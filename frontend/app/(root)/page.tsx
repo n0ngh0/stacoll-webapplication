@@ -1,10 +1,6 @@
-import Navigation from "@/components/layouts/navigation"
-import Footer from "@/components/layouts/footer"
-
 const Home = () => {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navigation />
+    <div className="flex-1 flex flex-col">
       <div className="flex-grow bg-white text-[#333333] font-sans">
             <main className="px-[5%] max-w-[1200px] mx-auto mt-4 pb-12">
                 {/* Hero Section */}
@@ -87,7 +83,6 @@ const Home = () => {
                 </section>
             </main>
         </div>
-      <Footer />
     </div>
   )
 }

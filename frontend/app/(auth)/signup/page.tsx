@@ -1,11 +1,8 @@
-import Navigation from "@/components/layouts/navigation"
-import Footer from "@/components/layouts/footer"
 import Link from "next/link"
 
 const page = () => {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navigation />
+    <div className="flex-1 flex flex-col">
       <main className="flex-grow flex flex-col items-center justify-center px-4 py-8">
         <div className="w-full max-w-md flex flex-col items-center">
           
@@ -61,7 +58,6 @@ const page = () => {
 
         </div>
       </main>
-      <Footer />
     </div>
   )
 }
