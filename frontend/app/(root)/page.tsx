@@ -1,20 +1,24 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
     const router = useRouter();
+    const [shouldRender, setShouldRender] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (token) {
             router.push("/user");
+        } else {
+            setShouldRender(true);
         }
     }, [router]);
 
+    if (!shouldRender) return <div className="min-h-screen bg-white" />;
     return (
         <div className="flex-1 flex flex-col">
-            <div className="flex-grow bg-white text-[#333333] font-sans">
+            <div className="flex-grow bg-white text-[#333333] font-sans animate-in fade-in duration-700">
                 <main className="px-[5%] max-w-[1200px] mx-auto mt-4 pb-12">
                     {/* Hero Section */}
                     <section className="flex flex-col md:flex-row gap-7 mb-12 items-center">

@@ -29,11 +29,14 @@ export default function UserDashboardPage() {
     if (!token) {
       router.push("/");
     } else {
-      setIsCheckingAuth(false);
+      const timer = setTimeout(() => setIsCheckingAuth(false), 100);
+      return () => clearTimeout(timer);
     }
   }, [router]);
   if (isCheckingAuth) {
-    return <div className="min-h-screen flex items-center justify-center bg-[#f9fafc]">Loading...</div>;
+    return (
+      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white animate-pulse"></div>
+    );
   }
 
   const filteredSkills = skillsData.filter((skill) => {
@@ -50,7 +53,7 @@ export default function UserDashboardPage() {
   });
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-[#f9fafc] text-[#222]">
+    <div className="min-h-[calc(100vh-80px)] bg-[#f9fafc] text-[#222] animate-in fade-in slide-in-from-bottom-2 duration-500">
 
       {/* --- Main Content --- */}
       <main className="max-w-[1300px] mx-auto px-[5%] py-10">
