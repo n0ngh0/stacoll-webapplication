@@ -11,7 +11,7 @@ const skillsData = [
   { id: 6, title: "Docker", icon: "https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/docker-icon.png", desc: "เครื่องมือจำลองสภาพแวดล้อมที่เรียกว่า 'Container'", category: "systems" },
 ];
 
-const categoryStyles = {
+const categoryTheme: Record<string, { border: string, iconBg: string, iconText: string }> = {
   analyst: { border: "border-[#b3caff]", iconBg: "bg-[#e6f0ff]", iconText: "text-[#0055ff]" },
   programming: { border: "border-[#b3e6cc]", iconBg: "bg-[#e6ffed]", iconText: "text-[#009933]" },
   systems: { border: "border-[#ffdab3]", iconBg: "bg-[#fff0e6]", iconText: "text-[#ff6600]" },
@@ -19,12 +19,26 @@ const categoryStyles = {
 
 export default function UserDashboardPage() {
   const [activeFilter, setActiveFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredSkills = skillsData.filter((skill) => {
+    let matchCategory = true;
+    if (activeFilter === "Analyst") matchCategory = skill.category === "analyst";
+    else if (activeFilter === "Programming") matchCategory = skill.category === "programming";
+    else if (activeFilter === "Systems and Tools") matchCategory = skill.category === "systems";
+
+    const matchSearch =
+      skill.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      skill.desc.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchCategory && matchSearch;
+  });
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#f9fafc] text-[#222]">
 
       {/* --- Main Content --- */}
-      <main className="max-w-[1200px] mx-auto px-[5%] py-10">
+      <main className="max-w-[1300px] mx-auto px-[5%] py-10">
 
         {/* Hero Section */}
         <section className="text-center mb-10">
@@ -36,11 +50,13 @@ export default function UserDashboardPage() {
           {/* Search Bar */}
           <div className="flex max-w-[600px] mx-auto mb-8 bg-white rounded-lg border border-[#eaeaea] shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-[#19c3af] transition-all">
             <div className="pl-4 flex items-center justify-center text-gray-400">
-              <Search width={20} height={20} />
+              <Search size={20} />
             </div>
             <input
               type="text"
               placeholder="Search (e.g. React, Python, AWS...)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 px-4 py-3.5 outline-none text-[15px]"
             />
             <button className="bg-[#19c3af] text-white px-8 font-bold text-[15px] hover:bg-teal-500 transition-colors">
@@ -65,10 +81,20 @@ export default function UserDashboardPage() {
           </div>
         </section>
 
+        {/* แสดงข้อความถ้าระบบหาข้อมูลไม่เจอ */}
+        {filteredSkills.length === 0 && (
+          <div className="text-center text-gray-500 mt-10">
+            <p className="text-lg font-semibold">ไม่พบทักษะที่คุณค้นหา</p>
+            <button onClick={() => { setSearchQuery(""); setActiveFilter("All"); }} className="mt-4 text-[#19c3af] underline">
+              ล้างการค้นหาทั้งหมด
+            </button>
+          </div>
+        )}
+
         {/* Cards Grid */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {skillsData.map((skill) => {
-            const theme = categoryStyles[skill.category as keyof typeof categoryStyles];
+          {filteredSkills.map((skill) => {
+            const theme = categoryTheme[skill.category] || categoryTheme.programming;
             const isImageIcon = skill.icon.startsWith("http") || skill.icon.startsWith("/");
 
             return (
@@ -87,16 +113,16 @@ export default function UserDashboardPage() {
 
                 {/* Card Info */}
                 <h3 className="text-[22px] font-bold text-[#222] mb-2">{skill.title}</h3>
-                <p className="text-[13px] text-[#666] leading-relaxed mb-6 flex-grow">
+                <p className="text-[13px] text-[#666] leading-relaxed mb-6 grow">
                   {skill.desc}
                 </p>
 
                 {/* Card Footer (Tags & Arrow) */}
                 <div className="flex justify-between items-center mt-auto">
                   <div className="flex flex-wrap gap-1.5">
-                    <span className="text-[10px] font-bold px-2 py-1 rounded bg-[#fff5cc] text-[#b38600] uppercase tracking-wider">Beginner</span>
-                    <span className="text-[10px] font-bold px-2 py-1 rounded bg-[#ccffcc] text-[#008000] uppercase tracking-wider">Intermediate</span>
-                    <span className="text-[10px] font-bold px-2 py-1 rounded bg-[#e6ccff] text-[#6600cc] uppercase tracking-wider hidden sm:inline-block">Advanced</span>
+                    <span className="text-[10px] font-bold px-2 py-1 rounded bg-[#fff5cc] text-[#b38600] uppercase">Beginner</span>
+                    <span className="text-[10px] font-bold px-2 py-1 rounded bg-[#ccffcc] text-[#008000] uppercase">Intermediate</span>
+                    <span className="text-[10px] font-bold px-2 py-1 rounded bg-[#e6ccff] text-[#6600cc] uppercase">Advanced</span>
                   </div>
                   <span className="text-[#19c3af] font-bold text-xl transition-transform transform group-hover:translate-x-1">→</span>
                 </div>
