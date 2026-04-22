@@ -1,6 +1,7 @@
 "use client";
 import { Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const skillsData = [
   { id: 1, title: "SQL", icon: "SQL", desc: "ภาษามาตรฐานที่ใช้สำหรับสื่อสาร จัดการ และดึงข้อมูลจากระบบฐานข้อมูลเชิงสัมพันธ์", category: "analyst" },
@@ -18,8 +19,22 @@ const categoryTheme: Record<string, { border: string, iconBg: string, iconText: 
 };
 
 export default function UserDashboardPage() {
+  const router = useRouter();
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/");
+    } else {
+      setIsCheckingAuth(false);
+    }
+  }, [router]);
+  if (isCheckingAuth) {
+    return <div className="min-h-screen flex items-center justify-center bg-[#f9fafc]">Loading...</div>;
+  }
 
   const filteredSkills = skillsData.filter((skill) => {
     let matchCategory = true;
