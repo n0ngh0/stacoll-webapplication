@@ -1,11 +1,12 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 
 // 1. กำหนด Interface สำหรับ TypeScript เพื่อให้รู้ว่า User Document มีฟิลด์อะไรบ้าง
-export interface IUser extends Document {
+export interface IUser {
   username: string;
   email: string;
   password: string;
   role: string;
+  imgUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +41,10 @@ const userSchema = new Schema<IUser>(
       type: String,
       enum: ["admin", "user"],
       default: "user",
+    },
+    imgUrl: {
+      type: String,
+      default: "/profiles/default.jpg",
     },
   },
   {

@@ -8,7 +8,7 @@ const Navigation = () => {
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [user, setUser] = useState<{ username: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ username: string; email: string; imgUrl?: string } | null>(null);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -38,6 +38,10 @@ const Navigation = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     
+    // ลบ Cookie ด้วยเพื่อให้ Middleware ทำงานถูกต้อง
+    document.cookie = "token=; path=/; max-age=0;";
+    document.cookie = "user=; path=/; max-age=0;";
+    
     // อัปเดตหน้าจอให้กลับเป็นโหมดปกติ
     setIsLoggedIn(false);
     setUser(null);
@@ -53,7 +57,7 @@ const Navigation = () => {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-[#19c3af] no-underline">
           <img className="h-10 w-auto object-contain" src="/assets/LogoStacoll.png" alt="Logo" />
-          <img className="h-6 w-auto object-contain" src="/assets/LogoStacoll-Text.png" alt="STACOLL" />
+          <img className="h-6 w-auto object-contain hidden sm:block" src="/assets/LogoStacoll-Text.png" alt="STACOLL" />
         </Link>
 
         {isLoggedIn ? (
@@ -70,14 +74,14 @@ const Navigation = () => {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="w-10 h-10 rounded-full border-2 border-[#19c3af] overflow-hidden cursor-pointer focus:outline-none transition-transform hover:scale-105"
               >
-                <img src="https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_640.png" alt="User Avatar" className="w-full h-full object-cover" />
+                <img src={`${user?.imgUrl}`} alt="User Avatar" className="w-full h-full object-cover" />
               </button>
 
               {/* Dropdown Menu */}
               {isDropdownOpen && (
                 <div className="absolute top-[55px] right-0 bg-white w-[280px] border-[3px] border-[#19c3af] rounded-xl shadow-xl p-5 text-center z-50">
                   <div className="w-20 h-20 rounded-full border-2 border-[#19c3af] overflow-hidden mx-auto mb-3">
-                    <img src="https://cdn.pixabay.com/photo/2023/02/18/11/00/icon-7797704_640.png" alt="Avatar" className="w-full h-full object-cover" />
+                    <img src={`${user?.imgUrl}`} alt="Avatar" className="w-full h-full object-cover" />
                   </div>
                   
                   <h3 className="text-lg font-bold text-[#222] mb-1">{user?.username}</h3>

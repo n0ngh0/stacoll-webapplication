@@ -88,7 +88,7 @@ export default function UserDashboardPage() {
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${activeFilter === filter
+                className={`hover:cursor-pointer px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 ${activeFilter === filter
                   ? "bg-[#19c3af] text-white shadow-md"
                   : "bg-[#e9ecef] text-[#666] hover:bg-gray-200"
                   }`}

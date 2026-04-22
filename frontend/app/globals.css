@@ -3,6 +3,18 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --bluebutton: #049CD3;
+  --greenui: #10DFAE;
+  --programming: #ACEFD4;
+  --database: #ADC6FF;
+  --tools: #FFE4A0;
+  --greenbutton: #34D399;
+  --beginnerbg: #FEF9C3;
+  --beginnertext: #A16207;
+  --intermediatebg: #DCFCE7;
+  --intermediatetext: #15803D;
+  --advancedbg: #C678DD;
+  --advancedtext: #63077F;
 }
 
 @theme inline {

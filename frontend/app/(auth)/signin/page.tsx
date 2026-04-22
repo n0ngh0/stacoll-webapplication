@@ -39,8 +39,10 @@ export default function SignInPage() {
       // Store token locally
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-
-
+      
+      // Store in cookies for Middleware
+      document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+      document.cookie = `user=${JSON.stringify(data.user)}; path=/; max-age=86400; SameSite=Lax`;
       // Redirect user to the dashboard or home
       window.location.href = "/user";
     } catch (err: any) {

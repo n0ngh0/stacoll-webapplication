@@ -3,7 +3,8 @@ export interface User {
   _id: string; // MongoDB ObjectId จะส่งมาเป็น String
   username: string;
   email: string;
-  
+  role: string;
+  img: string;
   // วันที่และเวลาจะถูกแปลงเป็น ISO String เมื่อส่งผ่าน JSON
   createdAt: string;
   updatedAt: string;

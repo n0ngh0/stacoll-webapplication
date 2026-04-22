@@ -116,7 +116,7 @@ export default function SignUpPage() {
               <button 
                 type="submit"
                 disabled={isLoading}
-                className="mt-4 w-[180px] mx-auto bg-[#0088cc] hover:bg-[#0077b3] disabled:bg-gray-400 text-white font-bold py-3.5 rounded-full shadow-lg transform active:scale-95 transition-all duration-200 tracking-wide"
+                className="mt-4 w-[180px] mx-auto bg-[var(--bluebutton)] hover:bg-[#0077b3] disabled:bg-gray-400 text-white font-bold py-3.5 rounded-full shadow-lg transform active:scale-95 transition-all duration-200 tracking-wide"
               >
                 {isLoading ? "SUBMITTING..." : "SUBMIT"}
               </button>

@@ -3,8 +3,8 @@ import { jwt } from "@elysiajs/jwt";
 import User, { IUser } from "../models/User";
 import { Document } from "mongoose";
 
-// Extend the IUser type with Mongoose document methods for correct typing
-type UserDocument = Document<unknown, any, IUser> & IUser & { _id: any };
+// We can now use the clean IUser interface directly without Mongoose overhead
+export type AuthUser = Omit<IUser, "password"> & { _id: any };
 
 export const authMiddleware = new Elysia({ name: "authMiddleware" })
   .use(
@@ -27,9 +27,10 @@ export const authMiddleware = new Elysia({ name: "authMiddleware" })
       return { user: null }; // Invalid token
     }
 
-    const user = await User.findById(payload.id).select("-password") as UserDocument | null;
-    return { user };
-  });
+    const user = await User.findById(payload.id).select("-password").lean();
+    return { user: user as AuthUser | null };
+  })
+  .as("global");
 
 export const requireAuth = new Elysia({ name: "requireAuth" })
   .use(authMiddleware)

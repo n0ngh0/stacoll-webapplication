@@ -27,7 +27,8 @@ export const authController = {
             id: newUser._id, 
             username: newUser.username, 
             email: newUser.email, 
-            role: newUser.role 
+            role: newUser.role,
+            imgUrl: newUser.imgUrl 
           } 
         }
       };
@@ -65,7 +66,8 @@ export const authController = {
             id: user._id, 
             username: user.username, 
             email: user.email, 
-            role: user.role 
+            role: user.role,
+            imgUrl: user.imgUrl 
           }
         }
       };
