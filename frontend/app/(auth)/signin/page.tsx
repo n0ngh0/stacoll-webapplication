@@ -38,9 +38,11 @@ export default function SignInPage() {
 
       // Store token locally
       localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
 
       // Redirect user to the dashboard or home
-      router.push("/user");
+      window.location.href = "/user";
     } catch (err: any) {
       setError(err.message);
     } finally {
