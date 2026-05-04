@@ -63,11 +63,6 @@ const Navigation = () => {
         {isLoggedIn ? (
           // --- Nav เข้าสู่ระบบแล้ว ---
           <div className="flex items-center gap-5">
-            <div className="hidden md:flex bg-[#f1f3f5] rounded-full px-4 py-2 items-center w-[250px]">
-              <Search width={20} height={20} className="mr-2 text-gray-400" />
-              <input type="text" placeholder="Search" className="bg-transparent border-none outline-none text-sm w-full" />
-            </div>
-
             {/* Profile Button & Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button 

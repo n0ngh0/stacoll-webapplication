@@ -2,6 +2,7 @@
 import { Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 const skillsData = [
   { id: 1, title: "SQL", icon: "SQL", desc: "ภาษามาตรฐานที่ใช้สำหรับสื่อสาร จัดการ และดึงข้อมูลจากระบบฐานข้อมูลเชิงสัมพันธ์", category: "analyst" },
@@ -116,8 +117,9 @@ export default function UserDashboardPage() {
             const isImageIcon = skill.icon.startsWith("http") || skill.icon.startsWith("/");
 
             return (
-              <div
+              <Link
                 key={skill.id}
+                href={`/${encodeURIComponent(skill.title)}`}
                 className={`bg-white rounded-xl p-6 shadow-sm flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer border-2 ${theme.border}`}
               >
                 {/* Card Icon */}
@@ -144,7 +146,7 @@ export default function UserDashboardPage() {
                   </div>
                   <span className="text-[#19c3af] font-bold text-xl transition-transform transform group-hover:translate-x-1">→</span>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </section>
