@@ -44,7 +44,7 @@ export default function SignInPage() {
       document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
       document.cookie = `user=${JSON.stringify(data.user)}; path=/; max-age=86400; SameSite=Lax`;
       // Redirect user to the dashboard or home
-      window.location.href = "/user";
+      window.location.href = "/explore";
     } catch (err: any) {
       setError(err.message);
     } finally {

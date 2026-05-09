@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navigation from "@/components/layouts/navigation"
 import Footer from "@/components/layouts/footer"
 
 const geistSans = Geist({
@@ -19,18 +19,13 @@ export const metadata: Metadata = {
   description: "Stacoll Skill-Wallet Web Application",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-screen flex flex-col">
-        <Navigation />
         <div className="flex-grow">
           {children}
         </div>

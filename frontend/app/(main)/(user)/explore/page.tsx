@@ -119,7 +119,7 @@ export default function UserDashboardPage() {
             return (
               <Link
                 key={skill.id}
-                href={`/${encodeURIComponent(skill.title)}`}
+                href={`/skill/${encodeURIComponent(skill.title)}`}
                 className={`bg-white rounded-xl p-6 shadow-sm flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer border-2 ${theme.border}`}
               >
                 {/* Card Icon */}

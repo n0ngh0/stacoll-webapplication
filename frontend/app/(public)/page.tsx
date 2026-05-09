@@ -9,7 +9,7 @@ export default function LandingPage() {
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (token) {
-            router.push("/user");
+            router.push("/explore");
         } else {
             setShouldRender(true);
         }
