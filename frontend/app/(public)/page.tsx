@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { BookOpenCheck, Briefcase, BriefcaseBusiness, WalletCards } from "lucide-react";
 
 export default function LandingPage() {
     const router = useRouter();
@@ -18,27 +20,74 @@ export default function LandingPage() {
     if (!shouldRender) return <div className="min-h-screen bg-[#f7f7f8] font-sans animate-in fade-in duration-700" />;
     return (
         <div className="flex-1 flex flex-col">
-            <div className="flex-grow bg-[#f9fafc] text-[#333333] font-sans animate-in fade-in duration-700 pb-20">
-                
-                <main className="px-[5%] max-w-[1200px] mx-auto mt-8 pb-12">
-                    <section className="flex flex-col md:flex-row gap-7 mb-12 items-center">
-                        <div className="flex-1 bg-[#b6ebe4] p-10 rounded-2xl">
-                            <h1 className="text-[32px] font-extrabold text-[#1a1a1a] mb-5">Start with STACOLL</h1>
-                            <p className="mb-4 text-[15px] text-[#444] leading-relaxed">
-                                We are a skill assessment tool designed to help you quickly understand your strengths and weaknesses (gaps) through tests and by collecting the skills you have in each area.
+            <div className="flex-grow bg-[#f9fafc] text-[#333333] font-sans animate-in fade-in duration-700">
+
+                <main className="px-[5%] max-w-[1200px] mx-auto mt-12 pb-12">
+                    <section className="flex flex-col md:flex-row gap-12 mb-20 items-center">
+                        <div className="flex-1 flex flex-col justify-center relative z-10">
+                            <h1 className="text-5xl font-extrabold text-[#1a1a1a] mb-6 leading-[1.1] tracking-tight">
+                                Validate Your Skills.<br />
+                                Build Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#10DFAE] to-[#00a3e0]">Skill Wallet.</span>
+                            </h1>
+                            <p className="mb-8 text-lg text-[#555] leading-relaxed max-w-[90%]">
+                                STACOLL is skill assessment tool designed to help you quickly understand your strengths and weaknesses through tests and by collecting the skills you have in each area.
                             </p>
-                            <p className="text-[15px] text-[#444] leading-relaxed">
-                                In addition, you can use your test results to create a resume, support your job applications, or share them on your profile.
-                            </p>
+
+                            <div className="flex flex-wrap gap-4 items-center">
+                                <Link href="/signup" className="px-8 py-4 bg-[#1a1a1a] text-white rounded-full font-bold text-lg hover:bg-[#333] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center gap-2">
+                                    Create Account
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+                                </Link>
+                            </div>
                         </div>
-                        <div className="flex-1 w-full flex items-center justify-center">
+                        <div className="flex-1 w-full flex items-center justify-center relative">
+                            <div className="absolute inset-0 bg-gradient-to-tr from-[#10DFAE]/20 to-[#00a3e0]/20 blur-[80px] -z-10 rounded-full w-full h-full m-auto"></div>
                             <img
                                 src="/assets/landing-illustration.png"
-                                alt="STACOLL Skill Assessment Illustration"
-                                className="w-full h-auto object-contain max-h-[290px] animate-in fade-in slide-in-from-right duration-1000"
+                                alt="STACOLL Skill Assessment Dashboard"
+                                className="w-full h-auto object-contain max-h-[450px] drop-shadow-xl animate-in fade-in zoom-in-95 duration-1000"
                             />
                         </div>
                     </section>
+
+                    <div className="py-8 border-t border-[#eaeaea] text-center"></div>
+
+                    <section className="mb-24">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-extrabold text-[#1a1a1a] mb-4">How STACOLL Works</h2>
+                            <p className="text-[#666] text-lg max-w-2xl mx-auto">A streamlined process to level up your career profile.</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="p-8 bg-white rounded-3xl border border-[#eaeaea] text-center shadow-sm hover:shadow-md transition-shadow">
+                                <div className="w-16 h-16 mx-auto bg-[#e0f4f9] text-[#00a3e0] rounded-2xl flex items-center justify-center mb-6">
+                                    <BookOpenCheck width={32} height={32} />
+                                </div>
+                                <h3 className="text-xl font-bold mb-3 text-[#1a1a1a]">1. Take Assessments</h3>
+                                <p className="text-[#666]">Complete industry-standard tests to evaluate your current knowledge and discover skill gaps.</p>
+                            </div>
+                            <div className="p-8 bg-white rounded-3xl border border-[#eaeaea] text-center shadow-sm hover:shadow-md transition-shadow">
+                                <div className="w-16 h-16 mx-auto bg-[#e6f9f1] text-[#10DFAE] rounded-2xl flex items-center justify-center mb-6">
+                                    <WalletCards width={32} height={32} />
+                                </div>
+                                <h3 className="text-xl font-bold mb-3 text-[#1a1a1a]">2. Collect Skills</h3>
+                                <p className="text-[#666]">Earn verified badges and store them securely in your personal digital Skill Wallet.</p>
+                            </div>
+                            <div className="p-8 bg-white rounded-3xl border border-[#eaeaea] text-center shadow-sm hover:shadow-md transition-shadow">
+                                <div className="w-16 h-16 mx-auto bg-[#fff6ed] text-[#f59e0b] rounded-2xl flex items-center justify-center mb-6">
+                                    <Briefcase width={32} height={32} />
+                                </div>
+                                <h3 className="text-xl font-bold mb-3 text-[#1a1a1a]">3. Build Your Resume</h3>
+                                <p className="text-[#666]">Generate powerful resumes backed by verified data to stand out to global employers.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div className="py-8 border-t border-[#eaeaea] text-center"></div>
+
+                    <div className="text-center mb-12">
+                        <h2 className="text-3xl font-extrabold text-[#1a1a1a] mb-4">Explore Skill Domains</h2>
+                        <p className="text-[#666] text-lg max-w-2xl mx-auto">Choose an area to begin your assessment journey.</p>
+                    </div>
 
                     {/* Analyst Skills Section */}
                     <section className="mb-12">
