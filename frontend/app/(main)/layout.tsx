@@ -4,7 +4,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <>
       <MemberNav />
-      <main className="bg-gray-50">{children}</main>
+      <main>{children}</main>
     </>
   );
 }

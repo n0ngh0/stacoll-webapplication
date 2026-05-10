@@ -1,34 +1,39 @@
-import type { Metadata } from "next";
+"use client";
 import type { ReactNode } from "react";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import { Figtree } from "next/font/google";
 import Footer from "@/components/layouts/footer"
+import { ThemeProvider } from "next-themes";
+import "./globals.css";
+import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const figtree = Figtree({
   subsets: ["latin"],
+  display: "swap",
+  variable: "--font-figtree",
 });
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata: Metadata = {
-  title: "Stacoll Web Application",
-  description: "Stacoll Skill-Wallet Web Application",
-};
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isPublicPage = pathname === "/" || pathname === "/signin" || pathname === "/signup";
   return (
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      lang="th"
+      className={`${figtree.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-screen flex flex-col">
-        <div className="flex-grow">
+      <body className="min-h-screen"
+        data-theme={mounted && isPublicPage ? "light" : undefined}
+      >
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           {children}
-        </div>
+        </ThemeProvider>
         <Footer />
       </body>
     </html>

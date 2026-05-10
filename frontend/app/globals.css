@@ -1,36 +1,111 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ตัวแปรสีโหมดปกติ (Light Mode) */
+[data-theme="light"],
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --bluebutton: #049CD3;
+  --bg-canvas: #f9fafc;
+  --bg-surface: #ffffff;
+  --border-subtle: #eaeaea;
+  --bg-surface-hover: #f7f7f8;
+
+  --text-main: #171717;
+  --text-muted: #6b7280;
+
+  --bluebutton: #9ca9ad;
   --greenui: #10DFAE;
-  --programming: #ACEFD4;
-  --database: #ADC6FF;
-  --tools: #FFE4A0;
   --greenbutton: #34D399;
+
+  --bg-brand-subtle: #e0f4f9;
+  --brand-secondary: #00a3e0;
+  --brand-secondary-hover: #0088cc;
+  --accent-orange: #f59e0b;
+
   --beginnerbg: #FEF9C3;
   --beginnertext: #A16207;
   --intermediatebg: #DCFCE7;
   --intermediatetext: #15803D;
-  --advancedbg: #C678DD;
+  --advancedbg: #e2bced;
   --advancedtext: #63077F;
+
+  --programming: #ACEFD4;
+  --database: #ADC6FF;
+  --tools: #FFE4A0;
+}
+
+[data-theme="light"] {
+  background-color: var(--bg-canvas) !important;
+  color: var(--text-main) !important;
+}
+
+[data-theme="light"] [class*="dark:"] {
+  background-color: transparent;
+  color: inherit;
+  border-color: inherit;
+}
+
+.dark {
+  --bg-canvas: #22272e;
+  --bg-surface: #2d333b;
+  --border-subtle: #444c56;
+  --bg-surface-hover: #333a45;
+
+  --text-main: #adbac7;
+  --text-muted: #768390;
+
+  --advancedbg: #a371f7;
+  --advancedtext: #8256d0;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-canvas: var(--bg-canvas);
+  --color-surface: var(--bg-surface);
+  --color-border-subtle: var(--border-subtle);
+  --color-surface-hover: var(--bg-surface-hover);
+
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+
+  --color-bluebutton: var(--bluebutton);
+  --color-greenui: var(--greenui);
+  --color-greenbutton: var(--greenbutton);
+
+  --color-bg-brand-subtle: var(--bg-brand-subtle);
+  --color-brand-secondary: var(--brand-secondary);
+  --color-brand-secondary-hover: var(--brand-secondary-hover);
+  --color-accent-orange: var(--accent-orange);
+
+  --color-beginnerbg: var(--beginnerbg);
+  --color-beginnertext: var(--beginnertext);
+  --color-intermediatebg: var(--intermediatebg);
+  --color-intermediatetext: var(--intermediatetext);
+  --color-advancedbg: var(--advancedbg);
+  --color-advancedtext: var(--advancedtext);
+
+  --color-programming: var(--programming);
+  --color-database: var(--database);
+  --color-tools: var(--tools);
+
+  --font-sans: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background-color: var(--color-canvas);
+    color: var(--text-main);
+    @apply transition-colors duration-300;
   }
 }
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

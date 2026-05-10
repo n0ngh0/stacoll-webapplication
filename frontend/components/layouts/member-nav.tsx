@@ -33,7 +33,6 @@ export default function MemberNav() {
 
     // ฟังก์ชันออกจากระบบ
     const handleLogout = () => {
-        // ลบข้อมูลทั้งหมดออกจากเครื่อง
         localStorage.removeItem("token");
         localStorage.removeItem("user");
 
@@ -41,16 +40,16 @@ export default function MemberNav() {
         document.cookie = "token=; path=/; max-age=0;";
         document.cookie = "user=; path=/; max-age=0;";
 
-        // กลับไปหน้าแรก
         router.push("/");
         router.refresh();
     };
 
     return (
-        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm relative">
+        <header className="sticky top-0 z-50 backdrop-blur-md shadow-sm bg-canvas/80 border-b border-border-subtle transition-colors duration-300">
             <nav className="flex justify-between items-center py-4 px-[5%] max-w-[1200px] mx-auto w-full">
+                
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-[#19c3af] no-underline">
+                <Link href="/" className="flex items-center gap-2 text-2xl font-bold no-underline text-greenui">
                     <img className="h-10 w-auto object-contain" src="/assets/LogoStacoll.png" alt="Logo" />
                     <img className="h-6 w-auto object-contain hidden sm:block" src="/assets/LogoStacoll-Text.png" alt="STACOLL" />
                 </Link>
@@ -60,36 +59,55 @@ export default function MemberNav() {
                     <div className="relative" ref={dropdownRef}>
                         <button
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            className="w-10 h-10 rounded-full border-2 border-[#19c3af] overflow-hidden cursor-pointer focus:outline-none transition-transform hover:scale-105"
+                            className="w-10 h-10 rounded-full overflow-hidden cursor-pointer focus:outline-none transition-transform hover:scale-105 border-2 border-greenui"
                         >
-                            <img src={`${user?.imgUrl}`} alt="User Avatar" className="w-full h-full object-cover" />
+                            <img src={user?.imgUrl || "/profiles/default.jpg"} alt="User Avatar" className="w-full h-full object-cover" />
                         </button>
 
                         {/* Dropdown Menu */}
                         {isDropdownOpen && (
-                            <div className="absolute top-[55px] right-0 bg-white w-[280px] border-[3px] border-[#19c3af] rounded-xl shadow-xl p-5 text-center z-50">
-                                <div className="w-20 h-20 rounded-full border-2 border-[#19c3af] overflow-hidden mx-auto mb-3">
-                                    <img src={`${user?.imgUrl}`} alt="Avatar" className="w-full h-full object-cover" />
+                            <div className="absolute top-[55px] right-0 bg-surface w-[280px] rounded-xl shadow-xl p-5 text-center z-50 border border-border-subtle transition-colors duration-300 animate-in fade-in slide-in-from-top-2">
+                                
+                                <div className="flex justify-center mb-3">
+                                    <Link
+                                        href="/profile"
+                                        onClick={() => setIsDropdownOpen(false)}
+                                        className="block w-20 h-20 rounded-full border-2 border-greenui overflow-hidden shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300"
+                                    >
+                                        <img
+                                            src={user?.imgUrl || "/profiles/default.jpg"}
+                                            alt="Avatar"
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </Link>
                                 </div>
 
-                                <h3 className="text-lg font-bold text-[#222] mb-1">{user?.username}</h3>
-                                <p className="text-xs text-[#666] mb-5 underline">{user?.email}</p>
+                                <h3 className="text-lg font-bold mb-1 text-text-main transition-colors">{user?.username || "Guest User"}</h3>
+                                <p className="text-xs mb-5 text-text-muted transition-colors">{user?.email || "No email provided"}</p>
 
                                 <ul className="list-none p-0 m-0">
-                                    <li className="border-t border-[#eaeaea]">
-                                        <Link href="/profile" className="block py-3 text-[#222] font-medium text-sm hover:text-[#19c3af] transition-colors" onClick={() => setIsDropdownOpen(false)}>
-                                            Profile / Dashboard
+                                    <li className="border-t border-border-subtle transition-colors pt-2">
+                                        <Link 
+                                            href="/profile" 
+                                            className="block py-3 font-medium text-sm text-text-main hover:bg-surface-hover rounded-lg transition-all"
+                                            onClick={() => setIsDropdownOpen(false)}
+                                        >
+                                            Profile
                                         </Link>
                                     </li>
-                                    <li className="border-t border-[#eaeaea]">
-                                        <Link href="/settings" className="block py-3 text-[#222] font-medium text-sm hover:text-[#19c3af] transition-colors" onClick={() => setIsDropdownOpen(false)}>
-                                            Setting
+                                    <li>
+                                        <Link 
+                                            href="/settings" 
+                                            className="block py-3 font-medium text-sm text-text-main hover:bg-surface-hover rounded-lg transition-all"
+                                            onClick={() => setIsDropdownOpen(false)}
+                                        >
+                                            Settings
                                         </Link>
                                     </li>
-                                    <li className="border-t border-[#eaeaea]">
+                                    <li>
                                         <button
                                             onClick={handleLogout}
-                                            className="w-full block py-3 text-red-500 font-medium text-sm hover:text-red-700 transition-colors text-center"
+                                            className="w-full block py-3 font-medium text-sm text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg transition-all text-center cursor-pointer"
                                         >
                                             Log out
                                         </button>

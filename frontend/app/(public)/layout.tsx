@@ -5,7 +5,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <PublicNav />
-      <main>{children}</main>
+      <main className="force-light">{children}</main>
     </>
   );
 }
