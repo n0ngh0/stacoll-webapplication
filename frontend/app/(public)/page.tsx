@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { BookOpenCheck, Briefcase, BriefcaseBusiness, WalletCards } from "lucide-react";
+import { BookOpenCheck, Briefcase, WalletCards } from "lucide-react";
 
 export default function LandingPage() {
     const router = useRouter();

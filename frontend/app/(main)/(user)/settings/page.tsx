@@ -1,13 +1,33 @@
 "use client";
+import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Moon, Sun, Shield, Trash2, Settings } from "lucide-react";
 import Link from "next/link";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      router.push("/");
+    } else {
+      const timer = setTimeout(() => setIsCheckingAuth(false), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [router]);
+
+  if (isCheckingAuth) {
+    return (
+      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-canvas animate-pulse transition-colors duration-300"></div>
+    );
+  }
 
   if (!mounted) return null;
   return (

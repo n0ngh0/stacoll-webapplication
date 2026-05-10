@@ -34,6 +34,10 @@
   --tools: #FFE4A0;
 }
 
+html:has(body[data-theme="light"]) {
+  color-scheme: light !important;
+}
+
 [data-theme="light"] {
   background-color: var(--bg-canvas) !important;
   color: var(--text-main) !important;

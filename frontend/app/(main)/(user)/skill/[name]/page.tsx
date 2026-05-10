@@ -3,6 +3,7 @@ import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, CircleQuestionMark, Clock, Monitor } from "lucide-react";
 import { useEffect, useState } from "react";
 
+
 export default function SkillDetailPage() {
     const params = useParams();
     const router = useRouter();
@@ -129,7 +130,7 @@ export default function SkillDetailPage() {
                                                 }`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-5 h-5 rounded-fulls border-2 flex items-center justify-center transition-colors duration-300 ${isActive
+                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${isActive
                                                     ? `border-current ${style.textClass}`
                                                     : 'border-border-subtle'
                                                     }`}>
