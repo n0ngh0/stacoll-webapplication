@@ -12,7 +12,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
     <>
       <PublicNav />
-      <main>{children}</main>
+      <main className="flex-grow flex flex-col">{children}</main>
     </>
   );
 }

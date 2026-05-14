@@ -28,11 +28,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       className={`${figtree.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-screen"
+      <body className="min-h-screen flex flex-col"
         data-theme={mounted && isPublicPage ? "light" : undefined}
       >
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          {children}
+          <div className="flex-grow flex flex-col">
+            {children}
+          </div>
         </ThemeProvider>
         <Footer />
       </body>
