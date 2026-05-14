@@ -1,10 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { Compass } from "lucide-react";
 
 export default function MemberNav() {
     const router = useRouter();
+    const pathname = usePathname();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [user, setUser] = useState<{ username: string; email: string; imgUrl?: string } | null>(null);
 
@@ -47,14 +49,29 @@ export default function MemberNav() {
     return (
         <header className="sticky top-0 z-50 backdrop-blur-md shadow-sm bg-canvas/80 border-b border-border-subtle transition-colors duration-300">
             <nav className="flex justify-between items-center py-4 px-[5%] max-w-[1200px] mx-auto w-full">
-                
+
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2 text-2xl font-bold no-underline text-greenui">
                     <img className="h-10 w-auto object-contain" src="/assets/LogoStacoll.png" alt="Logo" />
                     <img className="h-6 w-auto object-contain hidden sm:block" src="/assets/LogoStacoll-Text.png" alt="STACOLL" />
                 </Link>
 
-                <div className="flex items-center gap-5">
+                <div className="flex items-center gap-4 sm:gap-6">
+                    <div className="hidden md:flex items-center">
+                        <Link
+                            href="/explore"
+                            className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full transition-all duration-200 ${pathname === "/explore"
+                                ? "bg-[#10DFAE]/15 text-[#0d9b79] dark:bg-greenui/10 dark:text-greenui"
+                                : "text-text-muted hover:text-text-main hover:bg-surface-hover"
+                                }`}
+                        >
+                            <Compass size={18} />Explore Skills
+                        </Link>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="hidden md:block w-px h-6 bg-border-subtle"></div>
+
                     {/* Profile Button & Dropdown */}
                     <div className="relative" ref={dropdownRef}>
                         <button
@@ -67,7 +84,7 @@ export default function MemberNav() {
                         {/* Dropdown Menu */}
                         {isDropdownOpen && (
                             <div className="absolute top-[55px] right-0 bg-surface w-[280px] rounded-xl shadow-xl p-5 text-center z-50 border border-border-subtle transition-colors duration-300 animate-in fade-in slide-in-from-top-2">
-                                
+
                                 <div className="flex justify-center mb-3">
                                     <Link
                                         href="/profile"
@@ -87,8 +104,8 @@ export default function MemberNav() {
 
                                 <ul className="list-none p-0 m-0">
                                     <li className="border-t border-border-subtle transition-colors pt-2">
-                                        <Link 
-                                            href="/profile" 
+                                        <Link
+                                            href="/profile"
                                             className="block py-3 font-medium text-sm text-text-main hover:bg-surface-hover rounded-lg transition-all"
                                             onClick={() => setIsDropdownOpen(false)}
                                         >
@@ -96,8 +113,8 @@ export default function MemberNav() {
                                         </Link>
                                     </li>
                                     <li>
-                                        <Link 
-                                            href="/settings" 
+                                        <Link
+                                            href="/settings"
                                             className="block py-3 font-medium text-sm text-text-main hover:bg-surface-hover rounded-lg transition-all"
                                             onClick={() => setIsDropdownOpen(false)}
                                         >
