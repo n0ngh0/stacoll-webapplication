@@ -44,7 +44,7 @@ export default function SignUpPage() {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || "Registration failed");
 
-      router.push("/signin");
+      router.push("/verify-otp");
     } catch (err: any) {
       setError(err.message);
     } finally {
