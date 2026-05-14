@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     setMounted(true);
   }, []);
 
-  const isPublicPage = pathname === "/" || pathname === "/signin" || pathname === "/signup";
+  const isPublicPage = pathname === "/" || pathname === "/signin" || pathname === "/signup" || pathname === "/forgot-password";
   return (
     <html
       lang="th"
