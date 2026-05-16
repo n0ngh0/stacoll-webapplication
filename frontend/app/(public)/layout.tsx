@@ -1,6 +1,7 @@
 import PublicNav from "@/components/layouts/public-nav";
 import { ReactNode } from "react";
 import type { Metadata } from "next";
+import Footer from "@/components/layouts/footer";
 
 export const metadata: Metadata = {
   title: "STACOLL - The World's Leading Skill Wallet",
@@ -13,6 +14,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
     <>
       <PublicNav />
       <main className="force-light">{children}</main>
+      <Footer />
     </>
   );
 }

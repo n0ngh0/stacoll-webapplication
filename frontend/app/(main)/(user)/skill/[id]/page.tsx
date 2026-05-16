@@ -7,10 +7,11 @@ import { useEffect, useState } from "react";
 export default function SkillDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const skillName = decodeURIComponent(params.name as string);
+    const rawSkillId = (params?.id || "skill-assessment") as string;
+    const displaySkillName = decodeURIComponent(rawSkillId as string).toUpperCase();
 
     const skill = {
-        name: skillName,
+        name: displaySkillName,
         desc: "SQL (Structured Query Language) คือภาษามาตรฐานที่ใช้สำหรับสื่อสาร จัดการ และดึงข้อมูลจากระบบฐานข้อมูลเชิงสัมพันธ์ (Relational Database) เช่น การค้นหา เพิ่ม หรือลบข้อมูลในตาราง",
         category: "analyst",
         difficulty: "Beginner",
@@ -47,6 +48,7 @@ export default function SkillDetailPage() {
 
     const [selectedLevel, setSelectedLevel] = useState(skill.difficulty);
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+    const [showStartModal, setShowStartModal] = useState(false);
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -57,6 +59,15 @@ export default function SkillDetailPage() {
             return () => clearTimeout(timer);
         }
     }, [router]);
+
+
+    const handleStartAssessment = () => {
+        setShowStartModal(true);
+    }
+    const confirmStart = () => {
+        setShowStartModal(false);
+        router.push(`/assessment/${rawSkillId}`);
+    }
 
     if (isCheckingAuth) {
         return (
@@ -82,9 +93,9 @@ export default function SkillDetailPage() {
                     </button>
                 </div>
 
-                {/* Skill Title Hero */}
+                {/* Skill Title  */}
                 <div className="py-10 flex items-center justify-center relative overflow-hidden transition-colors duration-300 bg-[var(--theme-color)]/20">
-                    <h1 className="text-4xl md:text-5xl font-extrabold text-text-main z-10 transition-colors duration-300">{skillName}</h1>
+                    <h1 className="text-4xl md:text-5xl font-extrabold text-text-main z-10 transition-colors duration-300">{displaySkillName}</h1>
                 </div>
 
                 <div className="p-8 md:p-12 space-y-10">
@@ -158,12 +169,43 @@ export default function SkillDetailPage() {
 
                     {/* Action Button */}
                     <div className="flex justify-center pt-6">
-                        <button className="cursor-pointer bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold py-4 px-20 rounded-full text-xl shadow-lg shadow-brand-secondary/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95">
+                        <button onClick={handleStartAssessment} className="cursor-pointer bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold py-4 px-20 rounded-full text-xl shadow-lg shadow-brand-secondary/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95">
                             Start
                         </button>
                     </div>
                 </div>
             </div>
+
+            {/* Custom Start Modal */}
+            {showStartModal && (
+                <div className="fixed inset-0 z-[49] flex items-center justify-center bg-canvas/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+                    <div className="bg-surface p-8 rounded-3xl shadow-xl border border-border-subtle max-w-md w-full animate-in zoom-in-95 duration-200">
+
+                        <h3 className="text-xl font-bold text-text-main mb-3">Ready to begin?</h3>
+
+                        <p className="text-[15px] text-text-muted leading-relaxed mb-8">
+                            You are about to start the <strong className="text-text-main font-bold">{displaySkillName}</strong> assessment.
+                            You will have <strong>{skill.estimated_time} minutes</strong> to complete <strong>{skill.question_count} questions</strong>.
+                            The timer cannot be paused once started.
+                        </p>
+
+                        <div className="flex flex-col-reverse sm:flex-row gap-3">
+                            <button
+                                onClick={() => setShowStartModal(false)}
+                                className="flex-1 px-5 py-3 text-[15px] font-bold text-text-main hover:bg-surface-hover rounded-xl transition-colors cursor-pointer border border-border-subtle sm:border-transparent"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmStart}
+                                className="flex-1 px-5 py-3 text-[15px] font-bold text-white bg-brand-secondary hover:brightness-105 rounded-xl transition-colors shadow-sm cursor-pointer"
+                            >
+                                Start Assessment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

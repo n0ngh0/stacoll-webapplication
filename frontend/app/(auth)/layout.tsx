@@ -1,3 +1,4 @@
+import Footer from "@/components/layouts/footer";
 import PublicNav from "@/components/layouts/public-nav";
 import { Metadata } from "next";
 import { ReactNode } from "react";
@@ -13,6 +14,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
     <>
       <PublicNav />
       <main className="flex-grow flex flex-col">{children}</main>
+      <Footer />
     </>
   );
 }

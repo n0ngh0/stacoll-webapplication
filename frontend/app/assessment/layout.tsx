@@ -1,5 +1,3 @@
-import Footer from "@/components/layouts/footer";
-import MemberNav from "@/components/layouts/member-nav";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -8,12 +6,10 @@ export const metadata: Metadata = {
   keywords: ["Skill Assessment", "Resume Builder", "Tech Skills", "Developer Portfolio"],
 };
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function AssessmentLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <MemberNav />
-      <main>{children}</main>
-      <Footer />
+      <main >{children}</main>
     </>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 import type { ReactNode } from "react";
 import { Figtree } from "next/font/google";
-import Footer from "@/components/layouts/footer"
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { usePathname } from "next/navigation";
@@ -36,7 +35,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             {children}
           </div>
         </ThemeProvider>
-        <Footer />
       </body>
     </html>
   );
