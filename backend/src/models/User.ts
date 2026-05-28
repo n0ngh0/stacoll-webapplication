@@ -7,6 +7,9 @@ export interface IUser {
   password: string;
   role: string;
   imgUrl?: string;
+  isVerified: boolean;
+  otp?: string;
+  otpExpiry?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,6 +48,16 @@ const userSchema = new Schema<IUser>(
     imgUrl: {
       type: String,
       default: "/profiles/default.jpg",
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    otp: {
+      type: String,
+    },
+    otpExpiry: {
+      type: Date,
     },
   },
   {

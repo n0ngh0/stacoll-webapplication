@@ -47,13 +47,28 @@ export default function VerifyOTPPage() {
             return setError("Please enter the full 6-digit code.");
         }
 
+        const email = sessionStorage.getItem("signupEmail");
+        if (!email) {
+            return setError("No email found. Please sign up again.");
+        }
+
         setIsLoading(true);
         try {
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+            const res = await fetch(`${apiUrl}/auth/verify-otp`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, otp: otpCode })
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.message || "Verification failed");
+
+            // Clear email and redirect to signin
+            sessionStorage.removeItem("signupEmail");
             window.location.href = "/signin";
         } catch (err: any) {
-            setError("Invalid OTP code. Please try again.");
+            setError(err.message || "Invalid OTP code. Please try again.");
         } finally {
             setIsLoading(false);
         }

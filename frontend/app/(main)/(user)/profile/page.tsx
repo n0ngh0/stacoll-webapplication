@@ -1,4 +1,5 @@
 import { ExternalLink, Edit3, Award, CheckCircle } from "lucide-react";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const user = {
@@ -53,9 +54,9 @@ export default function ProfilePage() {
               <h1 className="text-4xl font-bold text-text-main transition-colors">{user.name}</h1>
               <p className="text-xl font-medium text-text-muted dark:text-greenui mt-1 transition-colors">My fav : AI / Developer</p>
             </div>
-            <button className="bg-brand-secondary text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 self-center md:self-start hover:bg-brand-secondary-hover shadow-sm transition cursor-pointer">
+            <Link href="/export" className="bg-brand-secondary text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 self-center md:self-start hover:bg-brand-secondary-hover shadow-sm transition cursor-pointer">
               <ExternalLink size={18} /> Export
-            </button>
+            </Link>
           </div>
           <p className="text-text-muted mt-4 max-w-2xl leading-relaxed transition-colors">
             {user.bio}

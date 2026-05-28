@@ -76,7 +76,7 @@ export default function UserDashboardPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 px-4 py-3.5 bg-transparent outline-none text-[15px] placeholder:text-text-muted text-text-main"
             />
-            <button className="bg-greenui hover:bg-greenbutton text-white px-8 font-bold text-[15px] cursor-pointer transition-colors">
+            <button className="bg-[#19c3af] text-white px-8 font-bold text-[15px] hover:cursor-pointer hover:bg-teal-500 transition-colors">
               Search
             </button>
           </div>

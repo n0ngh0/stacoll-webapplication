@@ -15,6 +15,16 @@ export const authRoutes = new Elysia({ prefix: "/api/auth" })
       password: t.String()
     })
   })
+  .post("/verify-otp", async ({ body, set }) => {
+    const { status, body: responseBody } = await authController.verifyOTP(body);
+    set.status = status;
+    return responseBody;
+  }, {
+    body: t.Object({
+      email: t.String(),
+      otp: t.String()
+    })
+  })
   .post("/login", async ({ body, jwt, set }) => {
     const { status, body: responseBody } = await authController.login(body, jwt.sign);
     set.status = status;
