@@ -27,8 +27,12 @@ export default function UserDashboardPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/");
+    if (!token || token === "undefined" || token === "null") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      document.cookie = "token=; path=/; max-age=0;";
+      document.cookie = "user=; path=/; max-age=0;";
+      window.location.href = "/";
     } else {
       const timer = setTimeout(() => setIsCheckingAuth(false), 100);
       return () => clearTimeout(timer);

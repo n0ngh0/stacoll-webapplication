@@ -4,6 +4,7 @@ import connectDB from "./config/database"
 import { setup } from "./setup";
 import { authRoutes } from "./routes/authRoutes";
 import { userRoutes } from "./routes/userRoutes";
+import { profileRoutes } from "./routes/profileRoutes";
 
 configDotenv()
 connectDB()
@@ -14,6 +15,7 @@ const app = new Elysia()
   .use(setup)
   .use(authRoutes)
   .use(userRoutes)
+  .use(profileRoutes)
   .listen(port);
 
 console.log(

@@ -7,6 +7,13 @@ export interface IUser {
   password: string;
   role: string;
   imgUrl?: string;
+  bio?: string;
+  title?: string;
+  projects?: Array<{
+    title: string;
+    description: string;
+    tags: string[];
+  }>;
   isVerified: boolean;
   otp?: string;
   otpExpiry?: Date;
@@ -49,6 +56,21 @@ const userSchema = new Schema<IUser>(
       type: String,
       default: "/profiles/default.jpg",
     },
+    bio: {
+      type: String,
+      default: "",
+    },
+    title: {
+      type: String,
+      default: "",
+    },
+    projects: [
+      {
+        title: { type: String, required: true },
+        description: { type: String, required: true },
+        tags: [{ type: String }],
+      }
+    ],
     isVerified: {
       type: Boolean,
       default: false,

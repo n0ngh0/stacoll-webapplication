@@ -10,8 +10,8 @@ export default function LandingPage() {
 
     useEffect(() => {
         const token = localStorage.getItem("token");
-        if (token) {
-            router.push("/explore");
+        if (token && token !== "undefined" && token !== "null") {
+            window.location.href = "/explore";
         } else {
             setShouldRender(true);
         }
@@ -34,10 +34,13 @@ export default function LandingPage() {
                             </p>
 
                             <div className="flex flex-wrap gap-4 items-center">
-                                <Link href="/signup" className="px-8 py-4 bg-[#1a1a1a] text-white rounded-full font-bold text-lg hover:bg-[#333] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center gap-2">
+                                <a href="/signup" className="px-8 py-4 bg-[#1a1a1a] text-white rounded-full font-bold text-lg hover:bg-[#333] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center gap-2">
                                     Create Account
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-                                </Link>
+                                </a>
+                                <a href="/signin" className="px-8 py-4 bg-white text-[#1a1a1a] border border-[#1a1a1a] rounded-full font-bold text-lg hover:bg-gray-50 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                                    Sign In
+                                </a>
                             </div>
                         </div>
                         <div className="flex-1 w-full flex items-center justify-center relative">

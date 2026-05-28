@@ -27,8 +27,12 @@ export const authMiddleware = new Elysia({ name: "authMiddleware" })
       return { user: null }; // Invalid token
     }
 
-    const user = await User.findById(payload.id).select("-password").lean();
-    return { user: user as AuthUser | null };
+    try {
+      const user = await User.findById(payload.id).select("-password").lean();
+      return { user: user as AuthUser | null };
+    } catch (error) {
+      return { user: null }; // Invalid ObjectId format
+    }
   })
   .as("global");
 

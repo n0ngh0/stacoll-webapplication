@@ -27,7 +27,7 @@ export function proxy(request: NextRequest) {
   }
 
   // 3. ถ้ามี token แล้วพยายามเข้าหน้า auth (signin/signup) ให้ส่งไปหน้า /user
-  if (token && (pathname.startsWith('/signin') || pathname.startsWith('/signup'))) {
+  if (token && token !== "undefined" && token !== "null" && (pathname.startsWith('/signin') || pathname.startsWith('/signup'))) {
     return NextResponse.redirect(new URL('/explore', request.url))
   }
 

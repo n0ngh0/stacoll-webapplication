@@ -44,7 +44,7 @@ export const authController = {
           success: true,
           message: "User created successfully. (OTP Bypassed for testing)", 
           user: { 
-            id: newUser._id, 
+            id: newUser._id.toString(), 
             username: newUser.username, 
             email: newUser.email, 
           } 
@@ -106,7 +106,7 @@ export const authController = {
       }
 
       const token = await jwtSign({ 
-        id: user._id, 
+        id: user._id.toString(), 
         role: user.role 
       });
 

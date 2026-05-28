@@ -4,7 +4,14 @@ export interface User {
   username: string;
   email: string;
   role: string;
-  img: string;
+  imgUrl?: string;
+  bio?: string;
+  title?: string;
+  projects?: Array<{
+    title: string;
+    description: string;
+    tags: string[];
+  }>;
   // วันที่และเวลาจะถูกแปลงเป็น ISO String เมื่อส่งผ่าน JSON
   createdAt: string;
   updatedAt: string;
