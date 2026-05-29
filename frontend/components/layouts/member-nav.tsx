@@ -48,7 +48,7 @@ export default function MemberNav() {
 
     return (
         <header className="sticky top-0 z-50 backdrop-blur-md shadow-sm bg-canvas/80 border-b border-border-subtle transition-colors duration-300">
-            <nav className="flex justify-between items-center py-4 px-[5%] max-w-[1200px] mx-auto w-full">
+            <nav className="flex justify-between items-center py-4 px-[5%] max-w-[1980px] mx-auto w-full">
 
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2 text-2xl font-bold no-underline text-greenui">
