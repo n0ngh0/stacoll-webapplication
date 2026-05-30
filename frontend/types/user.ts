@@ -17,6 +17,15 @@ export interface User {
   updatedAt: string;
 }
 
+// ข้อมูลสำหรับพวก Session (ใช้ใน use-user)
+export interface SessionUser {
+  id?: string;
+  username: string;
+  email: string;
+  role: string;
+  imgUrl?: string;
+}
+
 // (Optional) Type สำหรับเวลาส่งข้อมูลไป สมัครสมาชิก
 export interface SignUpPayload {
   username: string;
