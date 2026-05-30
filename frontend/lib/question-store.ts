@@ -1,11 +1,12 @@
 // Skill and Question Store — Mock Data
 import type {
   Skill, CreateSkillPayload, UpdateSkillPayload,
-  Question, CreateQuestionPayload, UpdateQuestionPayload
+  Question, CreateQuestionPayload, UpdateQuestionPayload,
+  SkillLevel
 } from "@/types/question";
 
 // SEED DATA
-let SKILL_SEED_DATA: Skill[] = [
+let SKILL_DATA: Skill[] = [
   {
     id: "sql",
     title: "SQL",
@@ -50,7 +51,7 @@ let SKILL_SEED_DATA: Skill[] = [
   }
 ];
 
-let QUESTION_SEED_DATA: Question[] = [
+let QUESTION_DATA: Question[] = [
   {
     id: "q-seed-001",
     skillId: "python",
@@ -99,6 +100,12 @@ let QUESTION_SEED_DATA: Question[] = [
   }
 ];
 
+const DEFAULT_LEVELS: SkillLevel[] = [
+  { id: "beginner", title: "Beginner", description: "ทำพื้นฐานทั่วไปได้", estimatedTime: 30 },
+  { id: "intermediate", title: "Intermediate", description: "สามารถประยุกต์ใช้งานได้", estimatedTime: 45 },
+  { id: "advanced", title: "Advanced", description: "เข้าใจจุดแข็งของภาษานี้จริงๆ", estimatedTime: 60 }
+];
+
 // Helper
 function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -106,7 +113,7 @@ function generateId(prefix: string): string {
 
 // SKILL CRUD
 export function getSkills(): Skill[] {
-  return SKILL_SEED_DATA;
+  return SKILL_DATA;
 }
 
 export function getSkillById(id: string): Skill | null {
@@ -114,11 +121,12 @@ export function getSkillById(id: string): Skill | null {
   return skills.find((s) => s.id === id) ?? null;
 }
 
-export function createSkill(payload: CreateSkillPayload): Skill {
+export function createSkill(payload: Omit<CreateSkillPayload, 'levels'>): Skill {
   const skills = getSkills();
   const now = new Date().toISOString();
   const newSkill: Skill = {
     ...payload,
+    levels: DEFAULT_LEVELS,
     id: generateId("skill"),
     createdAt: now,
     updatedAt: now,
@@ -139,7 +147,7 @@ export function updateSkill(id: string, payload: UpdateSkillPayload): Skill | nu
     updatedAt: new Date().toISOString(),
   };
   if (index !== -1)
-    SKILL_SEED_DATA[index] = updated;
+    SKILL_DATA[index] = updated;
 
   return updated;
 }
@@ -150,7 +158,7 @@ export function deleteSkill(id: string): boolean {
   if (index === -1) return false;
 
   skills.splice(index, 1);
-  QUESTION_SEED_DATA = QUESTION_SEED_DATA.filter(q => q.skillId !== id);
+  QUESTION_DATA = QUESTION_DATA.filter(q => q.skillId !== id);
 
   return true;
 }
@@ -174,7 +182,7 @@ export function getLevelMode(skillId: string, level: string): string {
 
 // QUESTION CRUD
 export function getQuestions(): Question[] {
-  return QUESTION_SEED_DATA;
+  return QUESTION_DATA;
 }
 
 export function getQuestionById(id: string): Question | null {
@@ -191,12 +199,12 @@ export function createQuestion(payload: CreateQuestionPayload): Question {
   const now = new Date().toISOString();
   const newQuestion = {
     ...payload,
-    id: generateId("q"),
+    id: generateId("question"),
     createdAt: now,
     updatedAt: now,
   } as Question;
 
-  QUESTION_SEED_DATA.unshift(newQuestion);
+  QUESTION_DATA.unshift(newQuestion);
   return newQuestion;
 }
 
@@ -213,7 +221,7 @@ export function updateQuestion(id: string, payload: UpdateQuestionPayload): Ques
     updatedAt: new Date().toISOString(),
   } as Question;
 
-  QUESTION_SEED_DATA[index] = updated;
+  QUESTION_DATA[index] = updated;
   return updated;
 }
 
@@ -222,7 +230,7 @@ export function deleteQuestion(id: string): boolean {
   const index = questions.findIndex((q) => q.id === id);
   if (index === -1) return false;
 
-  QUESTION_SEED_DATA.splice(index, 1);
+  QUESTION_DATA.splice(index, 1);
   return true;
 }
 
