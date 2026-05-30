@@ -2,26 +2,18 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Compass } from "lucide-react";
+import { Compass, Shield } from "lucide-react";
+import { useUser } from "@/lib/use-user";
 
 export default function MemberNav() {
     const router = useRouter();
     const pathname = usePathname();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [user, setUser] = useState<{ username: string; email: string; imgUrl?: string } | null>(null);
+    const { user, isAdmin } = useUser();
 
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        try {
-            const userData = localStorage.getItem("user");
-            if (userData) {
-                setUser(JSON.parse(userData));
-            }
-        } catch (error) {
-            console.error("Failed to parse user data:", error);
-        }
-
         // ฟังก์ชันปิด Dropdown
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -57,7 +49,7 @@ export default function MemberNav() {
                 </Link>
 
                 <div className="flex items-center gap-4 sm:gap-6">
-                    <div className="hidden md:flex items-center">
+                    <div className="hidden md:flex items-center gap-1">
                         <Link
                             href="/explore"
                             className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full transition-all duration-200 ${pathname === "/explore"
@@ -67,6 +59,19 @@ export default function MemberNav() {
                         >
                             <Compass size={18} />Explore Skills
                         </Link>
+
+                        {/* Admin Menu */}
+                        {isAdmin && (
+                            <Link
+                                href="/admin"
+                                className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full transition-all duration-200 ${pathname.startsWith("/admin")
+                                    ? "bg-amber-500/15 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+                                    : "text-text-muted hover:text-text-main hover:bg-surface-hover"
+                                    }`}
+                            >
+                                <Shield size={16} />Admin
+                            </Link>
+                        )}
                     </div>
 
                     {/* Divider */}
@@ -103,6 +108,17 @@ export default function MemberNav() {
                                 <p className="text-xs mb-5 text-text-muted transition-colors">{user?.email || "No email provided"}</p>
 
                                 <ul className="list-none p-0 m-0">
+                                    {isAdmin && (
+                                        <li className="transition-colors mb-1.5">
+                                            <Link
+                                                href="/admin"
+                                                className="flex items-center gap-1 py-3 justify-center font-medium text-sm text-text-main hover:bg-surface-hover rounded-lg transition-all"
+                                                onClick={() => setIsDropdownOpen(false)}
+                                            >
+                                                <Shield size={14} style={{ marginBottom: '3px' }} />Admin Panel
+                                            </Link>
+                                        </li>
+                                    )}
                                     <li className="border-t border-border-subtle transition-colors pt-2">
                                         <Link
                                             href="/profile"
