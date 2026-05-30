@@ -39,7 +39,25 @@ export default function UserDashboardPage() {
   useEffect(() => {
     setSkillsData(getSkills());
     setMounted(true);
+
+    const handleReset = () => {
+      setActiveFilter("All");
+      setSearchQuery("");
+      setSkillsData(getSkills());
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    window.addEventListener("reset-explore", handleReset);
+    return () => window.removeEventListener("reset-explore", handleReset);
   }, []);
+
+  if (!mounted) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-canvas flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-800 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const filteredSkills = skillsData.filter((skill) => {
     let matchCategory = true;
@@ -88,8 +106,8 @@ export default function UserDashboardPage() {
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
                 className={`hover:cursor-pointer px-5 py-2.5 rounded-full text-sm font-semibold border border-border-subtle transition-all duration-200 ${activeFilter === filter
-                    ? "bg-greenbutton text-white dark:text-black shadow-md dark:shadow-greenbutton/20"
-                    : "bg-surface text-text-muted hover:border-text-muted hover:text-text-main"
+                  ? "bg-greenbutton text-white dark:text-black shadow-md dark:shadow-greenbutton/20"
+                  : "bg-surface text-text-muted hover:border-text-muted hover:text-text-main"
                   }`}
               >
                 {filter}

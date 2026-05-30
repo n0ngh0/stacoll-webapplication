@@ -43,7 +43,16 @@ export default function MemberNav() {
             <nav className="flex justify-between items-center py-4 px-[5%] max-w-[1980px] mx-auto w-full">
 
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 text-2xl font-bold no-underline text-greenui">
+                <Link 
+                    href="/explore" 
+                    className="flex items-center gap-2 text-2xl font-bold no-underline text-greenui"
+                    onClick={(e) => {
+                        if (pathname === '/explore') {
+                            e.preventDefault();
+                            window.dispatchEvent(new Event("reset-explore"));
+                        }
+                    }}
+                >
                     <img className="h-10 w-auto object-contain" src="/assets/LogoStacoll.png" alt="Logo" />
                     <img className="h-6 w-auto object-contain hidden sm:block" src="/assets/LogoStacoll-Text.png" alt="STACOLL" />
                 </Link>
