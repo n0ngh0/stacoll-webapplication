@@ -8,13 +8,8 @@ import {
 } from "lucide-react";
 import { getSkills, getQuestionCountBySkill } from "@/lib/question-store";
 import type { Skill } from "@/types/question";
+import { CATEGORY_THEMES } from "@/types/question";
 import AdminSkillCard from "@/components/admin/AdminSkillCard";
-
-const categoryTheme: Record<string, string> = {
-  analyst: "#3b82f6",
-  programming: "#22c55e",
-  systems: "#f59e0b",
-};
 
 export default function AdminDashboardPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -248,7 +243,7 @@ export default function AdminDashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredSkills.map((skill) => {
               const qCount = getQuestionCountBySkill(skill.id);
-              const themeColor = categoryTheme[skill.category] || "#19c3af";
+              const themeColor = CATEGORY_THEMES[skill.category] || "#19c3af";
 
               return (
                 <AdminSkillCard key={skill.id} skill={skill} qCount={qCount} themeColor={themeColor} onDelete={handleDeleteSkill} />

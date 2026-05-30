@@ -5,7 +5,7 @@ import type { Skill } from "@/types/question";
 import { ArrowRight } from "lucide-react";
 
 export default function SkillCard({ skill, themeColor }: { skill: Skill; themeColor: string }) {
-    const isImageIcon = skill.icon.startsWith("http") || skill.icon.startsWith("/");
+    const isImageUrl = (url: string) => url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:");
 
     return (
         <Link
@@ -14,15 +14,15 @@ export default function SkillCard({ skill, themeColor }: { skill: Skill; themeCo
             className="group bg-surface rounded-xl p-6 shadow-sm flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[var(--theme-color)]/20 dark:hover:shadow-black/30 cursor-pointer border-2 border-[var(--theme-color)]/20 dark:border-[var(--theme-color)]/30"
         >
             <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl overflow-hidden transition-colors duration-300 bg-[var(--theme-color)]/10 text-[var(--theme-color)] dark:bg-[var(--theme-color)]/15">
-                    {isImageIcon ? (
-                        <img src={skill.icon} alt={skill.title} className="w-8 h-8 object-contain" />
+                <div className="w-12 h-12 p-2 rounded-xl flex items-center justify-center font-bold text-xl overflow-hidden transition-colors duration-300 bg-[var(--theme-color)]/10 text-[var(--theme-color)] dark:bg-[var(--theme-color)]/15">
+                    {isImageUrl(skill.icon) ? (
+                        <img src={skill.icon} alt={skill.title} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
                     ) : (
-                        skill.icon
+                        <span className="font-black text-text-muted select-none">{skill.icon || skill.title.substring(0, 3).toUpperCase()}</span>
                     )}
                 </div>
 
-                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[var(--theme-color)]/10 text-[var(--theme-color)] border border-[var(--theme-color)]/20 uppercase tracking-wider transition-colors duration-300">
+                <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[var(--theme-color)]/10 text-[var(--theme-color)] border border-border-subtle uppercase tracking-wider transition-colors duration-300">
                     {skill.category}
                 </span>
             </div>

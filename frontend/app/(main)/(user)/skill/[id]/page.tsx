@@ -2,7 +2,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, CircleQuestionMark, Clock, Monitor } from "lucide-react";
 import { useEffect, useState } from "react";
-
+import { CATEGORY_THEMES } from "@/types/question";
 
 export default function SkillDetailPage() {
     const params = useParams();
@@ -40,12 +40,6 @@ export default function SkillDetailPage() {
         }
     };
 
-    const categoryTheme: Record<string, string> = {
-        analyst: "#3b82f6",
-        programming: "#22c55e",
-        systems: "#f59e0b",
-    };
-
     const [selectedLevel, setSelectedLevel] = useState(skill.difficulty);
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [showStartModal, setShowStartModal] = useState(false);
@@ -75,7 +69,7 @@ export default function SkillDetailPage() {
         );
     }
 
-    const themeColor = categoryTheme[skill.category] || "#19c3af";
+    const themeColor = CATEGORY_THEMES[skill.category] || "#19c3af";
     return (
         <div className="flex-1 min-h-screen bg-canvas flex flex-col items-center py-10 px-4 transition-colors duration-300">
             <div

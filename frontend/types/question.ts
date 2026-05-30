@@ -52,14 +52,21 @@ export type CreateQuestionPayload = Omit<Question, "id" | "createdAt" | "updated
 export type UpdateQuestionPayload = Partial<Omit<Question, "id" | "createdAt" | "skillId">>;
 
 // --- MISC ---
-export const DIFFICULTY_OPTIONS = [
+export const LEVEL_OPTIONS = [
   { value: "beginner" as const, label: "Beginner", color: "beginnertext", bg: "beginnerbg" },
   { value: "intermediate" as const, label: "Intermediate", color: "intermediatetext", bg: "intermediatebg" },
   { value: "advanced" as const, label: "Advanced", color: "advancedtext", bg: "advancedbg" },
 ] as const;
 
 export const CATEGORY_OPTIONS = [
-  { value: "analyst", label: "Analyst" },
-  { value: "programming", label: "Programming" },
-  { value: "systems", label: "Systems and Tools" },
+  { value: "analyst", label: "Analyst", theme: "#3b82f6" },
+  { value: "programming", label: "Programming", theme: "#22c55e" },
+  { value: "systems", label: "Systems and Tools", theme: "#f59e0b" },
 ] as const;
+
+export const CATEGORY_THEMES: Record<string, string> = CATEGORY_OPTIONS.reduce(
+  (themesMap, category) => {
+    themesMap[category.value] = category.theme;
+    return themesMap;
+  }, {} as Record<string, string>
+);

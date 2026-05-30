@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
-import { Calendar, Clock, ArrowRight, CircleQuestionMark , MoreVertical, Edit2, Trash2, MessageCircleQuestionMark, FileQuestionMark, Database } from "lucide-react";
+import { Calendar, Clock, ArrowRight, MoreVertical, Edit2, Trash2, Database } from "lucide-react";
 import type { Skill } from "@/types/question";
 
 interface Props {
@@ -26,7 +26,7 @@ export default function AdminSkillCard({ skill, qCount, themeColor, onDelete }: 
     const router = useRouter();
     const [menuOpen, setMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement | null>(null);
-    const isImageIcon = skill.icon.startsWith("http") || skill.icon.startsWith("/");
+    const isImageUrl = (url: string) => url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:");
 
     useEffect(() => {
         const handle = (e: MouseEvent) => {
@@ -50,16 +50,16 @@ export default function AdminSkillCard({ skill, qCount, themeColor, onDelete }: 
             className={`group bg-surface rounded-xl p-6 shadow-sm flex flex-col transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-[var(--theme-color)]/20 dark:hover:shadow-black/30 border-2 border-[var(--theme-color)]/20 dark:border-[var(--theme-color)]/30 h-full relative cursor-pointer`}
         >
             <div className="flex items-start justify-between mb-3 relative">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl overflow-hidden transition-colors duration-300 bg-[var(--theme-color)]/10 text-[var(--theme-color)] dark:bg-[var(--theme-color)]/15">
-                    {isImageIcon ? (
-                        <img src={skill.icon} alt={skill.title} className="w-8 h-8 object-contain" />
+                <div className="w-12 h-12 p-2 rounded-xl flex items-center justify-center font-bold text-xl overflow-hidden transition-colors duration-300 bg-[var(--theme-color)]/10 text-[var(--theme-color)] dark:bg-[var(--theme-color)]/15">
+                    {isImageUrl(skill.icon) ? (
+                        <img src={skill.icon} alt={skill.title} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
                     ) : (
-                        skill.icon
+                        <span className="font-black text-text-muted select-none">{skill.icon || skill.title.substring(0, 3).toUpperCase()}</span>
                     )}
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[var(--theme-color)]/10 text-[var(--theme-color)] border border-[var(--theme-color)]/20 uppercase tracking-wider transition-colors duration-300">
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[var(--theme-color)]/10 text-[var(--theme-color)] border border-border-subtle uppercase tracking-wider transition-colors duration-300">
                         {skill.category}
                     </span>
 

@@ -6,12 +6,7 @@ import SkillCard from "@/components/skill/SkillCard";
 
 import { getSkills } from "@/lib/question-store";
 import type { Skill } from "@/types/question";
-
-const categoryTheme: Record<string, string> = {
-  analyst: "#3b82f6",
-  programming: "#22c55e",
-  systems: "#f59e0b",
-};
+import { CATEGORY_THEMES } from "@/types/question";
 
 export default function UserDashboardPage() {
   const router = useRouter();
@@ -129,7 +124,7 @@ export default function UserDashboardPage() {
         {/* Cards Grid */}
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSkills.map((skill) => {
-            const themeColor = categoryTheme[skill.category] || "#19c3af";
+            const themeColor = CATEGORY_THEMES[skill.category] || "#19c3af";
 
             return <SkillCard key={skill.id} skill={skill} themeColor={themeColor} />;
           })}

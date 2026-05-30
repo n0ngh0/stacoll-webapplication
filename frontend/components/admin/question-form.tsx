@@ -8,7 +8,7 @@ import {
   Trash2, ListChecks, Code2,
   AlertCircle, CheckCircle2, X,
 } from "lucide-react";
-import { DIFFICULTY_OPTIONS } from "@/types/question";
+import { LEVEL_OPTIONS } from "@/types/question";
 import type { Question, ChoiceQuestion, CodingQuestion, Skill } from "@/types/question";
 
 interface QuestionFormProps {
@@ -48,7 +48,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState(initialData?.description || "");
 
-  // Difficulty is locked to levelId
+  // level is locked to levelId
   const difficulty = levelId;
 
   // Choice-specific

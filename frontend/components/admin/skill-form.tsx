@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save, Upload, X, ImageIcon, Trash } from "lucide-react";
+import { ArrowLeft, Save, Upload, ImageIcon, Trash } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { CATEGORY_OPTIONS } from "@/types/question";
 import type { Skill } from "@/types/question";
@@ -20,7 +20,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
   const [desc, setDesc] = useState(initialData?.desc || "");
   const [icon, setIcon] = useState(initialData?.icon || "");
   const [category, setCategory] = useState<Skill['category']>(initialData?.category || "programming");
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validate = (): boolean => {
@@ -61,7 +61,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
 
       <div className="min-h-[calc(100vh-80px)] animate-in fade-in slide-in-from-bottom-2 duration-500">
         <main className="max-w-[800px] mx-auto px-[5%] py-10">
-          
+
           <div className="mb-8">
             <Link
               href={mode === "create" ? "/admin" : `/admin/skills/${initialData?.id}`}
@@ -76,7 +76,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
           </div>
 
           <div className="bg-surface rounded-2xl border border-border-subtle p-6 md:p-8 space-y-8">
-            
+
             <div className="space-y-6">
               <h2 className="text-lg font-bold text-text-main border-b border-border-subtle pb-2">General Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -86,7 +86,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
                   <input
                     type="text"
                     value={title}
-                    onChange={(e) => { setTitle(e.target.value); setErrors((p) => ({...p, title: ""})); }}
+                    onChange={(e) => { setTitle(e.target.value); setErrors((p) => ({ ...p, title: "" })); }}
                     placeholder="e.g. React, Docker, SQL"
                     className={`w-full bg-canvas border ${errors.title ? "border-red-500" : "border-border-subtle"} rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 transition-all`}
                   />
@@ -116,7 +116,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
                         </span>
                       )}
                     </div>
-                    
+
                     {/* Upload Controls */}
                     <div className="flex-1 space-y-3">
                       <div className="flex flex-wrap items-center gap-3">
@@ -148,7 +148,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
                         )}
                       </div>
                       <p className="text-xs text-text-muted leading-relaxed max-w-md">
-                        อัพโหลดรูปภาพสำหรับ Logo Skill (แนะนำขนาด 256x256px)<br/>
+                        อัพโหลดรูปภาพสำหรับ Logo Skill (แนะนำขนาด 256x256px)<br />
                         <span className="opacity-80">ถ้าไม่อัพโหลด ระบบจะดึงเอา 3 ตัวอักษรแรกของชื่อมาใช้แทน</span>
                       </p>
                     </div>
@@ -160,7 +160,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
                   <label className="block text-sm font-bold text-text-main mb-2">Description <span className="text-red-500">*</span></label>
                   <textarea
                     value={desc}
-                    onChange={(e) => { setDesc(e.target.value); setErrors((p) => ({...p, desc: ""})); }}
+                    onChange={(e) => { setDesc(e.target.value); setErrors((p) => ({ ...p, desc: "" })); }}
                     placeholder="Brief description of the skill..."
                     rows={3}
                     className={`w-full bg-canvas border ${errors.desc ? "border-red-500" : "border-border-subtle"} rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 transition-all resize-y`}
@@ -197,9 +197,8 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
               <button
                 type="button"
                 onClick={handleSubmit}
-                className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-greenui to-emerald-400 text-gray-900 font-extrabold rounded-xl shadow-lg shadow-greenui/20 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 text-sm cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-8 py-3 bg-greenbutton text-white dark:text-black font-extrabold rounded-xl hover:bg-greenbutton/90 transition-colors text-sm cursor-pointer shadow-sm"
               >
-                <Save size={16} />
                 {mode === "create" ? "Create Skill" : "Save Changes"}
               </button>
             </div>
