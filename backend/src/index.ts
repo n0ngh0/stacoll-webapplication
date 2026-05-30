@@ -5,6 +5,7 @@ import { setup } from "./setup";
 import { authRoutes } from "./routes/authRoutes";
 import { userRoutes } from "./routes/userRoutes";
 import { profileRoutes } from "./routes/profileRoutes";
+import { exportRoutes } from "./routes/exportRoutes";
 
 configDotenv()
 connectDB()
@@ -16,7 +17,11 @@ const app = new Elysia()
   .use(authRoutes)
   .use(userRoutes)
   .use(profileRoutes)
-  .listen(port);
+  .use(exportRoutes)
+  .listen({
+    port: port,
+    maxRequestBodySize: 200 * 1024 * 1024 // 200MB to be absolutely safe
+  });
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
