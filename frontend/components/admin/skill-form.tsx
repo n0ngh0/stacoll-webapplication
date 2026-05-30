@@ -57,7 +57,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
 
   return (
     <>
-      <Toaster position="top-right" />
+      <Toaster position="bottom-right" />
 
       <div className="min-h-[calc(100vh-80px)] animate-in fade-in slide-in-from-bottom-2 duration-500">
         <main className="max-w-[800px] mx-auto px-[5%] py-10">

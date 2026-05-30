@@ -3,6 +3,7 @@ export interface SkillLevel {
   id: "beginner" | "intermediate" | "advanced";
   title: string;
   description: string;
+  fullDescription?: string;
   estimatedTime: number;
 }
 

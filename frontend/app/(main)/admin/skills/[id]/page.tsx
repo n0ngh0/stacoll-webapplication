@@ -6,9 +6,11 @@ import {
   ArrowLeft, Pencil, Trash2, Plus, AlertTriangle,
   Settings, Clock, Eye, Code2, ListChecks, Monitor, CircleQuestionMark
 } from "lucide-react";
-import { getSkillById, deleteSkill, getQuestionsByLevel, deleteQuestion, getLevelMode } from "@/lib/question-store";
+import { toast, Toaster } from "react-hot-toast";
+import { getSkillById, deleteSkill, getQuestionsByLevel, deleteQuestion, getLevelMode, updateSkill } from "@/lib/question-store";
 import type { Skill, Question, SkillLevel } from "@/types/question";
-import { LEVEL_OPTIONS, CATEGORY_THEMES } from "@/types/question"
+import { LEVEL_OPTIONS, CATEGORY_THEMES } from "@/types/question";
+import { CompareLevelsModal } from "@/components/skills/compare-levels-modal";
 
 export default function SkillManagementPage() {
   const params = useParams();
@@ -23,6 +25,11 @@ export default function SkillManagementPage() {
   const [mounted, setMounted] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState<string | null>(null);
+
+  const [showEditLevelModal, setShowEditLevelModal] = useState(false);
+  const [editingLevelData, setEditingLevelData] = useState<SkillLevel | null>(null);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [activeCompareTab, setActiveCompareTab] = useState<SkillLevel["id"]>("beginner");
 
   useEffect(() => {
     if (id) { loadSkill(); }
@@ -64,6 +71,36 @@ export default function SkillManagementPage() {
     loadLevelData(activeLevel);
   };
 
+  const handleOpenEditLevel = (levelData: SkillLevel) => {
+    setEditingLevelData({ ...levelData });
+    setShowEditLevelModal(true);
+  };
+
+  const handleSaveLevel = () => {
+    if (!skill || !editingLevelData) return;
+
+    if (!editingLevelData.description?.trim()) {
+      toast.error("Short Description is required");
+      return;
+    }
+
+    if (editingLevelData.estimatedTime < 1) {
+      toast.error("Time Limit must be at least 1 minute");
+      return;
+    }
+
+    const newLevels = skill.levels.map(l => l.id === editingLevelData.id ? editingLevelData : l);
+    const updated = updateSkill(skill.id, { levels: newLevels });
+    
+    if (updated) { 
+      setSkill(updated);
+      toast.success(`${editingLevelData.title} Level updated successfully!`);
+    }
+    
+    setShowEditLevelModal(false);
+    setEditingLevelData(null);
+  };
+
   const getLevelStyle = (lId: string, isActive: boolean) => {
     if (!isActive) return "text-text-muted border-transparent hover:bg-surface-hover";
     const diff = LEVEL_OPTIONS.find(d => d.value === lId);
@@ -76,11 +113,13 @@ export default function SkillManagementPage() {
 
   const themeColor = CATEGORY_THEMES[skill.category] || "#19c3af";
   return (
-    <div className="min-h-[calc(100vh-80px)] animate-in fade-in slide-in-from-bottom-2 duration-500"
-      style={{ "--theme-color": themeColor } as React.CSSProperties}>
-      <main className="max-w-[1000px] mx-auto px-[5%] py-10">
+    <>
+      <Toaster position="bottom-right" />
+      <div className="min-h-[calc(100vh-80px)] animate-in fade-in slide-in-from-bottom-2 duration-500"
+        style={{ "--theme-color": themeColor } as React.CSSProperties}>
+        <main className="max-w-[1000px] mx-auto px-[5%] py-10">
 
-        {/* Header */}
+          {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-10">
           <div>
             <Link
@@ -130,27 +169,57 @@ export default function SkillManagementPage() {
         </div>
 
         {/* Level Tabs */}
-        <div className="mb-6 flex gap-2 border-b border-border-subtle overflow-x-auto custom-scrollbar">
-          {(skill.levels || []).map(level => (
-            <button
-              key={level.id}
-              onClick={() => setActiveLevel(level.id as SkillLevel["id"])}
-              className={`px-6 py-3 font-bold text-sm rounded-t-xl border-b-2 transition-all cursor-pointer whitespace-nowrap ${getLevelStyle(level.id, activeLevel === level.id)}`}
-            >
-              {level.title}
-            </button>
-          ))}
+        <div className="mb-6 flex gap-2 border-b border-border-subtle overflow-x-auto custom-scrollbar relative">
+          <div className="flex gap-2 flex-1">
+            {(skill.levels || []).map(level => (
+              <button
+                key={level.id}
+                onClick={() => setActiveLevel(level.id as SkillLevel["id"])}
+                className={`px-6 py-3 font-bold text-sm rounded-t-xl border-b-2 transition-all cursor-pointer whitespace-nowrap ${getLevelStyle(level.id, activeLevel === level.id)}`}
+              >
+                {level.title}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => setShowCompareModal(true)}
+            className="px-4 py-2 font-bold text-sm text-greenbutton hover:bg-greenui/10 rounded-t-xl transition-colors cursor-pointer self-end mb-1"
+          >
+            Compare All Levels
+          </button>
         </div>
 
         {/* Active Level Info */}
         {activeLevelData && (
-          <div className="bg-surface rounded-2xl border border-border-subtle p-6 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-sm">
+          <div className="bg-surface rounded-2xl border border-border-subtle p-6 mb-8 flex flex-col md:flex-row md:items-start justify-between gap-6 shadow-sm">
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-text-main mb-1">{activeLevelData.title} Level</h3>
-              <p className="text-text-muted text-sm">{activeLevelData.description}</p>
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-lg font-bold text-text-main">{activeLevelData.title} Level</h3>
+                <button
+                  onClick={() => handleOpenEditLevel(activeLevelData)}
+                  className="p-1.5 text-text-muted hover:text-greenui hover:bg-greenui/10 rounded-lg transition-colors cursor-pointer"
+                  title="Edit Level Settings"
+                >
+                  <Settings size={16} />
+                </button>
+              </div>
+              <div className="text-text-muted text-sm relative mt-2">
+                <p className="line-clamp-3">{activeLevelData.description}</p>
+                {activeLevelData.fullDescription && (
+                  <button
+                    onClick={() => {
+                      setActiveCompareTab(activeLevelData.id as SkillLevel["id"]);
+                      setShowCompareModal(true);
+                    }}
+                    className="text-greenui font-semibold text-xs mt-2 hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <Eye size={12} /> Read full criteria
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="flex gap-4 shrink-0 overflow-x-auto">
+            <div className="flex gap-4 shrink-0 overflow-x-auto self-stretch md:self-center">
               <div className="bg-canvas border border-border-subtle rounded-xl p-3 flex flex-col items-center min-w-[90px]">
                 <Clock size={16} className="text-text-muted mb-1" />
                 <span className="text-xs font-bold text-text-main">{activeLevelData.estimatedTime} Mins</span>
@@ -322,6 +391,110 @@ export default function SkillManagementPage() {
           </div>
         </div>
       )}
-    </div>
+
+      {/* Edit Level Modal (Enterprise Form Style) */}
+      {showEditLevelModal && editingLevelData && (
+        <div className="fixed mt-16  inset-0 z-[49] flex items-center justify-center bg-canvas/80 backdrop-blur-sm p-6 animate-in fade-in duration-200">
+          <div className="bg-surface rounded-2xl shadow-xl border border-border-subtle max-w-[650px] w-full overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+
+            {/* Header */}
+            <div className="px-6 md:px-8 py-6 border-b border-border-subtle flex items-center gap-4 bg-surface">
+              <div>
+                <h3 className="text-xl font-extrabold text-text-main tracking-tight">
+                  Configure : {editingLevelData.title} Level
+                </h3>
+              </div>
+            </div>
+
+            {/* Form Body */}
+            <div className="p-6 md:p-8 space-y-8 overflow-y-auto custom-scrollbar">
+
+              {/* Time Limit */}
+              <div>
+                <label className="block text-sm font-bold text-text-main mb-2">Time Limit <span className="text-red-500">*</span></label>
+                <div className="relative flex items-center">
+                  <Clock className="absolute left-4 text-text-muted" size={18} />
+                  <input
+                    type="number"
+                    min="1"
+                    value={editingLevelData.estimatedTime}
+                    onChange={(e) => setEditingLevelData({ ...editingLevelData, estimatedTime: parseInt(e.target.value) || 0 })}
+                    className="w-full pl-12 pr-24 py-3 bg-canvas border border-border-subtle rounded-xl text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 transition-all font-medium"
+                  />
+                  <span className="absolute right-5 text-sm font-bold text-text-muted select-none">
+                    minutes
+                  </span>
+                </div>
+              </div>
+
+              {/* Short Description */}
+              <div>
+                <label className="block text-sm font-bold text-text-main mb-2">Short Description <span className="text-red-500">*</span></label>
+                <textarea
+                  rows={2}
+                  value={editingLevelData.description}
+                  onChange={(e) => setEditingLevelData({ ...editingLevelData, description: e.target.value })}
+                  placeholder="E.g. Basic understanding of core concepts..."
+                  className="w-full px-4 py-3 bg-canvas border border-border-subtle rounded-xl text-sm text-text-main focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 transition-all resize-y font-medium leading-relaxed"
+                />
+              </div>
+
+              {/* Full Criteria */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-bold text-text-main">Full Criteria</label>
+                  <span className="px-3 py-1 bg-surface-hover border border-border-subtle text-text-muted text-[10px] uppercase font-black tracking-widest rounded-lg">Optional</span>
+                </div>
+
+                {/* Markdown Container */}
+                <div className="bg-canvas border border-border-subtle rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-brand-secondary/40 transition-shadow">
+                  <div className="bg-surface-hover border-b border-border-subtle px-4 py-2.5 flex items-center gap-2">
+                    <Code2 size={16} className="text-text-muted" />
+                    <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Markdown Supported</span>
+                  </div>
+                  <textarea
+                    rows={5}
+                    value={editingLevelData.fullDescription || ""}
+                    onChange={(e) => setEditingLevelData({ ...editingLevelData, fullDescription: e.target.value })}
+                    placeholder="## Pass Criteria&#10;- Must finish under 20 mins&#10;- Code is clean and optimized"
+                    className="w-full px-4 py-4 bg-transparent text-sm text-text-main font-mono outline-none resize-y placeholder:text-text-muted/50 leading-relaxed"
+                  />
+                </div>
+                <p className="text-xs text-text-muted mt-2.5 font-medium">Use markdown to format lists, bold text, and headings.</p>
+              </div>
+
+            </div>
+
+            {/* Footer (Action Buttons) */}
+            <div className="px-6 md:px-8 py-5 border-t border-border-subtle flex items-center justify-end gap-3 shrink-0 bg-surface">
+              <button
+                onClick={() => setShowEditLevelModal(false)}
+                className="px-6 py-3 text-sm font-bold text-text-muted hover:text-text-main hover:bg-surface-hover rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveLevel}
+                className="inline-flex items-center gap-1.5 px-8 py-3 bg-greenbutton text-white dark:text-black font-extrabold rounded-xl hover:bg-greenbutton/90 transition-colors text-sm cursor-pointer shadow-sm"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Compare All Levels Modal */}
+      {showCompareModal && (
+        <CompareLevelsModal
+          levels={skill.levels || []}
+          initialTab={activeCompareTab}
+          themeColor={themeColor}
+          onClose={() => setShowCompareModal(false)}
+        />
+      )}
+
+      </div>
+    </>
   );
 }
