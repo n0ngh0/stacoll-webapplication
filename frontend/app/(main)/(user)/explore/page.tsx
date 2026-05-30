@@ -76,7 +76,7 @@ export default function UserDashboardPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 px-4 py-3.5 bg-transparent outline-none text-[15px] placeholder:text-text-muted text-text-main"
             />
-            <button className="bg-[#19c3af] text-white px-8 font-bold text-[15px] hover:cursor-pointer hover:bg-teal-500 transition-colors">
+            <button className="bg-greenbutton text-white dark:text-black px-8 font-bold text-[15px] hover:cursor-pointer hover:bg-greenbutton/90 transition-colors">
               Search
             </button>
           </div>
@@ -88,7 +88,7 @@ export default function UserDashboardPage() {
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
                 className={`hover:cursor-pointer px-5 py-2.5 rounded-full text-sm font-semibold border border-border-subtle transition-all duration-200 ${activeFilter === filter
-                    ? "bg-greenui text-[#1a1a1a] shadow-md dark:shadow-greenui/20"
+                    ? "bg-greenbutton text-white dark:text-black shadow-md dark:shadow-greenbutton/20"
                     : "bg-surface text-text-muted hover:border-text-muted hover:text-text-main"
                   }`}
               >
@@ -102,7 +102,7 @@ export default function UserDashboardPage() {
         {filteredSkills.length === 0 && (
           <div className="text-center text-text-muted mt-10">
             <p className="text-lg font-semibold">ไม่พบทักษะที่คุณค้นหา</p>
-            <button onClick={() => { setSearchQuery(""); setActiveFilter("All"); }} className="mt-4 text-greenui underline cursor-pointer">
+            <button onClick={() => { setSearchQuery(""); setActiveFilter("All"); }} className="mt-4 text-greenbutton underline cursor-pointer">
               ล้างการค้นหาทั้งหมด
             </button>
           </div>

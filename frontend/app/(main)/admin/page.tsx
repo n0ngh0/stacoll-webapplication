@@ -124,7 +124,7 @@ export default function AdminDashboardPage() {
           <div className="shrink-0">
             <Link
               href="/admin/skills/create"
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#19c3af] text-white text-sm font-bold rounded-xl hover:bg-[#19c3af]/90 transition-colors shadow-sm"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-greenbutton text-white text-sm font-bold rounded-xl hover:bg-greenbutton/90 dark:text-black transition-colors shadow-sm"
             >
               <Plus size={16} strokeWidth={3.5} />
               Create New Skill

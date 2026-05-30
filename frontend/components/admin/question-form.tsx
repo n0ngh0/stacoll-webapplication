@@ -1,19 +1,12 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Save,
-  Eye,
-  Plus,
-  Trash2,
-  ListChecks,
-  Code2,
-  AlertCircle,
-  CheckCircle2,
-  X,
+  Save, Eye, Plus,
+  Trash2, ListChecks, Code2,
+  AlertCircle, CheckCircle2, X,
 } from "lucide-react";
 import { DIFFICULTY_OPTIONS } from "@/types/question";
 import type { Question, ChoiceQuestion, CodingQuestion, Skill } from "@/types/question";
@@ -34,11 +27,10 @@ function Toast({ message, type, onClose }: { message: string; type: "success" | 
   }, [onClose]);
 
   return (
-    <div className={`fixed top-6 right-6 z-[70] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border animate-in slide-in-from-top-2 fade-in duration-300 ${
-      type === "success"
+    <div className={`fixed top-6 right-6 z-[70] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border animate-in slide-in-from-top-2 fade-in duration-300 ${type === "success"
         ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
         : "bg-red-500/10 border-red-500/30 text-red-600 dark:text-red-400"
-    }`}>
+      }`}>
       {type === "success" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
       <span className="text-sm font-bold">{message}</span>
       <button onClick={onClose} className="ml-2 hover:opacity-70 cursor-pointer">
@@ -55,7 +47,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
   const [type, setType] = useState<"choice" | "coding">(initialData?.type || "choice");
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState(initialData?.description || "");
-  
+
   // Difficulty is locked to levelId
   const difficulty = levelId;
 
@@ -206,11 +198,10 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowPreview(!showPreview)}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl border transition-all cursor-pointer ${
-                  showPreview
+                className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl border transition-all cursor-pointer ${showPreview
                     ? "bg-brand-secondary/10 border-brand-secondary/30 text-brand-secondary"
                     : "border-border-subtle text-text-muted hover:text-text-main hover:bg-surface-hover"
-                }`}
+                  }`}
               >
                 <Eye size={16} />
                 Preview
@@ -230,11 +221,10 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
                 <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-brand-secondary/10 text-brand-secondary uppercase">
                   {type}
                 </span>
-                <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase ${
-                  difficulty === "beginner" ? "bg-beginnerbg dark:bg-beginnertext/20 text-beginnertext"
-                  : difficulty === "intermediate" ? "bg-intermediatebg dark:bg-intermediatetext/20 text-intermediatetext"
-                  : "bg-advancedbg dark:bg-advancedtext/20 text-advancedtext"
-                }`}>
+                <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase ${difficulty === "beginner" ? "bg-beginnerbg dark:bg-beginnertext/20 text-beginnertext"
+                    : difficulty === "intermediate" ? "bg-intermediatebg dark:bg-intermediatetext/20 text-intermediatetext"
+                      : "bg-advancedbg dark:bg-advancedtext/20 text-advancedtext"
+                  }`}>
                   {difficulty}
                 </span>
                 <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
@@ -253,11 +243,10 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
                     {options.filter(o => o.trim()).map((opt, i) => (
                       <div
                         key={i}
-                        className={`p-4 rounded-xl border-2 text-sm font-bold ${
-                          opt === correctAnswer
+                        className={`p-4 rounded-xl border-2 text-sm font-bold ${opt === correctAnswer
                             ? "border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                             : "border-border-subtle text-text-main"
-                        }`}
+                          }`}
                       >
                         {opt}
                         {opt === correctAnswer && (
@@ -287,15 +276,13 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
                 <button
                   type="button"
                   onClick={() => setType("choice")}
-                  className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
-                    type === "choice"
+                  className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${type === "choice"
                       ? "border-emerald-500 bg-emerald-500/5 shadow-sm"
                       : "border-border-subtle hover:border-emerald-500/30 hover:bg-surface-hover"
-                  }`}
+                    }`}
                 >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    type === "choice" ? "bg-emerald-500/15 text-emerald-500" : "bg-surface-hover text-text-muted"
-                  }`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${type === "choice" ? "bg-emerald-500/15 text-emerald-500" : "bg-surface-hover text-text-muted"
+                    }`}>
                     <ListChecks size={20} />
                   </div>
                   <div className="text-left">
@@ -307,15 +294,13 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
                 <button
                   type="button"
                   onClick={() => setType("coding")}
-                  className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
-                    type === "coding"
+                  className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${type === "coding"
                       ? "border-violet-500 bg-violet-500/5 shadow-sm"
                       : "border-border-subtle hover:border-violet-500/30 hover:bg-surface-hover"
-                  }`}
+                    }`}
                 >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    type === "coding" ? "bg-violet-500/15 text-violet-500" : "bg-surface-hover text-text-muted"
-                  }`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${type === "coding" ? "bg-violet-500/15 text-violet-500" : "bg-surface-hover text-text-muted"
+                    }`}>
                     <Code2 size={20} />
                   </div>
                   <div className="text-left">
@@ -334,7 +319,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
               <input
                 type="text"
                 value={title}
-                onChange={(e) => { setTitle(e.target.value); setErrors((p) => ({...p, title: ""})); }}
+                onChange={(e) => { setTitle(e.target.value); setErrors((p) => ({ ...p, title: "" })); }}
                 placeholder="e.g. Two Sum, Python Memory Management..."
                 className={`w-full bg-canvas border ${errors.title ? "border-red-500" : "border-border-subtle"} rounded-xl px-4 py-3 text-sm text-text-main placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 transition-all`}
               />
@@ -348,7 +333,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
               </label>
               <textarea
                 value={description}
-                onChange={(e) => { setDescription(e.target.value); setErrors((p) => ({...p, description: ""})); }}
+                onChange={(e) => { setDescription(e.target.value); setErrors((p) => ({ ...p, description: "" })); }}
                 placeholder="Write the question prompt or problem statement..."
                 rows={4}
                 className={`w-full bg-canvas border ${errors.description ? "border-red-500" : "border-border-subtle"} rounded-xl px-4 py-3 text-sm text-text-main placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 transition-all resize-y`}
@@ -390,11 +375,10 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
                           onClick={() => setCorrectAnswer(opt)}
                           disabled={!opt.trim()}
                           title="Mark as correct answer"
-                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${
-                            correctAnswer === opt && opt.trim()
+                          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${correctAnswer === opt && opt.trim()
                               ? "border-emerald-500 bg-emerald-500"
                               : "border-border-subtle hover:border-emerald-500/50"
-                          }`}
+                            }`}
                         >
                           {correctAnswer === opt && opt.trim() && (
                             <div className="w-2 h-2 bg-white rounded-full" />
@@ -451,7 +435,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
                   </label>
                   <textarea
                     value={initialCode}
-                    onChange={(e) => { setInitialCode(e.target.value); setErrors((p) => ({...p, initialCode: ""})); }}
+                    onChange={(e) => { setInitialCode(e.target.value); setErrors((p) => ({ ...p, initialCode: "" })); }}
                     placeholder="def solve():\n    # Write your code here\n    pass"
                     rows={8}
                     className={`w-full bg-slate-800 border ${errors.initialCode ? "border-red-500" : "border-slate-700"} rounded-xl px-4 py-3 text-sm text-slate-200 font-mono placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 transition-all resize-y`}
