@@ -9,7 +9,7 @@ export default function SkillCard({ skill, themeColor }: { skill: Skill; themeCo
 
     return (
         <Link
-            href={`/skill/${encodeURIComponent(skill.title)}`}
+            href={`/skill/${skill.id}`}
             style={{ "--theme-color": themeColor } as React.CSSProperties}
             className="group bg-surface rounded-xl p-6 shadow-sm flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[var(--theme-color)]/20 dark:hover:shadow-black/30 cursor-pointer border-2 border-[var(--theme-color)]/20 dark:border-[var(--theme-color)]/30"
         >

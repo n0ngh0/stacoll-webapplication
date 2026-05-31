@@ -1,50 +1,45 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, CircleQuestionMark, Clock, Monitor } from "lucide-react";
+import { ChevronLeft, CircleQuestionMark, Clock, Monitor, ListChecks } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CATEGORY_THEMES } from "@/types/question";
+import type { Skill } from "@/types/question";
+import { getSkillById, getQuestionsByLevel, getLevelMode } from "@/lib/question-store";
+import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
 
 export default function SkillDetailPage() {
     const params = useParams();
     const router = useRouter();
     const rawSkillId = (params?.id || "skill-assessment") as string;
-    const displaySkillName = decodeURIComponent(rawSkillId as string).toUpperCase();
-
-    const skill = {
-        name: displaySkillName,
-        desc: "SQL (Structured Query Language) คือภาษามาตรฐานที่ใช้สำหรับสื่อสาร จัดการ และดึงข้อมูลจากระบบฐานข้อมูลเชิงสัมพันธ์ (Relational Database) เช่น การค้นหา เพิ่ม หรือลบข้อมูลในตาราง",
-        category: "analyst",
-        difficulty: "Beginner",
-        estimated_time: 45,
-        question_count: 15,
-        mode: "Desktop Only",
-        levels: [
-            { id: "Beginner", title: "Beginner", description: "ทำพื้นฐานทั่วไปได้" },
-            { id: "Intermediate", title: "Intermediate", description: "สามารถประยุกต์ใช้งานได้" },
-            { id: "Advanced", title: "Advanced", description: "เข้าใจจุดแข็งของภาษานี้จริงๆ" }
-        ]
-    }
 
     const levelStyles: Record<string, { activeBg: string, textClass: string }> = {
-        Beginner: {
+        beginner: {
             activeBg: "bg-beginnerbg border-beginnertext/40 shadow-sm dark:shadow-beginnertext/20",
             textClass: "text-beginnertext dark:text-[var(--bg-canvas)]",
         },
-        Intermediate: {
+        intermediate: {
             activeBg: "bg-intermediatebg border-intermediatetext/40 shadow-sm dark:shadow-intermediatetext/20",
             textClass: "text-intermediatetext dark:text-[var(--bg-canvas)]",
         },
-        Advanced: {
+        advanced: {
             activeBg: "bg-advancedbg border-advancedtext/90 shadow-sm dark:shadow-advancedtext/20",
             textClass: "text-advancedtext dark:text-[var(--bg-canvas)]",
         }
     };
 
-    const [selectedLevel, setSelectedLevel] = useState(skill.difficulty);
+    const [mounted, setMounted] = useState(false);
+    const [selectedLevel, setSelectedLevel] = useState<string>("beginner");
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [showStartModal, setShowStartModal] = useState(false);
+    const [showCompareModal, setShowCompareModal] = useState(false);
+
+    const [skill, setSkill] = useState<Skill | null>(null);
+    const [questionCount, setQuestionCount] = useState(0);
+    const [levelMode, setLevelMode] = useState("Any Device");
+    const [estimatedTime, setEstimatedTime] = useState(0);
 
     useEffect(() => {
+        setMounted(true);
         const token = localStorage.getItem("token");
         if (!token) {
             router.push("/");
@@ -53,6 +48,23 @@ export default function SkillDetailPage() {
             return () => clearTimeout(timer);
         }
     }, [router]);
+
+    useEffect(() => {
+        if (mounted && rawSkillId) {
+            const fetchedSkill = getSkillById(rawSkillId);
+            setSkill(fetchedSkill);
+        }
+    }, [mounted, rawSkillId]);
+
+    useEffect(() => {
+        if (skill && selectedLevel) {
+            const questions = getQuestionsByLevel(skill.id, selectedLevel);
+            setQuestionCount(questions.length);
+            setLevelMode(getLevelMode(skill.id, selectedLevel));
+            const levelObj = skill.levels.find(l => l.id === selectedLevel);
+            setEstimatedTime(levelObj?.estimatedTime || 45);
+        }
+    }, [skill, selectedLevel]);
 
 
     const handleStartAssessment = () => {
@@ -63,9 +75,18 @@ export default function SkillDetailPage() {
         router.push(`/assessment/${rawSkillId}`);
     }
 
-    if (isCheckingAuth) {
+    if (!mounted || isCheckingAuth) {
         return (
             <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-canvas animate-pulse transition-colors duration-300"></div>
+        );
+    }
+
+    if (!skill) {
+        return (
+            <div className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center bg-canvas transition-colors duration-300">
+                <h2 className="text-2xl font-bold text-text-main mb-3">Skill Not Found</h2>
+                <button onClick={() => router.back()} className="text-brand-secondary hover:underline font-bold cursor-pointer">Back to Skills</button>
+            </div>
         );
     }
 
@@ -89,16 +110,16 @@ export default function SkillDetailPage() {
 
                 {/* Skill Title  */}
                 <div className="py-10 flex items-center justify-center relative overflow-hidden transition-colors duration-300 bg-[var(--theme-color)]/20">
-                    <h1 className="text-4xl md:text-5xl font-extrabold text-text-main z-10 transition-colors duration-300">{displaySkillName}</h1>
+                    <h1 className="text-4xl md:text-5xl font-extrabold text-text-main z-10 transition-colors duration-300 uppercase">{skill.title}</h1>
                 </div>
 
                 <div className="p-8 md:p-12 space-y-10">
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {[
-                            { icon: Clock, label: "Duration", value: `${skill.estimated_time} Minutes` },
-                            { icon: CircleQuestionMark, label: "Questions", value: `${skill.question_count} Questions` },
-                            { icon: Monitor, label: "Mode", value: skill.mode }
+                            { icon: Clock, label: "Time", value: `${estimatedTime}m` },
+                            { icon: CircleQuestionMark, label: "Questions", value: `${questionCount} Questions` },
+                            { icon: Monitor, label: "Mode", value: levelMode }
                         ].map((stat, idx) => (
                             <div key={idx} className="bg-canvas border border-border-subtle rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-sm transition-all duration-300">
                                 <div className="w-10 h-10 rounded-full bg-[var(--theme-color)]/15 flex items-center justify-center mb-3 transition-colors duration-300 text-[var(--theme-color)]">
@@ -120,10 +141,19 @@ export default function SkillDetailPage() {
 
                     {/* Skill Level Section */}
                     <div className="space-y-4">
-                        <h2 className="text-2xl font-bold text-text-main transition-colors duration-300">Skill Level</h2>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <h2 className="text-2xl font-bold text-text-main transition-colors duration-300">Skill Level</h2>
+                            <button
+                                onClick={() => setShowCompareModal(true)}
+                                className="inline-flex items-center justify-center gap-2 text-xs font-bold text-[var(--theme-color)] hover:bg-[var(--theme-color)]/20 bg-[var(--theme-color)]/10 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                            >
+                                <ListChecks size={14} />
+                                View Full Criteria
+                            </button>
+                        </div>
                         <div className="flex flex-col md:flex-row items-center gap-4">
                             {skill.levels.map((level, index) => {
-                                const style = levelStyles[level.id] || levelStyles.Beginner;
+                                const style = levelStyles[level.id] || levelStyles.beginner;
                                 const isActive = selectedLevel === level.id;
 
                                 return (
@@ -178,8 +208,8 @@ export default function SkillDetailPage() {
                         <h3 className="text-xl font-bold text-text-main mb-3">Ready to begin?</h3>
 
                         <p className="text-[15px] text-text-muted leading-relaxed mb-8">
-                            You are about to start the <strong className="text-text-main font-bold">{displaySkillName}</strong> assessment.
-                            You will have <strong>{skill.estimated_time} minutes</strong> to complete <strong>{skill.question_count} questions</strong>.
+                            You are about to start the <strong className="text-text-main font-bold">{skill.title}</strong> assessment.
+                            You will have <strong>{estimatedTime} minutes</strong> to complete <strong>{questionCount} questions</strong>.
                             The timer cannot be paused once started.
                         </p>
 
@@ -199,6 +229,16 @@ export default function SkillDetailPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Compare Levels Modal */}
+            {showCompareModal && (
+                <CompareLevelsModal
+                    levels={skill.levels as any}
+                    initialTab={selectedLevel as any}
+                    themeColor={themeColor}
+                    onClose={() => setShowCompareModal(false)}
+                />
             )}
         </div>
     );
