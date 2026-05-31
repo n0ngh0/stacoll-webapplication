@@ -3,15 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Award, CheckCircle, Clock, Search, ExternalLink, Activity, AlertTriangle, History } from "lucide-react";
 
-// Helper function
-const getLevelColorClass = (level: string) => {
-  switch (level.toUpperCase()) {
-    case "BEGINNER": return "text-brand-secondary";
-    case "INTERMEDIATE": return "text-greenui";
-    case "ADVANCED": return "text-accent-orange";
-    default: return "text-text-muted";
-  }
-};
+import { getLevelColorClass } from "@/types/question";
 
 export default function MySkillPage() {
   const [activeTab, setActiveTab] = useState<"verified" | "pending" | "history">("verified");

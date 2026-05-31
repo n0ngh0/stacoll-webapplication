@@ -56,9 +56,30 @@ export type UpdateQuestionPayload = Partial<Omit<Question, "id" | "createdAt" | 
 
 // --- MISC ---
 export const LEVEL_OPTIONS = [
-  { value: "beginner" as const, label: "Beginner", color: "beginnertext", bg: "beginnerbg" },
-  { value: "intermediate" as const, label: "Intermediate", color: "intermediatetext", bg: "intermediatebg" },
-  { value: "advanced" as const, label: "Advanced", color: "advancedtext", bg: "advancedbg" },
+  { 
+    value: "beginner" as const, 
+    label: "Beginner", 
+    color: "beginnertext", 
+    bg: "beginnerbg",
+    textClass: "text-beginnertext",
+    bgClass: "bg-beginnerbg border-beginnertext/40"
+  },
+  { 
+    value: "intermediate" as const, 
+    label: "Intermediate", 
+    color: "intermediatetext", 
+    bg: "intermediatebg",
+    textClass: "text-intermediatetext",
+    bgClass: "bg-intermediatebg border-intermediatetext/40"
+  },
+  { 
+    value: "advanced" as const, 
+    label: "Advanced", 
+    color: "advancedtext", 
+    bg: "advancedbg",
+    textClass: "text-advancedtext",
+    bgClass: "bg-advancedbg border-advancedtext/90"
+  },
 ] as const;
 
 export const CATEGORY_OPTIONS = [
@@ -73,3 +94,13 @@ export const CATEGORY_THEMES: Record<string, string> = CATEGORY_OPTIONS.reduce(
     return themesMap;
   }, {} as Record<string, string>
 );
+
+export const getLevelColorClass = (level: string) => {
+  const found = LEVEL_OPTIONS.find(l => l.value === level.toLowerCase());
+  return found ? found.textClass : LEVEL_OPTIONS[0].textClass;
+};
+
+export const getLevelBgColorClass = (level: string) => {
+  const found = LEVEL_OPTIONS.find(l => l.value === level.toLowerCase());
+  return found ? found.bgClass : LEVEL_OPTIONS[0].bgClass;
+};

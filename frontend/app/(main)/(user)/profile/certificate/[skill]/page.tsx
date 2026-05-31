@@ -1,10 +1,10 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, Award, CheckCircle, Clock, ExternalLink, ArrowRight, Star } from "lucide-react";
+import { ChevronLeft, Award, CheckCircle, Clock, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { CATEGORY_THEMES } from "@/types/question";
+import { CATEGORY_THEMES, getLevelColorClass } from "@/types/question";
 
 // Mock data
 const mockSkills = [
@@ -45,11 +45,7 @@ export default function CertificatePage() {
     );
   }
 
-  const getLevelColorClass = (level: string) => {
-    if (level === "ADVANCED") return "text-advancedtext";
-    if (level === "INTERMEDIATE") return "text-intermediatetext";
-    return "text-beginnertext";
-  };
+
 
   const themeColor = CATEGORY_THEMES[skillData.category] || "#19c3af";
 
@@ -130,7 +126,7 @@ export default function CertificatePage() {
             </div>
           </div>
 
-          {/* Competencies Section (Rendered from fullDescription) */}
+          {/* Competencies Section */}
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-text-main transition-colors duration-300">Competencies Demonstrated</h2>
             <div className="bg-canvas p-6 md:p-8 rounded-2xl border border-border-subtle transition-colors duration-300 prose prose-sm md:prose-base dark:prose-invert max-w-none text-text-main">

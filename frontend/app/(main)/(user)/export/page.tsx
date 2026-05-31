@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Check, AlertCircle } from "lucide-react";
 import { useExportContext } from "@/components/providers/export-context";
+import { getLevelColorClass, getLevelBgColorClass } from "@/types/question";
 
 // Mock Data (Should match the one in profile/page.tsx eventually)
 const mockUser = {
@@ -69,11 +70,7 @@ export default function ExportPreparePage() {
 
   const canPreview = selectedSkills.size > 0;
 
-  const getLevelColorClass = (level: string) => {
-    if (level === "ADVANCED") return "text-advancedtext bg-advancedbg/20 border-advancedbg";
-    if (level === "INTERMEDIATE") return "text-intermediatetext bg-intermediatebg/20 border-intermediatebg";
-    return "text-beginnertext bg-beginnerbg border-beginnerbg";
-  };
+
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8 transition-colors duration-300 pb-32">
@@ -129,7 +126,7 @@ export default function ExportPreparePage() {
                 <div>
                   <h3 className="font-bold text-text-main mb-1">{skill.name}</h3>
                   <div className="flex items-center gap-3">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase border ${getLevelColorClass(skill.level)}`}>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase border ${getLevelColorClass(skill.level)} ${getLevelBgColorClass(skill.level)}`}>
                       {skill.level}
                     </span>
                     <span className="text-xs text-text-muted">{skill.score}/100</span>

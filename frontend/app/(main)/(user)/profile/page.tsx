@@ -1,6 +1,8 @@
 "use client";
 import { ExternalLink, Edit3, Award, CheckCircle, X, Plus, Trash2, Loader2, Save, Clock } from "lucide-react";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
+import { getLevelColorClass } from "@/types/question";
 import { useState, useEffect } from "react";
 import { User } from "@/types/user";
 
@@ -115,11 +117,7 @@ export default function ProfilePage() {
     }
   };
 
-  const getLevelColorClass = (level: string) => {
-    if (level === "ADVANCED") return "text-advancedtext";
-    if (level === "INTERMEDIATE") return "text-intermediatetext";
-    return "text-beginnertext";
-  };
+
 
   const handleAddProject = () => {
     setEditForm({
