@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { CATEGORY_THEMES } from "@/types/question";
 
-// Mock data (Normally fetched from API)
+// Mock data
 const mockSkills = [
   { name: "React.js", category: "programming", level: "INTERMEDIATE", score: 82, date: "Oct 12, 2025", expires: "Oct 12, 2027", fullDescription: "### Competencies\n\n- Build reusable and performant components\n- Manage complex state using Context and Hooks\n- Integrate effectively with REST APIs" },
   { name: "Node.js", category: "programming", level: "BEGINNER", score: 67, date: "Oct 12, 2025", expires: "Oct 12, 2027", fullDescription: "### Competencies\n\n- Create basic HTTP servers\n- Understand CommonJS modules\n- Work with the file system and basic streams" },

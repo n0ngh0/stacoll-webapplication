@@ -78,14 +78,14 @@ export default function AssessmentResultPage() {
           {isPassed ? (
             <button
               onClick={() => router.push(`/profile/certificate/${decodedSkill.toLowerCase()}`)}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-white bg-greenui hover:brightness-105 shadow-sm shadow-greenui/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-white dark:text-black bg-greenbutton hover:bg-greenbutton/90 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               View Certificate <ArrowRight size={18} />
             </button>
           ) : (
             <button
               onClick={() => router.push(`/skill/${decodedSkill.toLowerCase()}`)}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-white bg-brand-secondary hover:bg-brand-secondary-hover shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-white dark:text-black bg-greenbutton hover:bg-greenbutton/90 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               Try Again Later <RotateCcw size={18} />
             </button>
