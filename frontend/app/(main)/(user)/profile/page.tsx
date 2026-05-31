@@ -1,6 +1,5 @@
 "use client";
-
-import { ExternalLink, Edit3, Award, CheckCircle, X, Plus, Trash2, Loader2, Save } from "lucide-react";
+import { ExternalLink, Edit3, Award, CheckCircle, X, Plus, Trash2, Loader2, Save, Clock } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { User } from "@/types/user";
@@ -27,11 +26,11 @@ export default function ProfilePage() {
 
   // Mock skills as requested (not editing skills yet)
   const mockSkills = [
-    { name: "React.js", level: "INTERMEDIATE", score: 82, date: "Oct 12, 2025" },
-    { name: "Node.js", level: "BEGINNER", score: 67, date: "Oct 12, 2025" },
-    { name: "Python", level: "ADVANCED", score: 95, date: "Sep 28, 2025" },
-    { name: "JavaScript", level: "ADVANCED", score: 91, date: "Jan 15, 2026" },
-    { name: "SQL", level: "INTERMEDIATE", score: 85, date: "Nov 05, 2025" },
+    { name: "React.js", level: "INTERMEDIATE", score: 82, date: "Oct 12, 2025", expires: "Oct 12, 2027" },
+    { name: "Node.js", level: "BEGINNER", score: 67, date: "Oct 12, 2025", expires: "Oct 12, 2027" },
+    { name: "Python", level: "ADVANCED", score: 95, date: "Sep 28, 2025", expires: "Sep 28, 2027" },
+    { name: "JavaScript", level: "ADVANCED", score: 91, date: "Jan 15, 2026", expires: "Jan 15, 2028" },
+    { name: "SQL", level: "INTERMEDIATE", score: 85, date: "Nov 05, 2025", expires: "Nov 05, 2027" },
   ];
 
   useEffect(() => {
@@ -275,9 +274,11 @@ export default function ProfilePage() {
                   
                   <div className="flex justify-between items-center mt-3 text-[10px] text-text-muted transition-colors">
                     <span className="flex items-center gap-1">
-                      <CheckCircle size={12} className="text-text-muted opacity-70" /> Verified
+                      <CheckCircle size={12} className="text-text-muted opacity-70" /> Verified on {skill.date}
                     </span>
-                    <span>{skill.date}</span>
+                    <span className="flex items-center gap-1.5 bg-accent-orange/15 text-accent-orange font-bold px-2.5 py-1 rounded-md text-[10px]">
+                      <Clock size={12} /> Expires: {skill.expires}
+                    </span>
                   </div>
                 </div>
               </div>
