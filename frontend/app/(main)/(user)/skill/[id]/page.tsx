@@ -1,52 +1,18 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, CircleQuestionMark, Clock, Monitor } from "lucide-react";
+import { ChevronLeft, CircleQuestionMark, Clock, Monitor, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Skill } from "@/types/skill";
 
 
 export default function SkillDetailPage() {
     const params = useParams();
     const router = useRouter();
-    const rawSkillId = (params?.id || "skill-assessment") as string;
-    const displaySkillName = decodeURIComponent(rawSkillId as string).toUpperCase();
+    const skillId = (params?.id || "") as string;
 
-    const skill = {
-        name: displaySkillName,
-        desc: "SQL (Structured Query Language) คือภาษามาตรฐานที่ใช้สำหรับสื่อสาร จัดการ และดึงข้อมูลจากระบบฐานข้อมูลเชิงสัมพันธ์ (Relational Database) เช่น การค้นหา เพิ่ม หรือลบข้อมูลในตาราง",
-        category: "analyst",
-        difficulty: "Beginner",
-        estimated_time: 45,
-        question_count: 15,
-        mode: "Desktop Only",
-        levels: [
-            { id: "Beginner", title: "Beginner", description: "ทำพื้นฐานทั่วไปได้" },
-            { id: "Intermediate", title: "Intermediate", description: "สามารถประยุกต์ใช้งานได้" },
-            { id: "Advanced", title: "Advanced", description: "เข้าใจจุดแข็งของภาษานี้จริงๆ" }
-        ]
-    }
-
-    const levelStyles: Record<string, { activeBg: string, textClass: string }> = {
-        Beginner: {
-            activeBg: "bg-beginnerbg border-beginnertext/40 shadow-sm dark:shadow-beginnertext/20",
-            textClass: "text-beginnertext dark:text-[var(--bg-canvas)]",
-        },
-        Intermediate: {
-            activeBg: "bg-intermediatebg border-intermediatetext/40 shadow-sm dark:shadow-intermediatetext/20",
-            textClass: "text-intermediatetext dark:text-[var(--bg-canvas)]",
-        },
-        Advanced: {
-            activeBg: "bg-advancedbg border-advancedtext/90 shadow-sm dark:shadow-advancedtext/20",
-            textClass: "text-advancedtext dark:text-[var(--bg-canvas)]",
-        }
-    };
-
-    const categoryTheme: Record<string, string> = {
-        analyst: "#3b82f6",
-        programming: "#22c55e",
-        systems: "#f59e0b",
-    };
-
-    const [selectedLevel, setSelectedLevel] = useState(skill.difficulty);
+    const [skill, setSkill] = useState<Skill | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedLevel, setSelectedLevel] = useState("beginner");
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [showStartModal, setShowStartModal] = useState(false);
 
@@ -60,22 +26,98 @@ export default function SkillDetailPage() {
         }
     }, [router]);
 
+    // Fetch skill detail from API
+    useEffect(() => {
+        if (!isCheckingAuth && skillId) {
+            fetchSkillDetail();
+        }
+    }, [isCheckingAuth, skillId]);
+
+    const fetchSkillDetail = async () => {
+        try {
+            setIsLoading(true);
+            const token = localStorage.getItem("token");
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+            const res = await fetch(`${apiUrl}/skills/${skillId}`, {
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                },
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                setSkill(data.skill);
+                // Set default selected level to first available level
+                if (data.skill.levels && data.skill.levels.length > 0) {
+                    setSelectedLevel(data.skill.levels[0].level);
+                }
+            } else {
+                console.error("Failed to fetch skill:", data.message);
+            }
+        } catch (error) {
+            console.error("Error fetching skill:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const levelStyles: Record<string, { activeBg: string, textClass: string }> = {
+        beginner: {
+            activeBg: "bg-beginnerbg border-beginnertext/40 shadow-sm dark:shadow-beginnertext/20",
+            textClass: "text-beginnertext dark:text-[var(--bg-canvas)]",
+        },
+        intermediate: {
+            activeBg: "bg-intermediatebg border-intermediatetext/40 shadow-sm dark:shadow-intermediatetext/20",
+            textClass: "text-intermediatetext dark:text-[var(--bg-canvas)]",
+        },
+        advanced: {
+            activeBg: "bg-advancedbg border-advancedtext/90 shadow-sm dark:shadow-advancedtext/20",
+            textClass: "text-advancedtext dark:text-[var(--bg-canvas)]",
+        }
+    };
+
+    const categoryTheme: Record<string, string> = {
+        analyst: "#3b82f6",
+        programming: "#22c55e",
+        systems: "#f59e0b",
+    };
 
     const handleStartAssessment = () => {
         setShowStartModal(true);
     }
     const confirmStart = () => {
         setShowStartModal(false);
-        router.push(`/assessment/${rawSkillId}`);
+        router.push(`/assessment/${skillId}?level=${selectedLevel}`);
     }
 
-    if (isCheckingAuth) {
+    if (isCheckingAuth || isLoading) {
         return (
-            <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-canvas animate-pulse transition-colors duration-300"></div>
+            <div className="flex-1 min-h-screen bg-canvas flex items-center justify-center transition-colors duration-300">
+                <Loader2 className="w-10 h-10 animate-spin text-greenui" />
+            </div>
         );
     }
 
+    if (!skill) {
+        return (
+            <div className="flex-1 min-h-screen bg-canvas flex flex-col items-center justify-center transition-colors duration-300">
+                <div className="bg-surface border border-border-subtle rounded-2xl p-10 text-center max-w-md">
+                    <p className="text-text-muted font-medium text-lg mb-4">Skill not found.</p>
+                    <button
+                        onClick={() => router.push("/explore")}
+                        className="text-greenui font-bold hover:underline cursor-pointer"
+                    >
+                        Back to Explore
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Get current level info for stats
+    const currentLevel = skill.levels.find((l) => l.level === selectedLevel) || skill.levels[0];
     const themeColor = categoryTheme[skill.category] || "#19c3af";
+
     return (
         <div className="flex-1 min-h-screen bg-canvas flex flex-col items-center py-10 px-4 transition-colors duration-300">
             <div
@@ -95,16 +137,16 @@ export default function SkillDetailPage() {
 
                 {/* Skill Title  */}
                 <div className="py-10 flex items-center justify-center relative overflow-hidden transition-colors duration-300 bg-[var(--theme-color)]/20">
-                    <h1 className="text-4xl md:text-5xl font-extrabold text-text-main z-10 transition-colors duration-300">{displaySkillName}</h1>
+                    <h1 className="text-4xl md:text-5xl font-extrabold text-text-main z-10 transition-colors duration-300">{skill.title.toUpperCase()}</h1>
                 </div>
 
                 <div className="p-8 md:p-12 space-y-10">
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {[
-                            { icon: Clock, label: "Duration", value: `${skill.estimated_time} Minutes` },
-                            { icon: CircleQuestionMark, label: "Questions", value: `${skill.question_count} Questions` },
-                            { icon: Monitor, label: "Mode", value: skill.mode }
+                            { icon: Clock, label: "Duration", value: `${currentLevel?.estimatedTime || 30} Minutes` },
+                            { icon: CircleQuestionMark, label: "Questions", value: `${currentLevel?.questionCount || 15} Questions` },
+                            { icon: Monitor, label: "Mode", value: "Desktop Only" }
                         ].map((stat, idx) => (
                             <div key={idx} className="bg-canvas border border-border-subtle rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-sm transition-all duration-300">
                                 <div className="w-10 h-10 rounded-full bg-[var(--theme-color)]/15 flex items-center justify-center mb-3 transition-colors duration-300 text-[var(--theme-color)]">
@@ -120,7 +162,7 @@ export default function SkillDetailPage() {
                     <div className="space-y-4">
                         <h2 className="text-2xl font-bold text-text-main transition-colors duration-300">Description</h2>
                         <div className="min-h-[122px] bg-canvas border border-border-subtle dark:border-transparent p-6 rounded-2xl text-text-muted text-[15px] leading-relaxed transition-colors duration-300">
-                            {skill.desc}
+                            {skill.description}
                         </div>
                     </div>
 
@@ -129,13 +171,14 @@ export default function SkillDetailPage() {
                         <h2 className="text-2xl font-bold text-text-main transition-colors duration-300">Skill Level</h2>
                         <div className="flex flex-col md:flex-row items-center gap-4">
                             {skill.levels.map((level, index) => {
-                                const style = levelStyles[level.id] || levelStyles.Beginner;
-                                const isActive = selectedLevel === level.id;
+                                const style = levelStyles[level.level] || levelStyles.beginner;
+                                const isActive = selectedLevel === level.level;
 
                                 return (
-                                    <div key={level.id} className="flex-1 flex items-center w-full">
+                                    <div key={level.level} className="flex-1 flex items-center w-full">
                                         <div
-                                            className={`min-h-[125px] w-full relative p-5 rounded-2xl border-2 transition-all duration-300 text-left flex flex-col gap-2 ${isActive
+                                            onClick={() => setSelectedLevel(level.level)}
+                                            className={`min-h-[125px] w-full relative p-5 rounded-2xl border-2 transition-all duration-300 text-left flex flex-col gap-2 cursor-pointer ${isActive
                                                 ? style.activeBg
                                                 : 'bg-canvas border-border-subtle'
                                                 }`}
@@ -147,8 +190,8 @@ export default function SkillDetailPage() {
                                                     }`}>
                                                     {isActive && <div className="w-2.5 h-2.5 rounded-full bg-current"></div>}
                                                 </div>
-                                                <span className={`font-bold transition-colors duration-300 ${isActive ? style.textClass : 'text-text-main'}`}>
-                                                    {level.title}
+                                                <span className={`font-bold transition-colors duration-300 capitalize ${isActive ? style.textClass : 'text-text-main'}`}>
+                                                    {level.level}
                                                 </span>
                                             </div>
                                             <p className={`text-xs font-medium transition-colors duration-300 ${isActive ? style.textClass : 'text-text-muted opacity-80'}`}>
@@ -184,8 +227,9 @@ export default function SkillDetailPage() {
                         <h3 className="text-xl font-bold text-text-main mb-3">Ready to begin?</h3>
 
                         <p className="text-[15px] text-text-muted leading-relaxed mb-8">
-                            You are about to start the <strong className="text-text-main font-bold">{displaySkillName}</strong> assessment.
-                            You will have <strong>{skill.estimated_time} minutes</strong> to complete <strong>{skill.question_count} questions</strong>.
+                            You are about to start the <strong className="text-text-main font-bold">{skill.title.toUpperCase()}</strong> assessment
+                            at <strong className="capitalize">{selectedLevel}</strong> level.
+                            You will have <strong>{currentLevel?.estimatedTime || 30} minutes</strong> to complete <strong>{currentLevel?.questionCount || 15} questions</strong>.
                             The timer cannot be paused once started.
                         </p>
 

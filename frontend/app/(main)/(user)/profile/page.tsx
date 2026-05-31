@@ -25,14 +25,18 @@ export default function ProfilePage() {
     projects: []
   });
 
-  // Mock skills as requested (not editing skills yet)
-  const mockSkills = [
-    { name: "React.js", level: "INTERMEDIATE", score: 82, date: "Oct 12, 2025" },
-    { name: "Node.js", level: "BEGINNER", score: 67, date: "Oct 12, 2025" },
-    { name: "Python", level: "ADVANCED", score: 95, date: "Sep 28, 2025" },
-    { name: "JavaScript", level: "ADVANCED", score: 91, date: "Jan 15, 2026" },
-    { name: "SQL", level: "INTERMEDIATE", score: 85, date: "Nov 05, 2025" },
-  ];
+  // Helper: format date from ISO string
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
 
   useEffect(() => {
     fetchProfile();
@@ -226,7 +230,11 @@ export default function ProfilePage() {
           
           <div className="space-y-6">
             {!user.projects || user.projects.length === 0 ? (
-              <p className="text-text-muted text-sm italic">No projects added yet.</p>
+              <div className="bg-surface border border-border-subtle rounded-2xl p-8 text-center transition-colors duration-300">
+                <p className="text-text-muted font-medium">
+                  No projects have been added yet. Click &quot;Edit Projects&quot; to get started.
+                </p>
+              </div>
             ) : (
               user.projects.map((project, idx) => (
                 <div key={idx} className="bg-surface border-2 border-brand-secondary dark:border-brand-secondary/70 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
@@ -245,43 +253,50 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* --- VERIFIED SKILLS --- */}
         <section>
           <h2 className="text-2xl font-bold text-text-main mb-6 transition-colors">Verified Skills</h2>
           <div className="space-y-4">
-            {mockSkills.map((skill, idx) => (
-              <div key={idx} className="bg-surface border border-border-subtle rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden transition-colors duration-300">
-                
-                {/* แถบสีด้านซ้าย */}
-                <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${idx % 2 === 0 ? "bg-greenui" : "bg-accent-orange"}`}></div>
-                
-                <div className="bg-canvas p-3 rounded-xl transition-colors">
-                  <Award className={idx % 2 === 0 ? "text-greenui" : "text-accent-orange"} size={24} />
-                </div>
-                
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-text-main transition-colors">{skill.name}</h3>
-                      <p className={`text-[10px] font-bold mt-0.5 ${getLevelColorClass(skill.level)} transition-colors`}>
-                        {skill.level}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-2xl font-bold text-text-main transition-colors">{skill.score}</span>
-                      <span className="text-xs text-text-muted ml-1 transition-colors">/100</span>
-                    </div>
+            {!user.verifiedSkills || user.verifiedSkills.length === 0 ? (
+              <div className="bg-surface border border-border-subtle rounded-2xl p-8 text-center transition-colors duration-300">
+                <p className="text-text-muted font-medium">
+                  No verified skills yet. Start an assessment to earn your first badge!
+                </p>
+              </div>
+            ) : (
+              user.verifiedSkills.map((skill, idx) => (
+                <div key={idx} className="bg-surface border border-border-subtle rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden transition-colors duration-300">
+                  
+                  {/* แถบสีด้านซ้าย */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${idx % 2 === 0 ? "bg-greenui" : "bg-accent-orange"}`}></div>
+                  
+                  <div className="bg-canvas p-3 rounded-xl transition-colors">
+                    <Award className={idx % 2 === 0 ? "text-greenui" : "text-accent-orange"} size={24} />
                   </div>
                   
-                  <div className="flex justify-between items-center mt-3 text-[10px] text-text-muted transition-colors">
-                    <span className="flex items-center gap-1">
-                      <CheckCircle size={12} className="text-text-muted opacity-70" /> Verified
-                    </span>
-                    <span>{skill.date}</span>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-text-main transition-colors">{skill.skillName}</h3>
+                        <p className={`text-[10px] font-bold mt-0.5 ${getLevelColorClass(skill.level.toUpperCase())} transition-colors`}>
+                          {skill.level.toUpperCase()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-bold text-text-main transition-colors">{skill.score}</span>
+                        <span className="text-xs text-text-muted ml-1 transition-colors">/100</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center mt-3 text-[10px] text-text-muted transition-colors">
+                      <span className="flex items-center gap-1">
+                        <CheckCircle size={12} className="text-text-muted opacity-70" /> Verified
+                      </span>
+                      <span>{formatDate(skill.verifiedAt)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
       </div>
