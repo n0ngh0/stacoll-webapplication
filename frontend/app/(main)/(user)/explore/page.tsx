@@ -13,12 +13,15 @@ const categoryTheme: Record<string, string> = {
 
 export default function UserDashboardPage() {
   const router = useRouter();
+
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [skills, setSkills] = useState<Skill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token || token === "undefined" || token === "null") {
@@ -61,7 +64,9 @@ export default function UserDashboardPage() {
 
   if (isCheckingAuth) {
     return (
-      <div className="fixed inset-0 z-[9999] bg-canvas flex flex-col items-center justify-center animate-pulse"></div>
+      <div className="fixed inset-0 z-[9999] bg-canvas flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-800 rounded-full animate-spin" />
+      </div>
     );
   }
 
@@ -100,7 +105,7 @@ export default function UserDashboardPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 px-4 py-3.5 bg-transparent outline-none text-[15px] placeholder:text-text-muted text-text-main"
             />
-            <button className="bg-[#19c3af] text-white px-8 font-bold text-[15px] hover:cursor-pointer hover:bg-teal-500 transition-colors">
+            <button className="bg-greenbutton text-white dark:text-black px-8 font-bold text-[15px] hover:cursor-pointer hover:bg-greenbutton/90 transition-colors">
               Search
             </button>
           </div>
@@ -112,8 +117,8 @@ export default function UserDashboardPage() {
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
                 className={`hover:cursor-pointer px-5 py-2.5 rounded-full text-sm font-semibold border border-border-subtle transition-all duration-200 ${activeFilter === filter
-                    ? "bg-greenui text-[#1a1a1a] shadow-md dark:shadow-greenui/20"
-                    : "bg-surface text-text-muted hover:border-text-muted hover:text-text-main"
+                  ? "bg-greenbutton text-white dark:text-black shadow-md dark:shadow-greenbutton/20"
+                  : "bg-surface text-text-muted hover:border-text-muted hover:text-text-main"
                   }`}
               >
                 {filter}
@@ -144,7 +149,7 @@ export default function UserDashboardPage() {
         {!isLoading && skills.length > 0 && filteredSkills.length === 0 && (
           <div className="text-center text-text-muted mt-10">
             <p className="text-lg font-semibold">ไม่พบทักษะที่คุณค้นหา</p>
-            <button onClick={() => { setSearchQuery(""); setActiveFilter("All"); }} className="mt-4 text-greenui underline cursor-pointer">
+            <button onClick={() => { setSearchQuery(""); setActiveFilter("All"); }} className="mt-4 text-greenbutton underline cursor-pointer">
               ล้างการค้นหาทั้งหมด
             </button>
           </div>

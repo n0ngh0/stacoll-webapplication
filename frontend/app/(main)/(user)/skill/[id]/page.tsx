@@ -4,6 +4,10 @@ import { ChevronLeft, CircleQuestionMark, Clock, Monitor, Loader2 } from "lucide
 import { useEffect, useState } from "react";
 import { Skill } from "@/types/skill";
 
+const MOCK_USER_PROGRESS = {
+    passedLevels: ["beginner"],
+    cooldownLevels: { "intermediate": 14 } as Record<string, number>
+};
 
 export default function SkillDetailPage() {
     const params = useParams();
@@ -168,7 +172,16 @@ export default function SkillDetailPage() {
 
                     {/* Skill Level Section */}
                     <div className="space-y-4">
-                        <h2 className="text-2xl font-bold text-text-main transition-colors duration-300">Skill Level</h2>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <h2 className="text-2xl font-bold text-text-main transition-colors duration-300">Skill Level</h2>
+                            <button
+                                onClick={() => setShowCompareModal(true)}
+                                className="inline-flex items-center justify-center gap-2 text-xs font-bold text-[var(--theme-color)] hover:bg-[var(--theme-color)]/20 bg-[var(--theme-color)]/10 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                            >
+                                <ListChecks size={14} />
+                                View Full Criteria
+                            </button>
+                        </div>
                         <div className="flex flex-col md:flex-row items-center gap-4">
                             {skill.levels.map((level, index) => {
                                 const style = levelStyles[level.level] || levelStyles.beginner;
@@ -183,7 +196,9 @@ export default function SkillDetailPage() {
                                                 : 'bg-canvas border-border-subtle'
                                                 }`}
                                         >
-                                            <div className="flex items-center gap-3">
+                                            {isLocked && <Lock size={28} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-text-muted opacity-60 z-10" />}
+                                            
+                                            <div className={`flex items-center gap-3 ${isLocked ? 'opacity-40' : ''}`}>
                                                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${isActive
                                                     ? `border-current ${style.textClass}`
                                                     : 'border-border-subtle'
@@ -194,7 +209,7 @@ export default function SkillDetailPage() {
                                                     {level.level}
                                                 </span>
                                             </div>
-                                            <p className={`text-xs font-medium transition-colors duration-300 ${isActive ? style.textClass : 'text-text-muted opacity-80'}`}>
+                                            <p className={`text-xs font-medium transition-colors duration-300 ${isActive ? style.textClass : 'text-text-muted opacity-80'} ${isLocked ? 'opacity-40' : ''}`}>
                                                 {level.description}
                                             </p>
                                         </div>
@@ -211,10 +226,49 @@ export default function SkillDetailPage() {
                     </div>
 
                     {/* Action Button */}
-                    <div className="flex justify-center pt-6">
-                        <button onClick={handleStartAssessment} className="cursor-pointer bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold py-4 px-20 rounded-full text-xl shadow-lg shadow-brand-secondary/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95">
-                            Start
-                        </button>
+                    <div className="flex justify-center pt-4 mb-1">
+                        {(() => {
+                            const selectedIndex = skill.levels.findIndex((l: any) => l.id === selectedLevel);
+                            const isLocked = selectedIndex > 0 && !MOCK_USER_PROGRESS.passedLevels.includes(skill.levels[selectedIndex - 1].id);
+                            const isPassed = MOCK_USER_PROGRESS.passedLevels.includes(selectedLevel);
+                            const cooldownDays = MOCK_USER_PROGRESS.cooldownLevels[selectedLevel] || 0;
+
+                            if (isPassed) {
+                                return (
+                                    <button 
+                                        onClick={() => router.push(`/profile/certificate/${rawSkillId.toLowerCase()}`)} 
+                                        className="cursor-pointer bg-greenbutton hover:bg-greenbutton/90 text-white dark:text-black font-bold py-4 w-[320px] max-w-full flex justify-center items-center rounded-full text-xl shadow-lg shadow-greenbutton/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 gap-2"
+                                    >
+                                        View Certificate <Award size={20} />
+                                    </button>
+                                );
+                            }
+
+                            if (isLocked) {
+                                return (
+                                    <button disabled className="bg-canvas border border-border-subtle text-text-muted font-bold py-4 w-[320px] max-w-full flex justify-center items-center rounded-full text-xl shadow-sm cursor-not-allowed gap-2 transition-colors">
+                                        <Lock size={20} /> Locked
+                                    </button>
+                                );
+                            }
+
+                            if (cooldownDays > 0) {
+                                return (
+                                    <div className="flex flex-col items-center w-[320px] max-w-full relative">
+                                        <button disabled className="max-h-[60px] w-full bg-canvas border border-accent-orange/40 text-accent-orange/80 font-bold py-4 flex justify-center items-center rounded-full text-xl shadow-sm cursor-not-allowed gap-2 transition-colors">
+                                            <Clock size={20} /> Cooldown: {cooldownDays} Days Left
+                                        </button>
+                                        <p className="text-xs text-text-muted mt-2 font-medium text-center absolute top-full left-0 w-full">You must wait {cooldownDays} days before retaking this assessment.</p>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <button onClick={handleStartAssessment} className="cursor-pointer bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold py-4 w-[320px] max-w-full flex justify-center items-center rounded-full text-xl shadow-lg shadow-brand-secondary/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 gap-2">
+                                    Start Assessment
+                                </button>
+                            );
+                        })()}
                     </div>
                 </div>
             </div>
@@ -249,6 +303,16 @@ export default function SkillDetailPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Compare Levels Modal */}
+            {showCompareModal && (
+                <CompareLevelsModal
+                    levels={skill.levels as any}
+                    initialTab={selectedLevel as any}
+                    themeColor={themeColor}
+                    onClose={() => setShowCompareModal(false)}
+                />
             )}
         </div>
     );

@@ -1,7 +1,8 @@
 "use client";
-
-import { ExternalLink, Edit3, Award, CheckCircle, X, Plus, Trash2, Loader2, Save } from "lucide-react";
+import { ExternalLink, Edit3, Award, CheckCircle, X, Plus, Trash2, Loader2, Save, Clock } from "lucide-react";
 import Link from "next/link";
+import ReactMarkdown from "react-markdown";
+import { getLevelColorClass } from "@/types/question";
 import { useState, useEffect } from "react";
 import { User } from "@/types/user";
 
@@ -11,7 +12,7 @@ export default function ProfilePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  
+
   // Edit form state
   const [editForm, setEditForm] = useState<{
     username: string;
@@ -53,7 +54,7 @@ export default function ProfilePage() {
           "Authorization": `Bearer ${token}`
         }
       });
-      
+
       const text = await res.text();
       let data;
       try {
@@ -61,7 +62,7 @@ export default function ProfilePage() {
       } catch (e) {
         throw new Error(`Invalid JSON response: ${text.substring(0, 50)}...`);
       }
-      
+
       if (data.success) {
         setUser(data.user);
         setEditForm({
@@ -92,7 +93,7 @@ export default function ProfilePage() {
       setIsSaving(true);
       const token = localStorage.getItem("token");
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-      
+
       const res = await fetch(`${apiUrl}/profile/me`, {
         method: 'PUT',
         headers: {
@@ -101,7 +102,7 @@ export default function ProfilePage() {
         },
         body: JSON.stringify(editForm)
       });
-      
+
       const data = await res.json();
       if (data.success) {
         setUser(data.user); // Update local state with saved data
@@ -120,11 +121,7 @@ export default function ProfilePage() {
     }
   };
 
-  const getLevelColorClass = (level: string) => {
-    if (level === "ADVANCED") return "text-advancedtext";
-    if (level === "INTERMEDIATE") return "text-intermediatetext";
-    return "text-beginnertext";
-  };
+
 
   const handleAddProject = () => {
     setEditForm({
@@ -166,14 +163,14 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-8 transition-colors duration-300 relative">
-      
+
       {/* --- USER SECTION --- */}
       <section className="bg-bg-brand-subtle dark:bg-bg-brand-subtle/10 rounded-3xl p-8 flex flex-col md:flex-row items-center gap-8 relative mb-12 transition-colors duration-300">
         <div className="relative">
           <div className="w-40 h-40 rounded-full border-4 border-greenui overflow-hidden shadow-lg">
             <img src={user.imgUrl || "/profiles/default.jpg"} alt="Profile" className="w-full h-full object-cover" />
           </div>
-          <button 
+          <button
             onClick={() => { setErrorMsg(""); setIsEditModalOpen(true); }}
             className="absolute bottom-1 right-1 bg-greenui p-2 rounded-lg text-white shadow-md hover:brightness-110 transition cursor-pointer"
           >
@@ -201,7 +198,9 @@ export default function ProfilePage() {
 
       {/* --- RECOMMEND SECTION --- */}
       <section className="mb-12">
-        <h2 className="text-2xl font-bold text-text-main mb-6 transition-colors">Recommend</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-text-main transition-colors">Job Recommen</h2>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {["Front-end", "Back-end", "Data Analyst"].map((role, idx) => (
             <div key={idx} className="bg-surface border-2 border-greenui dark:border-greenui/70 rounded-2xl p-6 text-center shadow-sm transition-colors duration-300">
@@ -220,14 +219,14 @@ export default function ProfilePage() {
         <section>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-text-main transition-colors">Recent Projects</h2>
-            <button 
+            <button
               onClick={() => { setErrorMsg(""); setIsEditModalOpen(true); }}
               className="text-sm font-semibold text-brand-secondary hover:underline cursor-pointer"
             >
               Edit Projects
             </button>
           </div>
-          
+
           <div className="space-y-6">
             {!user.projects || user.projects.length === 0 ? (
               <div className="bg-surface border border-border-subtle rounded-2xl p-8 text-center transition-colors duration-300">
@@ -305,12 +304,12 @@ export default function ProfilePage() {
       {isEditModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSaving && setIsEditModalOpen(false)}></div>
-          
+
           <div className="bg-surface relative z-10 w-full max-w-3xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-border-subtle animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex justify-between items-center p-6 border-b border-border-subtle bg-canvas/50">
               <h2 className="text-2xl font-bold text-text-main">Edit Profile</h2>
-              <button 
+              <button
                 onClick={() => setIsEditModalOpen(false)}
                 disabled={isSaving}
                 className="p-2 bg-canvas hover:bg-surface-hover rounded-full transition-colors text-text-muted hover:text-text-main cursor-pointer"
@@ -321,7 +320,7 @@ export default function ProfilePage() {
 
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto flex-1 space-y-8">
-              
+
               {errorMsg && (
                 <div className="w-full bg-red-50 border border-red-100 text-red-600 p-4 rounded-xl text-sm font-medium flex items-start gap-3 animate-in slide-in-from-top-2">
                   <div className="mt-0.5">
@@ -334,22 +333,22 @@ export default function ProfilePage() {
               {/* Basic Info Section */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-text-main border-b border-border-subtle pb-2">Basic Info</h3>
-                
+
                 <div>
                   <label className="block text-sm font-bold text-text-main mb-1.5 ml-1">Username</label>
                   <input
                     value={editForm.username}
-                    onChange={(e) => setEditForm({...editForm, username: e.target.value})}
+                    onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
                     placeholder="Your name"
                     className="w-full px-4 py-3 rounded-xl text-text-main bg-canvas border border-border-subtle focus:bg-white focus:outline-none focus:border-greenui focus:ring-4 focus:ring-greenui/10 transition-all"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-bold text-text-main mb-1.5 ml-1">Title</label>
                   <input
                     value={editForm.title}
-                    onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
                     placeholder="e.g. Fullstack Developer"
                     className="w-full px-4 py-3 rounded-xl text-text-main bg-canvas border border-border-subtle focus:bg-white focus:outline-none focus:border-greenui focus:ring-4 focus:ring-greenui/10 transition-all"
                   />
@@ -359,7 +358,7 @@ export default function ProfilePage() {
                   <label className="block text-sm font-bold text-text-main mb-1.5 ml-1">Bio</label>
                   <textarea
                     value={editForm.bio}
-                    onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
+                    onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })}
                     placeholder="Write a short bio about yourself..."
                     rows={4}
                     className="w-full px-4 py-3 rounded-xl text-text-main bg-canvas border border-border-subtle focus:bg-white focus:outline-none focus:border-greenui focus:ring-4 focus:ring-greenui/10 transition-all resize-none"
@@ -371,28 +370,28 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center border-b border-border-subtle pb-2">
                   <h3 className="text-lg font-semibold text-text-main">Projects</h3>
-                  <button 
+                  <button
                     onClick={handleAddProject}
                     className="text-sm font-bold text-brand-secondary flex items-center gap-1 hover:brightness-110 cursor-pointer"
                   >
                     <Plus size={16} /> Add Project
                   </button>
                 </div>
-                
+
                 {editForm.projects.length === 0 ? (
                   <p className="text-text-muted text-sm italic text-center py-4">No projects added yet.</p>
                 ) : (
                   <div className="space-y-6">
                     {editForm.projects.map((project, idx) => (
                       <div key={idx} className="bg-canvas border border-border-subtle rounded-2xl p-5 relative group">
-                        <button 
+                        <button
                           onClick={() => handleRemoveProject(idx)}
                           className="absolute top-4 right-4 text-red-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
                           title="Remove Project"
                         >
                           <Trash2 size={18} />
                         </button>
-                        
+
                         <div className="space-y-4">
                           <div>
                             <label className="block text-xs font-bold text-text-main mb-1 ml-1">Project Title</label>
@@ -403,7 +402,7 @@ export default function ProfilePage() {
                               className="w-full px-4 py-2.5 rounded-xl text-sm text-text-main bg-surface border border-border-subtle focus:bg-white focus:outline-none focus:border-greenui transition-all pr-10"
                             />
                           </div>
-                          
+
                           <div>
                             <label className="block text-xs font-bold text-text-main mb-1 ml-1">Description</label>
                             <textarea
@@ -414,7 +413,7 @@ export default function ProfilePage() {
                               className="w-full px-4 py-2.5 rounded-xl text-sm text-text-main bg-surface border border-border-subtle focus:bg-white focus:outline-none focus:border-greenui transition-all resize-none"
                             />
                           </div>
-                          
+
                           <div>
                             <label className="block text-xs font-bold text-text-main mb-1 ml-1">Tags (Comma separated)</label>
                             <input
@@ -433,19 +432,19 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
-              
+
             </div>
 
             {/* Modal Footer */}
             <div className="p-6 border-t border-border-subtle bg-canvas/50 flex justify-end gap-3">
-              <button 
+              <button
                 onClick={() => setIsEditModalOpen(false)}
                 disabled={isSaving}
                 className="px-6 py-2.5 rounded-xl font-bold text-text-main bg-surface border border-border-subtle hover:bg-surface-hover transition-colors cursor-pointer"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSaveProfile}
                 disabled={isSaving}
                 className="px-8 py-2.5 rounded-xl font-bold text-white bg-greenui hover:brightness-105 shadow-sm shadow-greenui/20 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-70"

@@ -1,5 +1,6 @@
 "use client";
 import { memo } from "react";
+import ReactMarkdown from "react-markdown";
 import { ChevronRight, ChevronLeft, Send } from "lucide-react";
 
 export interface QuestionData {
@@ -39,12 +40,15 @@ const ChoiceQuestion = memo(function ChoiceQuestion({
                 <div className="mb-12">
                     <div className="text-[11px] font-black text-brand-secondary uppercase tracking-[0.2em] mb-4">Question Description</div>
                     <h2 className="text-3xl font-black text-text-main mb-6 tracking-tight leading-tight">{data.title}</h2>
-                    <div className="text-lg text-text-muted leading-relaxed mb-8">
-                        {data.description}
+                    <div className="prose prose-lg dark:prose-invert max-w-none text-text-muted leading-relaxed mb-8 whitespace-pre-wrap">
+                        <ReactMarkdown>{data.description}</ReactMarkdown>
                     </div>
                     {data.codeSnippet && (
-                        <div className="bg-slate-800 p-6 rounded-2xl shadow-xl border border-slate-700 font-mono text-sm text-slate-200 mb-8 overflow-x-auto custom-scrollbar">
-                            <pre>{data.codeSnippet}</pre>
+                        <div className="mb-8">
+                            <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.2em] mb-3">Code Snippet</div>
+                            <div className="bg-[#1e293b] dark:bg-[#0f172a] p-5 rounded-xl font-mono text-sm text-slate-200 overflow-x-auto border border-[#334155] custom-scrollbar">
+                                <pre>{data.codeSnippet}</pre>
+                            </div>
                         </div>
                     )}
                 </div>

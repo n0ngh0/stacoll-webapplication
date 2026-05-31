@@ -2,26 +2,18 @@
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Compass } from "lucide-react";
+import { Compass, Shield } from "lucide-react";
+import { useUser } from "@/lib/use-user";
 
 export default function MemberNav() {
     const router = useRouter();
     const pathname = usePathname();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [user, setUser] = useState<{ username: string; email: string; imgUrl?: string } | null>(null);
+    const { user, isAdmin } = useUser();
 
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        try {
-            const userData = localStorage.getItem("user");
-            if (userData) {
-                setUser(JSON.parse(userData));
-            }
-        } catch (error) {
-            console.error("Failed to parse user data:", error);
-        }
-
         // ฟังก์ชันปิด Dropdown
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -48,16 +40,25 @@ export default function MemberNav() {
 
     return (
         <header className="sticky top-0 z-50 backdrop-blur-md shadow-sm bg-canvas/80 border-b border-border-subtle transition-colors duration-300">
-            <nav className="flex justify-between items-center py-4 px-[5%] max-w-[1200px] mx-auto w-full">
+            <nav className="flex justify-between items-center py-4 px-[5%] max-w-[1980px] mx-auto w-full">
 
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 text-2xl font-bold no-underline text-greenui">
+                <Link
+                    href="/explore"
+                    className="flex items-center gap-2 text-2xl font-bold no-underline text-greenui"
+                    onClick={(e) => {
+                        if (pathname === '/explore') {
+                            e.preventDefault();
+                            window.dispatchEvent(new Event("reset-explore"));
+                        }
+                    }}
+                >
                     <img className="h-10 w-auto object-contain" src="/assets/LogoStacoll.png" alt="Logo" />
                     <img className="h-6 w-auto object-contain hidden sm:block" src="/assets/LogoStacoll-Text.png" alt="STACOLL" />
                 </Link>
 
                 <div className="flex items-center gap-4 sm:gap-6">
-                    <div className="hidden md:flex items-center">
+                    <div className="hidden md:flex items-center gap-1">
                         <Link
                             href="/explore"
                             className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full transition-all duration-200 ${pathname === "/explore"
@@ -67,6 +68,19 @@ export default function MemberNav() {
                         >
                             <Compass size={18} />Explore Skills
                         </Link>
+
+                        {/* Admin Menu */}
+                        {isAdmin && (
+                            <Link
+                                href="/admin"
+                                className={`flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full transition-all duration-200 ${pathname.startsWith("/admin")
+                                    ? "bg-amber-500/15 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
+                                    : "text-text-muted hover:text-text-main hover:bg-surface-hover"
+                                    }`}
+                            >
+                                <Shield size={16} />Admin
+                            </Link>
+                        )}
                     </div>
 
                     {/* Divider */}
@@ -103,6 +117,26 @@ export default function MemberNav() {
                                 <p className="text-xs mb-5 text-text-muted transition-colors">{user?.email || "No email provided"}</p>
 
                                 <ul className="list-none p-0 m-0">
+                                    {isAdmin && (
+                                        <li className="transition-colors mb-1.5">
+                                            <Link
+                                                href="/admin"
+                                                className="flex items-center gap-1 py-3 justify-center font-medium text-sm text-text-main hover:bg-surface-hover rounded-lg transition-all"
+                                                onClick={() => setIsDropdownOpen(false)}
+                                            >
+                                                <Shield size={14} style={{ marginBottom: '3px' }} />Admin Panel
+                                            </Link>
+                                        </li>
+                                    )}
+                                    <li className="transition-colors mb-1.5">
+                                        <Link
+                                            href="/myskill"
+                                            className="block py-3 font-medium text-sm text-text-main hover:bg-surface-hover rounded-lg transition-all"
+                                            onClick={() => setIsDropdownOpen(false)}
+                                        >
+                                            MySkill
+                                        </Link>
+                                    </li>
                                     <li className="border-t border-border-subtle transition-colors pt-2">
                                         <Link
                                             href="/profile"

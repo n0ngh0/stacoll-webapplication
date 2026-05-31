@@ -108,7 +108,7 @@ export default function SettingsPage() {
               />
             </div>
             <div className="pt-2">
-              <button className="bg-greenui text-[#000000d3] px-6 py-2.5 rounded-xl font-bold text-sm hover:brightness-110 transition-all shadow-sm cursor-pointer flex items-center gap-2">
+              <button className="bg-greenbutton text-white dark:text-black px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-greenbutton/90 transition-all shadow-sm cursor-pointer flex items-center gap-2">
                 Change Password
               </button>
             </div>

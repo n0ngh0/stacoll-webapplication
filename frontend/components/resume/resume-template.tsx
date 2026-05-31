@@ -1,4 +1,5 @@
 import React from "react";
+import { getLevelColorClass, getLevelBgColorClass } from "@/types/question";
 
 interface Skill {
   name: string;
@@ -28,11 +29,7 @@ interface ResumeTemplateProps {
 
 export const ResumeTemplate = React.forwardRef<HTMLDivElement, ResumeTemplateProps>(
   ({ user, skills, projects, issuedDate, verificationId }, ref) => {
-    const getLevelColorClass = (level: string) => {
-      if (level === "ADVANCED") return "bg-[#e2bced] text-[#63077F]";
-      if (level === "INTERMEDIATE") return "bg-[#DCFCE7] text-[#15803D]";
-      return "bg-[#FEF9C3] text-[#A16207]";
-    };
+
 
     return (
       <div
@@ -102,7 +99,7 @@ export const ResumeTemplate = React.forwardRef<HTMLDivElement, ResumeTemplatePro
                       <span className="font-bold text-gray-900 text-[15px]">{skill.name}</span>
                     </div>
                     <div className="col-span-3">
-                      <span className={`text-[9px] font-bold px-2 py-1 rounded-full uppercase ${getLevelColorClass(skill.level)}`}>
+                      <span className={`text-[9px] font-bold px-2 py-1 rounded-full uppercase ${getLevelColorClass(skill.level)} ${getLevelBgColorClass(skill.level)}`}>
                         {skill.level}
                       </span>
                     </div>

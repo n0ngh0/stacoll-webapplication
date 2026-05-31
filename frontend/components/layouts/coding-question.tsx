@@ -1,5 +1,6 @@
 "use client";
 import { useState, memo } from "react";
+import ReactMarkdown from "react-markdown";
 import { Play, Terminal, ChevronRight, ChevronLeft, SendHorizontal } from "lucide-react";
 
 interface CodingProps {
@@ -43,8 +44,8 @@ const CodingQuestion = memo(function CodingQuestion({
       {/* Problem Section */}
       <div className="w-full md:w-[42%] h-full bg-surface border-r border-border-subtle overflow-y-auto p-8 lg:p-10 custom-scrollbar">
         <h2 className="text-2xl font-black text-text-main mb-6 tracking-tight">{title}</h2>
-        <div className="prose prose-slate prose-sm max-w-none text-text-muted leading-relaxed">
-          {description}
+        <div className="prose prose-sm dark:prose-invert max-w-none text-text-muted leading-relaxed whitespace-pre-wrap">
+          {typeof description === 'string' ? <ReactMarkdown>{description}</ReactMarkdown> : description}
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "next/navigation";
-import { CheckCircle2 } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 import AssessmentHeader from "@/components/layouts/assessment-header";
 import CodingQuestion from "@/components/layouts/coding-question";
 import ChoiceQuestion from "@/components/layouts/choice-question";
@@ -37,6 +37,7 @@ const MOCK_QUESTIONS = [
 
 export default function ExamPage() {
     const params = useParams();
+    const router = useRouter();
     const rawSkillId = (params?.id || "skill-assessment") as string;
     const displaySkillName = decodeURIComponent(rawSkillId as string).toUpperCase();
 
@@ -81,29 +82,28 @@ export default function ExamPage() {
         if (!isFirst) setCurrentIndex(prev => prev - 1);
     }, [isFirst]);
 
+    // Effect to redirect when finished
+    useEffect(() => {
+        if (isFinished) {
+            // Mock a delay and then redirect to result page
+            const timer = setTimeout(() => {
+                router.push(`/assessment/${rawSkillId}/result?score=85&passed=true&level=BEGINNER`);
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [isFinished, router, rawSkillId]);
+
     if (isFinished) {
         return (
             <div className="h-screen w-full flex flex-col items-center justify-center bg-canvas p-4 text-center">
-                <div className="bg-surface p-8 sm:p-10 rounded-3xl shadow-xl border border-border-subtle max-w-md w-full animate-in slide-in-from-bottom-4 fade-in duration-500">
-
-                    <div className="w-16 h-16 bg-brand-secondary/10 text-brand-secondary rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        <CheckCircle2 size={32} strokeWidth={2.5} />
-                    </div>
-
-                    <h2 className="text-2xl font-black text-text-main mb-3 tracking-tight">
-                        Nice work!
+                <div className="bg-surface p-8 sm:p-10 rounded-3xl shadow-xl border border-border-subtle max-w-md w-full animate-in zoom-in-95 duration-500 flex flex-col items-center">
+                    <Loader2 className="w-12 h-12 text-brand-secondary animate-spin mb-4" />
+                    <h2 className="text-2xl font-black text-text-main mb-2 tracking-tight">
+                        Calculating Results...
                     </h2>
-                    <p className="text-text-muted mb-8 leading-relaxed text-[15px]">
-                        Your answers are in. We're calculating your results for <strong className="text-text-main font-bold">{displaySkillName}</strong>.
+                    <p className="text-text-muted text-[15px]">
+                        Please wait while we evaluate your answers for <strong className="text-text-main">{displaySkillName}</strong>.
                     </p>
-
-                    <button
-                        onClick={() => window.location.href = `/skill/${rawSkillId}`}
-                        className="w-full bg-greenui text-text-main font-extrabold py-3.5 rounded-xl hover:brightness-105 transition-all shadow-sm active:scale-95 cursor-pointer"
-                    >
-                        Return to skill page
-                    </button>
-
                 </div>
             </div>
         );
