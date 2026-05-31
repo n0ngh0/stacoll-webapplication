@@ -211,7 +211,7 @@ export default function QuestionDetailPage() {
 
       {/* Delete Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-canvas/80 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[49] flex items-center justify-center bg-canvas/80 backdrop-blur-sm p-4">
           <div className="bg-surface p-6 rounded-2xl border border-border-subtle max-w-[420px] w-full">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-red-500/15 flex items-center justify-center">
@@ -221,8 +221,8 @@ export default function QuestionDetailPage() {
             </div>
             <p className="text-[14px] text-text-muted mb-6">Are you sure you want to delete this question?</p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setShowDeleteModal(false)} className="px-5 py-2.5 text-sm font-bold text-text-main hover:bg-surface-hover rounded-xl">Cancel</button>
-              <button onClick={handleDelete} className="px-5 py-2.5 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl">Delete</button>
+              <button onClick={() => setShowDeleteModal(false)} className="px-5 py-2.5 text-sm font-bold text-text-main hover:bg-surface-hover rounded-xl cursor-pointer">Cancel</button>
+              <button onClick={handleDelete} className="px-5 py-2.5 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl cursor-pointer">Delete</button>
             </div>
           </div>
         </div>
