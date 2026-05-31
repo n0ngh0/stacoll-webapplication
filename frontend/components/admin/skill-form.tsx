@@ -101,7 +101,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
                     <div className="relative w-20 h-20 rounded-2xl bg-surface border border-border-subtle flex items-center justify-center shrink-0 overflow-hidden shadow-sm group">
                       {isImageUrl(icon) ? (
                         <>
-                          <img src={icon} alt="Logo preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                          <img src={icon} alt="Logo preview" className="p-2 w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = 'none')} />
                           <button
                             type="button"
                             onClick={() => setIcon("")}
