@@ -12,6 +12,13 @@ export interface User {
     description: string;
     tags: string[];
   }>;
+  verifiedSkills?: Array<{
+    skillId: string;
+    skillName: string;
+    level: string;
+    score: number;
+    verifiedAt: string;
+  }>;
   // วันที่และเวลาจะถูกแปลงเป็น ISO String เมื่อส่งผ่าน JSON
   createdAt: string;
   updatedAt: string;

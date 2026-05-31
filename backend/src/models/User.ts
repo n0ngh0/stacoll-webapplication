@@ -1,6 +1,14 @@
 import mongoose, { Document, Model, Schema } from "mongoose";
 
 // 1. กำหนด Interface สำหรับ TypeScript เพื่อให้รู้ว่า User Document มีฟิลด์อะไรบ้าง
+export interface IVerifiedSkill {
+  skillId: mongoose.Types.ObjectId;
+  skillName: string;
+  level: string;
+  score: number;
+  verifiedAt: Date;
+}
+
 export interface IUser {
   username: string;
   email: string;
@@ -14,6 +22,7 @@ export interface IUser {
     description: string;
     tags: string[];
   }>;
+  verifiedSkills?: IVerifiedSkill[];
   isVerified: boolean;
   otp?: string;
   otpExpiry?: Date;
@@ -69,6 +78,15 @@ const userSchema = new Schema<IUser>(
         title: { type: String, required: true },
         description: { type: String, required: true },
         tags: [{ type: String }],
+      }
+    ],
+    verifiedSkills: [
+      {
+        skillId: { type: Schema.Types.ObjectId, ref: "Skill", required: true },
+        skillName: { type: String, required: true },
+        level: { type: String, enum: ["beginner", "intermediate", "advanced"], required: true },
+        score: { type: Number, required: true, min: 0, max: 100 },
+        verifiedAt: { type: Date, default: Date.now },
       }
     ],
     isVerified: {
