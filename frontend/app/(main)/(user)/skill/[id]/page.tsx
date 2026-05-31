@@ -8,7 +8,7 @@ import { getSkillById, getQuestionsByLevel, getLevelMode } from "@/lib/question-
 import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
 
 const MOCK_USER_PROGRESS = {
-    passedLevels: ["beginner", "intermediate"],
+    passedLevels: ["beginner"],
     cooldownLevels: { "intermediate": 14 } as Record<string, number>
 };
 
@@ -236,7 +236,7 @@ export default function SkillDetailPage() {
                                 return (
                                     <button 
                                         onClick={() => router.push(`/profile/certificate/${rawSkillId.toLowerCase()}`)} 
-                                        className="cursor-pointer bg-greenbutton hover:bg-greenbutton/90 text-white dark:text-black font-bold py-4 px-16 rounded-full text-xl shadow-lg shadow-greenbutton/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-2"
+                                        className="cursor-pointer bg-greenbutton hover:bg-greenbutton/90 text-white dark:text-black font-bold py-4 w-[320px] max-w-full flex justify-center items-center rounded-full text-xl shadow-lg shadow-greenbutton/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 gap-2"
                                     >
                                         View Certificate <Award size={20} />
                                     </button>
@@ -245,7 +245,7 @@ export default function SkillDetailPage() {
 
                             if (isLocked) {
                                 return (
-                                    <button disabled className="bg-canvas border border-border-subtle text-text-muted font-bold py-4 px-20 rounded-full text-xl shadow-sm cursor-not-allowed flex items-center gap-2 transition-colors">
+                                    <button disabled className="bg-canvas border border-border-subtle text-text-muted font-bold py-4 w-[320px] max-w-full flex justify-center items-center rounded-full text-xl shadow-sm cursor-not-allowed gap-2 transition-colors">
                                         <Lock size={20} /> Locked
                                     </button>
                                 );
@@ -253,17 +253,17 @@ export default function SkillDetailPage() {
 
                             if (cooldownDays > 0) {
                                 return (
-                                    <div className="flex flex-col items-center">
-                                        <button disabled className="bg-canvas border border-accent-orange/40 text-accent-orange/80 font-bold py-4 px-12 rounded-full text-xl shadow-sm cursor-not-allowed flex items-center gap-2 transition-colors">
+                                    <div className="flex flex-col items-center w-[320px] max-w-full relative">
+                                        <button disabled className="max-h-[60px] w-full bg-canvas border border-accent-orange/40 text-accent-orange/80 font-bold py-4 flex justify-center items-center rounded-full text-xl shadow-sm cursor-not-allowed gap-2 transition-colors">
                                             <Clock size={20} /> Cooldown: {cooldownDays} Days Left
                                         </button>
-                                        <p className="text-xs text-text-muted mt-3 font-medium">You must wait {cooldownDays} days before retaking this assessment.</p>
+                                        <p className="text-xs text-text-muted mt-2 font-medium text-center absolute top-full left-0 w-full">You must wait {cooldownDays} days before retaking this assessment.</p>
                                     </div>
                                 );
                             }
 
                             return (
-                                <button onClick={handleStartAssessment} className="cursor-pointer bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold py-4 px-20 rounded-full text-xl shadow-lg shadow-brand-secondary/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95">
+                                <button onClick={handleStartAssessment} className="cursor-pointer bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold py-4 w-[320px] max-w-full flex justify-center items-center rounded-full text-xl shadow-lg shadow-brand-secondary/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 gap-2">
                                     Start Assessment
                                 </button>
                             );
