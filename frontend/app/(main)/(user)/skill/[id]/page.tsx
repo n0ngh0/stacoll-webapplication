@@ -55,11 +55,13 @@ export default function SkillDetailPage() {
     }, [router]);
 
     useEffect(() => {
-        if (mounted && rawSkillId) {
+        setMounted(true);
+        window.scrollTo(0, 0);
+        if (rawSkillId) {
             const fetchedSkill = getSkillById(rawSkillId);
             setSkill(fetchedSkill);
         }
-    }, [mounted, rawSkillId]);
+    }, [rawSkillId]);
 
     useEffect(() => {
         if (skill && selectedLevel) {

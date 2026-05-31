@@ -26,6 +26,7 @@ export default function CertificatePage() {
 
   useEffect(() => {
     setMounted(true);
+    window.scrollTo(0, 0);
     // Find the skill in our mock data
     const found = mockSkills.find(s => s.name.toLowerCase() === decodedSkill);
     setSkillData(found || null);
