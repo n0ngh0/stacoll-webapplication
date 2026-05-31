@@ -43,8 +43,8 @@ export default function MemberNav() {
             <nav className="flex justify-between items-center py-4 px-[5%] max-w-[1980px] mx-auto w-full">
 
                 {/* Logo */}
-                <Link 
-                    href="/explore" 
+                <Link
+                    href="/explore"
                     className="flex items-center gap-2 text-2xl font-bold no-underline text-greenui"
                     onClick={(e) => {
                         if (pathname === '/explore') {
@@ -128,6 +128,15 @@ export default function MemberNav() {
                                             </Link>
                                         </li>
                                     )}
+                                    <li className="transition-colors mb-1.5">
+                                        <Link
+                                            href="/myskill"
+                                            className="block py-3 font-medium text-sm text-text-main hover:bg-surface-hover rounded-lg transition-all"
+                                            onClick={() => setIsDropdownOpen(false)}
+                                        >
+                                            MySkill
+                                        </Link>
+                                    </li>
                                     <li className="border-t border-border-subtle transition-colors pt-2">
                                         <Link
                                             href="/profile"

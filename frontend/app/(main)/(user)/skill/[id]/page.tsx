@@ -1,11 +1,16 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, CircleQuestionMark, Clock, Monitor, ListChecks } from "lucide-react";
+import { ChevronLeft, CircleQuestionMark, Clock, Monitor, ListChecks, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CATEGORY_THEMES } from "@/types/question";
 import type { Skill } from "@/types/question";
 import { getSkillById, getQuestionsByLevel, getLevelMode } from "@/lib/question-store";
 import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
+
+const MOCK_USER_PROGRESS = {
+    passedLevels: ["beginner"],
+    cooldownLevels: { "intermediate": 14 } as Record<string, number>
+};
 
 export default function SkillDetailPage() {
     const params = useParams();
@@ -155,16 +160,20 @@ export default function SkillDetailPage() {
                             {skill.levels.map((level, index) => {
                                 const style = levelStyles[level.id] || levelStyles.beginner;
                                 const isActive = selectedLevel === level.id;
+                                const isLocked = index > 0 && !MOCK_USER_PROGRESS.passedLevels.includes(skill.levels[index - 1].id);
 
                                 return (
                                     <div key={level.id} className="flex-1 flex items-center w-full">
                                         <div
-                                            className={`min-h-[125px] w-full relative p-5 rounded-2xl border-2 transition-all duration-300 text-left flex flex-col gap-2 ${isActive
-                                                ? style.activeBg
-                                                : 'bg-canvas border-border-subtle'
+                                            onClick={() => !isLocked && setSelectedLevel(level.id)}
+                                            className={`min-h-[125px] w-full relative p-5 rounded-2xl border-2 transition-all duration-300 text-left flex flex-col gap-2 ${
+                                                isLocked ? 'opacity-50 grayscale cursor-not-allowed bg-canvas border-border-subtle' :
+                                                isActive ? style.activeBg : 'bg-canvas border-border-subtle cursor-pointer hover:border-current/30'
                                                 }`}
                                         >
-                                            <div className="flex items-center gap-3">
+                                            {isLocked && <Lock size={28} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-text-muted opacity-60 z-10" />}
+                                            
+                                            <div className={`flex items-center gap-3 ${isLocked ? 'opacity-40' : ''}`}>
                                                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${isActive
                                                     ? `border-current ${style.textClass}`
                                                     : 'border-border-subtle'
@@ -175,7 +184,7 @@ export default function SkillDetailPage() {
                                                     {level.title}
                                                 </span>
                                             </div>
-                                            <p className={`text-xs font-medium transition-colors duration-300 ${isActive ? style.textClass : 'text-text-muted opacity-80'}`}>
+                                            <p className={`text-xs font-medium transition-colors duration-300 ${isActive ? style.textClass : 'text-text-muted opacity-80'} ${isLocked ? 'opacity-40' : ''}`}>
                                                 {level.description}
                                             </p>
                                         </div>
@@ -193,9 +202,36 @@ export default function SkillDetailPage() {
 
                     {/* Action Button */}
                     <div className="flex justify-center pt-6">
-                        <button onClick={handleStartAssessment} className="cursor-pointer bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold py-4 px-20 rounded-full text-xl shadow-lg shadow-brand-secondary/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95">
-                            Start
-                        </button>
+                        {(() => {
+                            const selectedIndex = skill.levels.findIndex((l: any) => l.id === selectedLevel);
+                            const isLocked = selectedIndex > 0 && !MOCK_USER_PROGRESS.passedLevels.includes(skill.levels[selectedIndex - 1].id);
+                            const cooldownDays = MOCK_USER_PROGRESS.cooldownLevels[selectedLevel] || 0;
+
+                            if (isLocked) {
+                                return (
+                                    <button disabled className="bg-canvas border border-border-subtle text-text-muted font-bold py-4 px-20 rounded-full text-xl shadow-sm cursor-not-allowed flex items-center gap-2 transition-colors">
+                                        <Lock size={20} /> Locked
+                                    </button>
+                                );
+                            }
+
+                            if (cooldownDays > 0) {
+                                return (
+                                    <div className="flex flex-col items-center">
+                                        <button disabled className="bg-canvas border border-accent-orange/40 text-accent-orange/80 font-bold py-4 px-12 rounded-full text-xl shadow-sm cursor-not-allowed flex items-center gap-2 transition-colors">
+                                            <Clock size={20} /> Cooldown: {cooldownDays} Days Left
+                                        </button>
+                                        <p className="text-xs text-text-muted mt-3 font-medium">You must wait {cooldownDays} days before retaking this assessment.</p>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <button onClick={handleStartAssessment} className="cursor-pointer bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold py-4 px-20 rounded-full text-xl shadow-lg shadow-brand-secondary/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95">
+                                    Start Assessment
+                                </button>
+                            );
+                        })()}
                     </div>
                 </div>
             </div>

@@ -24,13 +24,13 @@ export default function ProfilePage() {
     projects: []
   });
 
-  // Mock skills as requested (not editing skills yet)
+  // We sort by date to simulate "Recently verified"
   const mockSkills = [
+    { name: "JavaScript", level: "ADVANCED", score: 91, date: "Jan 15, 2026", expires: "Jan 15, 2028" },
+    { name: "SQL", level: "INTERMEDIATE", score: 85, date: "Nov 05, 2025", expires: "Nov 05, 2027" },
     { name: "React.js", level: "INTERMEDIATE", score: 82, date: "Oct 12, 2025", expires: "Oct 12, 2027" },
     { name: "Node.js", level: "BEGINNER", score: 67, date: "Oct 12, 2025", expires: "Oct 12, 2027" },
     { name: "Python", level: "ADVANCED", score: 95, date: "Sep 28, 2025", expires: "Sep 28, 2027" },
-    { name: "JavaScript", level: "ADVANCED", score: 91, date: "Jan 15, 2026", expires: "Jan 15, 2028" },
-    { name: "SQL", level: "INTERMEDIATE", score: 85, date: "Nov 05, 2025", expires: "Nov 05, 2027" },
   ];
 
   useEffect(() => {
@@ -196,7 +196,9 @@ export default function ProfilePage() {
 
       {/* --- RECOMMEND SECTION --- */}
       <section className="mb-12">
-        <h2 className="text-2xl font-bold text-text-main mb-6 transition-colors">Recommend</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-text-main transition-colors">Job Recommen</h2>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {["Front-end", "Back-end", "Data Analyst"].map((role, idx) => (
             <div key={idx} className="bg-surface border-2 border-greenui dark:border-greenui/70 rounded-2xl p-6 text-center shadow-sm transition-colors duration-300">
@@ -244,11 +246,16 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* --- VERIFIED SKILLS --- */}
-        <section>
-          <h2 className="text-2xl font-bold text-text-main mb-6 transition-colors">Verified Skills</h2>
+        {/* --- RECENTLY VERIFIED SKILLS --- */}
+        <section className="mb-10">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-text-main transition-colors">Recently Verified</h2>
+            <Link href="/myskill" className="text-sm font-semibold text-brand-secondary hover:underline cursor-pointer">
+              View All Skills
+            </Link>
+          </div>
           <div className="space-y-4">
-            {mockSkills.map((skill, idx) => (
+            {mockSkills.slice(0, 5).map((skill, idx) => (
               <Link
                 href={`/profile/certificate/${skill.name.toLowerCase()}`}
                 key={idx}

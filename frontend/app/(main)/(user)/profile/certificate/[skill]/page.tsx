@@ -4,14 +4,15 @@ import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Award, CheckCircle, Clock, ExternalLink, ArrowRight, Star } from "lucide-react";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { CATEGORY_THEMES } from "@/types/question";
 
 // Mock data (Normally fetched from API)
 const mockSkills = [
-  { name: "React.js", level: "INTERMEDIATE", score: 82, date: "Oct 12, 2025", expires: "Oct 12, 2027", fullDescription: "### Competencies\n\n- Build reusable and performant components\n- Manage complex state using Context and Hooks\n- Integrate effectively with REST APIs" },
-  { name: "Node.js", level: "BEGINNER", score: 67, date: "Oct 12, 2025", expires: "Oct 12, 2027", fullDescription: "### Competencies\n\n- Create basic HTTP servers\n- Understand CommonJS modules\n- Work with the file system and basic streams" },
-  { name: "Python", level: "ADVANCED", score: 95, date: "Sep 28, 2025", expires: "Sep 28, 2027", fullDescription: "### Competencies\n\n- Optimize application performance and memory usage\n- Implement advanced decorators, generators, and context managers\n- Design scalable and maintainable application architectures" },
-  { name: "JavaScript", level: "ADVANCED", score: 91, date: "Jan 15, 2026", expires: "Jan 15, 2028", fullDescription: "### Competencies\n\n- Master asynchronous programming (Promises/async-await)\n- Deep understanding of closures, scopes, and prototypes\n- Write efficient, modern ES6+ code patterns" },
-  { name: "SQL", level: "INTERMEDIATE", score: 85, date: "Nov 05, 2025", expires: "Nov 05, 2027", fullDescription: "### Competencies\n\n- Write complex queries using subqueries\n- Perform data aggregations with GROUP BY and HAVING\n- Use multiple JOIN types effectively and efficiently" },
+  { name: "React.js", category: "programming", level: "INTERMEDIATE", score: 82, date: "Oct 12, 2025", expires: "Oct 12, 2027", fullDescription: "### Competencies\n\n- Build reusable and performant components\n- Manage complex state using Context and Hooks\n- Integrate effectively with REST APIs" },
+  { name: "Node.js", category: "programming", level: "BEGINNER", score: 67, date: "Oct 12, 2025", expires: "Oct 12, 2027", fullDescription: "### Competencies\n\n- Create basic HTTP servers\n- Understand CommonJS modules\n- Work with the file system and basic streams" },
+  { name: "Python", category: "programming", level: "ADVANCED", score: 95, date: "Sep 28, 2025", expires: "Sep 28, 2027", fullDescription: "### Competencies\n\n- Optimize application performance and memory usage\n- Implement advanced decorators, generators, and context managers\n- Design scalable and maintainable application architectures" },
+  { name: "JavaScript", category: "programming", level: "ADVANCED", score: 91, date: "Jan 15, 2026", expires: "Jan 15, 2028", fullDescription: "### Competencies\n\n- Master asynchronous programming (Promises/async-await)\n- Deep understanding of closures, scopes, and prototypes\n- Write efficient, modern ES6+ code patterns" },
+  { name: "SQL", category: "analyst", level: "INTERMEDIATE", score: 85, date: "Nov 05, 2025", expires: "Nov 05, 2027", fullDescription: "### Competencies\n\n- Write complex queries using subqueries\n- Perform data aggregations with GROUP BY and HAVING\n- Use multiple JOIN types effectively and efficiently" },
 ];
 
 export default function CertificatePage() {
@@ -49,15 +50,14 @@ export default function CertificatePage() {
     return "text-beginnertext";
   };
 
-  const getLevelBgColorClass = (level: string) => {
-    if (level === "ADVANCED") return "bg-advancedbg border-advancedtext/90";
-    if (level === "INTERMEDIATE") return "bg-intermediatebg border-intermediatetext/40";
-    return "bg-beginnerbg border-beginnertext/40";
-  };
+  const themeColor = CATEGORY_THEMES[skillData.category] || "#19c3af";
 
   return (
     <div className="flex-1 min-h-screen bg-canvas flex flex-col items-center py-10 px-4 transition-colors duration-300">
-      <div className="w-full max-w-[850px] bg-surface rounded-[32px] shadow-sm border border-border-subtle overflow-hidden animate-in fade-in zoom-in duration-500 transition-colors duration-300">
+      <div 
+        className="w-full max-w-[850px] bg-surface rounded-[32px] shadow-sm border border-border-subtle overflow-hidden animate-in fade-in zoom-in duration-500 transition-colors duration-300"
+        style={{ "--theme-color": themeColor } as React.CSSProperties}
+      >
         
         {/* Header Navigation */}
         <div className="px-8 py-4 border-b border-border-subtle transition-colors duration-300">
@@ -71,12 +71,28 @@ export default function CertificatePage() {
         </div>
 
         {/* Certificate Title */}
-        <div className={`py-12 flex flex-col items-center justify-center relative overflow-hidden transition-colors duration-300 ${getLevelBgColorClass(skillData.level)}`}>
-          <div className="w-20 h-20 bg-surface rounded-full shadow-lg flex items-center justify-center mb-6 text-brand-secondary">
+        <div 
+          className="py-10 flex flex-col items-center justify-center relative overflow-hidden transition-colors duration-300"
+          style={{ backgroundColor: `${themeColor}33` }}
+        >
+          <span 
+            className="px-3 py-1 bg-surface rounded-full text-[10px] font-black uppercase tracking-widest mb-4 shadow-sm border"
+            style={{ color: themeColor, borderColor: `${themeColor}50` }}
+          >
+            {skillData.category}
+          </span>
+          <div 
+            className="w-20 h-20 bg-surface rounded-full shadow-lg flex items-center justify-center mb-6"
+            style={{ color: themeColor }}
+          >
             <Award size={40} />
           </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-text-main z-10 transition-colors duration-300 mb-2">{skillData.name}</h1>
-          <p className={`text-lg font-bold tracking-widest ${getLevelColorClass(skillData.level)} transition-colors`}>{skillData.level}</p>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-text-main z-10 transition-colors duration-300 uppercase mb-2">
+            {skillData.name}
+          </h1>
+          <p className={`text-lg font-bold tracking-widest ${getLevelColorClass(skillData.level)} transition-colors`}>
+            {skillData.level}
+          </p>
         </div>
 
         <div className="p-8 md:p-12 space-y-10">
