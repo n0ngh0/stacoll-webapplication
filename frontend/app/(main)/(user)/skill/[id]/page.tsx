@@ -225,7 +225,7 @@ export default function SkillDetailPage() {
                     </div>
 
                     {/* Action Button */}
-                    <div className="flex justify-center pt-6">
+                    <div className="flex justify-center pt-4 mb-1">
                         {(() => {
                             const selectedIndex = skill.levels.findIndex((l: any) => l.id === selectedLevel);
                             const isLocked = selectedIndex > 0 && !MOCK_USER_PROGRESS.passedLevels.includes(skill.levels[selectedIndex - 1].id);
