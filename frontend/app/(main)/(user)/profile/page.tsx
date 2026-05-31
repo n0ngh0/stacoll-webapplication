@@ -26,14 +26,18 @@ export default function ProfilePage() {
     projects: []
   });
 
-  // We sort by date to simulate "Recently verified"
-  const mockSkills = [
-    { name: "JavaScript", level: "ADVANCED", score: 91, date: "Jan 15, 2026", expires: "Jan 15, 2028" },
-    { name: "SQL", level: "INTERMEDIATE", score: 85, date: "Nov 05, 2025", expires: "Nov 05, 2027" },
-    { name: "React.js", level: "INTERMEDIATE", score: 82, date: "Oct 12, 2025", expires: "Oct 12, 2027" },
-    { name: "Node.js", level: "BEGINNER", score: 67, date: "Oct 12, 2025", expires: "Oct 12, 2027" },
-    { name: "Python", level: "ADVANCED", score: 95, date: "Sep 28, 2025", expires: "Sep 28, 2027" },
-  ];
+  // Helper: format date from ISO string
+  const formatDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+      });
+    } catch {
+      return dateStr;
+    }
+  };
 
   useEffect(() => {
     fetchProfile();
@@ -225,7 +229,11 @@ export default function ProfilePage() {
 
           <div className="space-y-6">
             {!user.projects || user.projects.length === 0 ? (
-              <p className="text-text-muted text-sm italic">No projects added yet.</p>
+              <div className="bg-surface border border-border-subtle rounded-2xl p-8 text-center transition-colors duration-300">
+                <p className="text-text-muted font-medium">
+                  No projects have been added yet. Click &quot;Edit Projects&quot; to get started.
+                </p>
+              </div>
             ) : (
               user.projects.map((project, idx) => (
                 <div key={idx} className="bg-surface border-2 border-brand-secondary dark:border-brand-secondary/70 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300">
@@ -244,54 +252,50 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* --- RECENTLY VERIFIED SKILLS --- */}
-        <section className="mb-10">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-text-main transition-colors">Recently Verified</h2>
-            <Link href="/myskill" className="text-sm font-semibold text-brand-secondary hover:underline cursor-pointer">
-              View All Skills
-            </Link>
-          </div>
+        <section>
+          <h2 className="text-2xl font-bold text-text-main mb-6 transition-colors">Verified Skills</h2>
           <div className="space-y-4">
-            {mockSkills.slice(0, 5).map((skill, idx) => (
-              <Link
-                href={`/profile/certificate/${skill.name.toLowerCase()}`}
-                key={idx}
-                className="block bg-surface border border-border-subtle rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md cursor-pointer group"
-              >
-
-                {/* แถบสีด้านซ้าย */}
-                <div className={`absolute left-0 top-0 bottom-0 w-1.5 transition-colors ${idx % 2 === 0 ? "bg-greenui group-hover:bg-greenui/80" : "bg-accent-orange group-hover:bg-accent-orange/80"}`}></div>
-
-                <div className="bg-canvas p-3 rounded-xl transition-colors group-hover:bg-surface-hover">
-                  <Award className={idx % 2 === 0 ? "text-greenui" : "text-accent-orange"} size={24} />
-                </div>
-
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-bold text-text-main transition-colors group-hover:text-brand-secondary">{skill.name}</h3>
-                      <p className={`text-[10px] font-bold mt-0.5 ${getLevelColorClass(skill.level)} transition-colors`}>
-                        {skill.level}
-                      </p>
+            {!user.verifiedSkills || user.verifiedSkills.length === 0 ? (
+              <div className="bg-surface border border-border-subtle rounded-2xl p-8 text-center transition-colors duration-300">
+                <p className="text-text-muted font-medium">
+                  No verified skills yet. Start an assessment to earn your first badge!
+                </p>
+              </div>
+            ) : (
+              user.verifiedSkills.map((skill, idx) => (
+                <div key={idx} className="bg-surface border border-border-subtle rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden transition-colors duration-300">
+                  
+                  {/* แถบสีด้านซ้าย */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${idx % 2 === 0 ? "bg-greenui" : "bg-accent-orange"}`}></div>
+                  
+                  <div className="bg-canvas p-3 rounded-xl transition-colors">
+                    <Award className={idx % 2 === 0 ? "text-greenui" : "text-accent-orange"} size={24} />
+                  </div>
+                  
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-text-main transition-colors">{skill.skillName}</h3>
+                        <p className={`text-[10px] font-bold mt-0.5 ${getLevelColorClass(skill.level.toUpperCase())} transition-colors`}>
+                          {skill.level.toUpperCase()}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-2xl font-bold text-text-main transition-colors">{skill.score}</span>
+                        <span className="text-xs text-text-muted ml-1 transition-colors">/100</span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-2xl font-bold text-text-main transition-colors">{skill.score}</span>
-                      <span className="text-xs text-text-muted ml-1 transition-colors">/100</span>
+                    
+                    <div className="flex justify-between items-center mt-3 text-[10px] text-text-muted transition-colors">
+                      <span className="flex items-center gap-1">
+                        <CheckCircle size={12} className="text-text-muted opacity-70" /> Verified
+                      </span>
+                      <span>{formatDate(skill.verifiedAt)}</span>
                     </div>
                   </div>
-
-                  <div className="flex justify-between items-center mt-3 text-[10px] text-text-muted transition-colors">
-                    <span className="flex items-center gap-1">
-                      <CheckCircle size={12} className="text-text-muted opacity-70" /> Verified on {skill.date}
-                    </span>
-                    <span className="flex items-center gap-1.5 bg-accent-orange/15 text-accent-orange font-bold px-2.5 py-1 rounded-md text-[10px]">
-                      <Clock size={12} /> Expires: {skill.expires}
-                    </span>
-                  </div>
                 </div>
-              </Link>
-            ))}
+              ))
+            )}
           </div>
         </section>
       </div>
