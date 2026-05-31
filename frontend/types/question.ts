@@ -45,6 +45,8 @@ export interface CodingQuestion extends BaseQuestion {
   type: "coding";
   initialCode: string;
   testCases?: string[];
+  expectedInput?: string;
+  expectedOutput?: string;
 }
 
 export type Question = ChoiceQuestion | CodingQuestion;

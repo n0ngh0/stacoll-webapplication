@@ -69,7 +69,7 @@ export function CompareLevelsModal({ levels, initialTab = "beginner", themeColor
         <div className="flex justify-end pt-6 border-t border-border-subtle shrink-0 mt-2">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 text-sm font-bold text-white bg-text-main hover:bg-text-muted rounded-xl transition-colors cursor-pointer"
+            className="px-6 py-3 text-sm font-bold text-text-main bg-surface border border-border-subtle hover:border-border-strong hover:bg-surface-hover rounded-xl transition-all cursor-pointer shadow-sm"
           >
             Close Comparison
           </button>

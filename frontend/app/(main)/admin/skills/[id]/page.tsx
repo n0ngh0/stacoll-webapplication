@@ -10,7 +10,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { getSkillById, deleteSkill, getQuestionsByLevel, deleteQuestion, getLevelMode, updateSkill } from "@/lib/question-store";
 import type { Skill, Question, SkillLevel } from "@/types/question";
 import { LEVEL_OPTIONS, CATEGORY_THEMES } from "@/types/question";
-import { CompareLevelsModal } from "@/components/skills/compare-levels-modal";
+import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
 
 export default function SkillManagementPage() {
   const params = useParams();
@@ -244,7 +244,7 @@ export default function SkillManagementPage() {
               Questions for {activeLevelData?.title}
             </h2>
             <Link
-              href={`/admin/skills/${skill.id}/levels/${activeLevel}/questions/create`}
+              href={`/admin/skills/${skill.id}/${activeLevel}/questions/create`}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-greenbutton text-white dark:text-black font-extrabold rounded-xl hover:bg-greenbutton/90 transition-colors text-sm cursor-pointer shadow-sm"
             >
               <Plus size={16} /> Add Question
@@ -262,7 +262,7 @@ export default function SkillManagementPage() {
                   Add questions to this level to evaluate candidates.
                 </p>
                 <Link
-                  href={`/admin/skills/${skill.id}/levels/${activeLevel}/questions/create`}
+                  href={`/admin/skills/${skill.id}/${activeLevel}/questions/create`}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-secondary text-white font-bold rounded-xl shadow-md hover:bg-brand-secondary-hover transition-colors"
                 >
                   <Plus size={16} /> Create First Question
@@ -295,14 +295,14 @@ export default function SkillManagementPage() {
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Link
-                              href={`/admin/skills/${skill.id}/levels/${activeLevel}/questions/${q.id}`}
+                              href={`/admin/skills/${skill.id}/${activeLevel}/questions/${q.id}`}
                               className="p-2 text-text-muted hover:text-greenbutton hover:bg-greenbutton/10 rounded-lg transition-colors"
                               title="Preview"
                             >
                               <Eye size={16} />
                             </Link>
                             <Link
-                              href={`/admin/skills/${skill.id}/levels/${activeLevel}/questions/${q.id}/edit`}
+                              href={`/admin/skills/${skill.id}/${activeLevel}/questions/${q.id}/edit`}
                               className="p-2 text-text-muted hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors"
                               title="Edit"
                             >
