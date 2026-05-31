@@ -31,7 +31,7 @@ export default function AssessmentResultPage() {
   const Icon = isPassed ? CheckCircle : XCircle;
 
   return (
-    <div className="flex-1 min-h-[calc(100vh-80px)] bg-canvas flex flex-col items-center justify-center p-6 relative overflow-hidden transition-colors duration-300">
+    <div className="flex-1 pt-24 pb-4 min-h-[calc(100vh-80px)] bg-canvas flex flex-col items-center justify-center p-6 relative overflow-hidden transition-colors duration-300">
       
       {/* Background Decorative */}
       <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[120px] -z-10 ${isPassed ? 'bg-greenui/10' : 'bg-red-500/10'}`}></div>
