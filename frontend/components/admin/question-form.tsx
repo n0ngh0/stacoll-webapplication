@@ -150,7 +150,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
       toast.success(mode === "create" ? "Question created successfully!" : "Question updated successfully!");
 
       setTimeout(() => {
-        router.push(`/admin/skills/${skill.id}`);
+        router.push(`/admin/skills/${skill.id}?level=${levelId}`);
       }, 1000);
     } catch (err) {
       toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
@@ -323,7 +323,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
           {/* Header */}
           <div className="mb-8">
             <Link
-              href={`/admin/skills/${skill.id}`}
+              href={`/admin/skills/${skill.id}?level=${levelId}`}
               className="inline-flex items-center gap-1.5 text-sm font-bold text-text-muted hover:text-text-main transition-colors mb-3 cursor-pointer"
             >
               <ArrowLeft size={16} />
@@ -707,7 +707,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => router.push(`/admin/skills/${skill.id}`)}
+                onClick={() => router.push(`/admin/skills/${skill.id}?level=${levelId}`)}
                 className="px-6 py-3 text-sm font-bold text-text-muted hover:text-text-main hover:bg-surface-hover rounded-xl transition-colors cursor-pointer"
               >
                 Cancel

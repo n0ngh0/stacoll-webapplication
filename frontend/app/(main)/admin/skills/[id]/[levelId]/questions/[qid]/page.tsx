@@ -49,7 +49,7 @@ export default function QuestionDetailPage() {
 
   const handleDelete = () => {
     deleteQuestion(question.id);
-    router.push(`/admin/skills/${skill.id}`);
+    router.push(`/admin/skills/${skill.id}?level=${levelId}`);
   };
 
   const getDifficultyStyle = (d: string) => {
@@ -69,7 +69,7 @@ export default function QuestionDetailPage() {
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-10">
           <div>
             <Link
-              href={`/admin/skills/${skill.id}`}
+              href={`/admin/skills/${skill.id}?level=${levelId}`}
               className="inline-flex items-center gap-1.5 text-sm font-bold text-text-muted hover:text-text-main transition-colors mb-4"
             >
               <ArrowLeft size={16} /> Back to Skill

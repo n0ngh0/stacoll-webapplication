@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Pencil, Trash2, Plus, AlertTriangle,
@@ -15,10 +15,12 @@ import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
 export default function SkillManagementPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params?.id as string;
+  const initialLevel = (searchParams?.get("level") as SkillLevel["id"]) || "beginner";
 
   const [skill, setSkill] = useState<Skill | null>(null);
-  const [activeLevel, setActiveLevel] = useState<SkillLevel["id"]>("beginner");
+  const [activeLevel, setActiveLevel] = useState<SkillLevel["id"]>(initialLevel);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [levelMode, setLevelMode] = useState<string>("Any Device");
 
