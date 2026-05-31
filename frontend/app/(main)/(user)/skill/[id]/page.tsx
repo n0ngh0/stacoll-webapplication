@@ -1,6 +1,6 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, CircleQuestionMark, Clock, Monitor, ListChecks, Lock } from "lucide-react";
+import { ChevronLeft, CircleQuestionMark, Clock, Monitor, ListChecks, Lock, Award } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CATEGORY_THEMES } from "@/types/question";
 import type { Skill } from "@/types/question";
@@ -8,7 +8,7 @@ import { getSkillById, getQuestionsByLevel, getLevelMode } from "@/lib/question-
 import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
 
 const MOCK_USER_PROGRESS = {
-    passedLevels: ["beginner"],
+    passedLevels: ["beginner", "intermediate"],
     cooldownLevels: { "intermediate": 14 } as Record<string, number>
 };
 
@@ -60,6 +60,28 @@ export default function SkillDetailPage() {
         if (rawSkillId) {
             const fetchedSkill = getSkillById(rawSkillId);
             setSkill(fetchedSkill);
+            
+            if (fetchedSkill && fetchedSkill.levels.length > 0) {
+                let defaultLvl = fetchedSkill.levels[0].id;
+                const passed = MOCK_USER_PROGRESS.passedLevels;
+                
+                // Find highest passed index
+                let highestPassedIdx = -1;
+                passed.forEach(passId => {
+                    const idx = fetchedSkill.levels.findIndex(l => l.id === passId);
+                    if (idx > highestPassedIdx) highestPassedIdx = idx;
+                });
+
+                if (highestPassedIdx >= 0 && highestPassedIdx < fetchedSkill.levels.length - 1) {
+                    // Unlock next level
+                    defaultLvl = fetchedSkill.levels[highestPassedIdx + 1].id;
+                } else if (highestPassedIdx === fetchedSkill.levels.length - 1) {
+                    // Passed all levels
+                    defaultLvl = fetchedSkill.levels[highestPassedIdx].id;
+                }
+                
+                setSelectedLevel(defaultLvl);
+            }
         }
     }, [rawSkillId]);
 
@@ -207,7 +229,19 @@ export default function SkillDetailPage() {
                         {(() => {
                             const selectedIndex = skill.levels.findIndex((l: any) => l.id === selectedLevel);
                             const isLocked = selectedIndex > 0 && !MOCK_USER_PROGRESS.passedLevels.includes(skill.levels[selectedIndex - 1].id);
+                            const isPassed = MOCK_USER_PROGRESS.passedLevels.includes(selectedLevel);
                             const cooldownDays = MOCK_USER_PROGRESS.cooldownLevels[selectedLevel] || 0;
+
+                            if (isPassed) {
+                                return (
+                                    <button 
+                                        onClick={() => router.push(`/profile/certificate/${rawSkillId.toLowerCase()}`)} 
+                                        className="cursor-pointer bg-greenbutton hover:bg-greenbutton/90 text-white dark:text-black font-bold py-4 px-16 rounded-full text-xl shadow-lg shadow-greenbutton/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-2"
+                                    >
+                                        View Certificate <Award size={20} />
+                                    </button>
+                                );
+                            }
 
                             if (isLocked) {
                                 return (
