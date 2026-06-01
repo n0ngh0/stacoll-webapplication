@@ -10,7 +10,7 @@ import {
   AlertTriangle, CheckCircle2, Pencil,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
-import type { Question, ChoiceQuestion, CodingQuestion, Skill } from "@/types/question";
+import type { Question, ChoiceQuestion, CodingQuestion, Skill, TestCase } from "@/types/question";
 
 interface QuestionFormProps {
   mode: "create" | "edit";
@@ -185,7 +185,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
     setTestCases(newTc);
   };
 
-  const updateTestCase = (index: number, field: keyof ITestCase, value: any) => {
+  const updateTestCase = (index: number, field: keyof TestCase, value: any) => {
     const newTc = [...testCases];
     newTc[index] = { ...newTc[index], [field]: value };
     setTestCases(newTc);

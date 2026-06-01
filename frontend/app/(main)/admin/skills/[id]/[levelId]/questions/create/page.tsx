@@ -66,21 +66,28 @@ export default function CreateQuestionPage() {
       const token = localStorage.getItem("token");
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
       
+      let typeSpecificFields: any = {};
+      if (data.type === "choice") {
+          typeSpecificFields = {
+              options: data.options,
+              correctAnswer: data.correctAnswer,
+              codeSnippet: data.codeSnippet
+          };
+      } else {
+          typeSpecificFields = {
+              languageId: data.languageId,
+              templateCode: data.templateCode,
+              testCases: data.testCases
+          };
+      }
+
       const payload = {
         skillId,
         level: levelId,
         question: data.title,
         questionType: data.type,
         explanation: data.description,
-        ...(data.type === "choice" ? {
-            options: data.options,
-            correctAnswer: data.correctAnswer,
-            codeSnippet: data.codeSnippet
-        } : {
-            languageId: data.languageId,
-            templateCode: data.templateCode,
-            testCases: data.testCases
-        })
+        ...typeSpecificFields
       };
 
       const res = await fetch(`${apiUrl}/admin/skills/${skillId}/problems`, {

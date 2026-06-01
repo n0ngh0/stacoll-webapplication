@@ -160,7 +160,7 @@ export default function SkillDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {[
                             { icon: Clock, label: "Duration", value: `${currentLevel?.estimatedTime ?? 0} Minutes` },
-                            { icon: CircleQuestionMark, label: "Questions", value: `${currentLevel?.actualQuestionCount ?? 0} Questions` },
+                            { icon: CircleQuestionMark, label: "Questions", value: `${currentLevel?.questionCount ?? 0} Questions` },
                             { icon: Monitor, label: "Mode", value: currentLevel?.mode || "Any Device" }
                         ].map((stat, idx) => (
                             <div key={idx} className="bg-canvas border border-border-subtle rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-sm transition-all duration-300">
@@ -250,7 +250,7 @@ export default function SkillDetailPage() {
                             const isPassed = userProgress?.passedLevels[selectedLevel] || false;
                             const cooldown = userProgress?.cooldownLevels[selectedLevel];
                             const cooldownDays = cooldown?.active ? cooldown.daysRemaining : 0;
-                            const hasNoQuestions = (currentLevel?.actualQuestionCount || 0) === 0;
+                            const hasNoQuestions = (currentLevel?.questionCount || 0) === 0;
 
                             if (isPassed) {
                                 return (

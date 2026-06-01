@@ -5,6 +5,7 @@ export interface SkillLevel {
   description: string;
   questionCount: number;
   estimatedTime: number;
+  mode?: string;
 }
 
 export interface Skill {
