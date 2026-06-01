@@ -85,6 +85,13 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
     })
   })
 
+  // GET /api/admin/problems/:id — ดึงคำถามเดียว
+  .get("/problems/:id", async ({ params, set }) => {
+    const { status, body: responseBody } = await problemController.getProblemById(params.id);
+    set.status = status;
+    return responseBody;
+  })
+
   // PUT /api/admin/problems/:id — แก้ไขคำถาม
   .put("/problems/:id", async ({ params, body, set }) => {
     const { status, body: responseBody } = await problemController.updateProblem(params.id, body);

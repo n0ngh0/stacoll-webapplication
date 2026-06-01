@@ -6,7 +6,6 @@ import {
   Filter, ChevronDown, Check,
   Plus
 } from "lucide-react";
-import { getQuestionCountBySkill } from "@/lib/question-store"; // Keep this for now if problems aren't fully migrated
 import type { Skill } from "@/types/skill";
 import { CATEGORY_THEMES } from "@/types/question";
 import AdminSkillCard from "@/components/admin/AdminSkillCard";

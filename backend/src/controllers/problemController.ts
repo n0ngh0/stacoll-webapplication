@@ -93,6 +93,27 @@ export const problemController = {
     }
   },
 
+  // GET /api/admin/problems/:id — ดึงคำถามเดียว (admin)
+  async getProblemById(id: string) {
+    try {
+      const problem = await Problem.findById(id).populate("languageId").lean();
+
+      if (!problem) {
+        return { status: 404, body: { success: false, message: "Problem not found" } };
+      }
+
+      return {
+        status: 200,
+        body: { success: true, message: "Problem fetched successfully", problem },
+      };
+    } catch (err: any) {
+      return {
+        status: 500,
+        body: { success: false, message: "Error fetching problem", error: err.message },
+      };
+    }
+  },
+
   // PUT /api/admin/problems/:id — แก้ไขคำถาม (admin only)
   async updateProblem(id: string, body: any) {
     try {
