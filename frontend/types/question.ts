@@ -41,12 +41,17 @@ export interface ChoiceQuestion extends BaseQuestion {
   codeSnippet?: string;
 }
 
+export interface TestCase {
+  input: string;
+  expectedOutput: string;
+  isHidden: boolean;
+}
+
 export interface CodingQuestion extends BaseQuestion {
   type: "coding";
-  initialCode: string;
-  testCases?: string[];
-  expectedInput?: string;
-  expectedOutput?: string;
+  templateCode: string;
+  languageId: string;
+  testCases: TestCase[];
 }
 
 export type Question = ChoiceQuestion | CodingQuestion;

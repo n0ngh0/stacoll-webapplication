@@ -69,10 +69,17 @@ export default function AssessmentResultPage() {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
-            onClick={() => router.push("/profile")}
+            onClick={() => router.push("/explore")}
             className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-text-main bg-canvas border border-border-subtle hover:bg-surface-hover transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <ChevronLeft size={18} /> Back to Profile
+            <ChevronLeft size={18} /> Back to Explore
+          </button>
+          
+          <button
+            onClick={() => router.push(`/skill/${rawSkillId}`)}
+            className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-text-main bg-canvas border border-border-subtle hover:bg-surface-hover transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            Back to Skill
           </button>
 
           {isPassed ? (

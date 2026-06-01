@@ -59,8 +59,12 @@ let QUESTION_DATA: Question[] = [
     title: "Two Sum",
     description: "Given an array of integers, return indices of the two numbers such that they add up to a specific target.",
     difficulty: "beginner",
-    initialCode: 'def solve(nums, target):\n    # Write your code here\n    pass',
-    testCases: ["assert solve([2,7,11,15], 9) == [0,1]", "assert solve([3,2,4], 6) == [1,2]"],
+    templateCode: 'def solve(nums, target):\n    # Write your code here\n    pass',
+    languageId: 'python',
+    testCases: [
+      { input: "[2,7,11,15]\n9", expectedOutput: "[0,1]", isHidden: false },
+      { input: "[3,2,4]\n6", expectedOutput: "[1,2]", isHidden: true }
+    ],
     createdAt: new Date("2025-01-15").toISOString(),
     updatedAt: new Date("2025-01-15").toISOString(),
   },

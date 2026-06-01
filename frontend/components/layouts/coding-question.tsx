@@ -1,12 +1,19 @@
 "use client";
 import { useState, memo } from "react";
 import ReactMarkdown from "react-markdown";
-import { Play, Terminal, ChevronRight, ChevronLeft, SendHorizontal } from "lucide-react";
+import { Panel, Group, Separator } from "react-resizable-panels";
+import { Play, Terminal, ChevronRight, ChevronLeft, SendHorizontal, Loader2 } from "lucide-react";
+import Editor from "@monaco-editor/react";
 
 interface CodingProps {
   title: string;
   description: React.ReactNode;
   code: string;
+  language: string;
+  languageId: number;
+  testCases: any[];
+  problemId: string;
+  skillId: string;
   onChange: (value: string) => void;
   onNext: () => void;
   onBack: () => void;
@@ -18,6 +25,11 @@ const CodingQuestion = memo(function CodingQuestion({
   title,
   description,
   code,
+  language,
+  languageId,
+  testCases,
+  problemId,
+  skillId,
   onChange,
   onNext,
   onBack,
@@ -28,77 +40,189 @@ const CodingQuestion = memo(function CodingQuestion({
   const [output, setOutput] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
-  const lineCount = Math.max(20, code.split("\n").length);
+  const [isCompiling, setIsCompiling] = useState(false);
 
-  const handleRun = () => {
-    setIsRunning(true);
-    setTimeout(() => {
-      setOutput("Output: 5\nTest Case 1: Passed\nTest Case 2: Passed");
-      setIsRunning(false);
-    }, 1000);
+  const handleRun = async () => {
+    setIsCompiling(true);
+    setOutput("Executing code...");
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      
+      // Let's test against the first public test case
+      const publicTestCase = testCases?.find(tc => !tc.isHidden);
+      const stdin = publicTestCase ? publicTestCase.input : "";
+
+      const res = await fetch(`${apiUrl}/assessment/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          language_id: languageId,
+          source_code: code,
+          stdin: stdin,
+        })
+      });
+      const data = await res.json();
+      
+      if (data.success && data.data) {
+        const jd0 = data.data;
+        if (jd0.status?.id === 3) {
+          setOutput(`Status: Accepted\n\nOutput:\n${jd0.stdout || ""}`);
+        } else {
+          setOutput(`Status: ${jd0.status?.description}\n\nError/Output:\n${jd0.compile_output || jd0.stderr || jd0.stdout || ""}`);
+        }
+      } else {
+        setOutput("Failed to execute code on server.");
+      }
+    } catch (err) {
+      setOutput("Network Error.");
+    } finally {
+      setIsCompiling(false);
+    }
+  };
+
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+
+  const handleVerify = async () => {
+    setIsVerifying(true);
+    setOutput("Verifying against all test cases (including hidden)...");
+    setIsVerified(false);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      const token = localStorage.getItem("token");
+      
+      const res = await fetch(`${apiUrl}/assessment/${skillId}/verify-problem/${problemId}`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          source_code: code,
+        })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        let outStr = `Verification Results: ${data.passed ? "✅ All Tests Passed!" : "❌ Some Tests Failed."}\n\n`;
+        data.results?.forEach((r: any) => {
+          outStr += `Test Case ${r.testCaseIndex} [${r.isHidden ? 'HIDDEN' : 'PUBLIC'}]: ${r.passed ? '✅ Passed' : '❌ Failed'}\n`;
+          if (!r.passed && !r.isHidden) {
+            outStr += `  Input: ${r.input}\n  Expected: ${r.expectedOutput}\n  Actual: ${r.actualOutput}\n`;
+          } else if (!r.passed && r.isHidden) {
+            outStr += `  (Hidden test cases do not reveal inputs/outputs)\n`;
+          }
+        });
+        setOutput(outStr);
+        if (data.passed) setIsVerified(true);
+      } else {
+        setOutput(`Verification failed: ${data.message || "Unknown error"}`);
+      }
+    } catch (err) {
+      setOutput("Network Error during verification.");
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   return (
-    <div className="flex-1 flex overflow-hidden animate-in fade-in duration-500">
-
-      {/* Problem Section */}
-      <div className="w-full md:w-[42%] h-full bg-surface border-r border-border-subtle overflow-y-auto p-8 lg:p-10 custom-scrollbar">
-        <h2 className="text-2xl font-black text-text-main mb-6 tracking-tight">{title}</h2>
-        <div className="prose prose-sm dark:prose-invert max-w-none text-text-muted leading-relaxed whitespace-pre-wrap">
-          {typeof description === 'string' ? <ReactMarkdown>{description}</ReactMarkdown> : description}
-        </div>
-      </div>
-
-      {/* IDE & Output Section */}
-      <div className="hidden md:flex flex-1 flex-col bg-canvas relative overflow-hidden">
-
-        {/* Code Editor Area */}
-        <div className="flex-1 relative flex bg-surface overflow-hidden shadow-inner">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Group direction="horizontal">
           
-          {/* Line Numbers */}
-          <div className="w-12 bg-surface-hover border-r border-border-subtle flex flex-col items-end py-6 pr-3 text-text-muted/50 font-mono text-sm select-none overflow-hidden">
-            {[...Array(lineCount)].map((_, i) => <div key={i}>{i + 1}</div>)}
-          </div>
+          {/* Problem Description Area (Left Panel) */}
+          <Panel defaultSize={25} minSize={20}>
+            <div className="h-full bg-canvas border-r border-border-subtle flex flex-col overflow-y-auto custom-scrollbar">
+              <div className="p-8 pb-10 flex-1">
+                <div className="mb-8">
+                  <h2 className="text-sm font-black tracking-widest text-brand-secondary uppercase mb-2">Question Description</h2>
+                  <h3 className="text-2xl font-bold text-text-main leading-snug">{title}</h3>
+                </div>
 
-          <textarea
-            value={code}
-            onChange={(e) => onChange(e.target.value)}
-            spellCheck="false"
-            aria-label="Code Editor"
-            className="flex-1 bg-surface text-text-main p-6 font-mono text-[15px] leading-relaxed resize-none focus:outline-none focus:ring-0 custom-scrollbar"
-            style={{ tabSize: 4 }}
-          />
-        </div>
+                <div className="prose prose-invert max-w-none prose-p:text-text-muted prose-headings:text-text-main prose-strong:text-text-main prose-code:bg-surface-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-hover prose-pre:border prose-pre:border-border-subtle">
+                  {typeof description === 'string' ? <ReactMarkdown>{description}</ReactMarkdown> : description}
+                </div>
 
-        {/* Console Output Section */}
-        <div className="h-[280px] bg-canvas border-t-2 border-border-subtle flex flex-col shadow-2xl z-20">
-
-          {/* Console Header & Run Button */}
-          <div className="h-12 bg-brand-secondary/10 border-b border-brand-secondary/30 flex items-center justify-between px-5">
-            <div className="flex items-center gap-2 text-[13px] font-black text-text-main uppercase tracking-wider">
-              <Terminal size={14} className="text-brand-secondary" />
-              Console Output
+                {/* Optional: Show public test cases here if needed */}
+                {testCases && testCases.filter(tc => !tc.isHidden).length > 0 && (
+                  <div className="mt-8">
+                    <h4 className="text-sm font-bold text-text-main mb-3 uppercase tracking-wider">Example Test Cases</h4>
+                    <div className="space-y-4">
+                      {testCases.filter(tc => !tc.isHidden).map((tc, idx) => (
+                        <div key={idx} className="bg-surface border border-border-subtle rounded-xl p-4">
+                          <div className="text-xs font-bold text-text-muted mb-1">Input:</div>
+                          <pre className="text-sm text-text-main bg-canvas p-2 rounded-lg mb-3">{tc.input}</pre>
+                          <div className="text-xs font-bold text-text-muted mb-1">Expected Output:</div>
+                          <pre className="text-sm text-text-main bg-canvas p-2 rounded-lg">{tc.expectedOutput}</pre>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            <button
-              onClick={handleRun}
-              disabled={isRunning}
-              className="flex items-center gap-2 bg-brand-secondary text-white hover:brightness-95 px-4 py-1.5 rounded-lg text-[13px] font-black transition-colors shadow-sm active:scale-95 disabled:opacity-50 cursor-pointer"
-            >
-              <Play size={12} fill="currentColor" />
-              {isRunning ? "Running..." : "Run Code"}
-            </button>
-          </div>
+          </Panel>
 
-          {/* Console Content */}
-          <div className="flex-1 p-5 font-mono text-[14px] overflow-y-auto text-text-main bg-surface custom-scrollbar">
-            {output ? (
-              <pre className="animate-in fade-in slide-in-from-bottom-2 text-green-600 dark:text-green-400 font-bold">
-                {output}
-              </pre>
-            ) : (
-              <span className="text-text-muted italic">Click "Run Code" to test your solution...</span>
-            )}
-          </div>
+          {/* Resizer Handle */}
+          <Separator className="w-1.5 bg-border-subtle hover:bg-brand-secondary active:bg-brand-secondary transition-colors cursor-col-resize z-10" />
+
+          {/* Code Editor Area (Right Panel) */}
+          <Panel defaultSize={75} minSize={30}>
+            <div className="h-full flex flex-col bg-surface relative">
+              <div className="flex-1 relative flex overflow-hidden shadow-inner">
+                <Editor
+                  height="100%"
+                  language={language || "python"}
+                  theme="vs-dark"
+                  value={code}
+                  onChange={(val) => onChange(val || "")}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 15,
+                    padding: { top: 16 },
+                    scrollBeyondLastLine: false,
+                  }}
+                />
+              </div>
+
+              {/* Terminal Output Area */}
+              <div className="h-[200px] bg-canvas border-t border-border-subtle flex flex-col shrink-0">
+                <div className="flex items-center justify-between px-4 py-2 border-b border-border-subtle bg-surface/50">
+                  <div className="flex items-center gap-2 text-xs font-black text-text-muted uppercase tracking-wider">
+                    <Terminal size={14} className="text-brand-secondary" />
+                    Console Output
+                  </div>
+                  <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleRun}
+                    disabled={isCompiling || isVerifying}
+                    className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-text-main bg-surface hover:bg-surface-hover rounded-xl border border-border-subtle transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                  >
+                    {isCompiling ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
+                    {isCompiling ? "Running..." : "Run Code"}
+                  </button>
+                  <button
+                    onClick={handleVerify}
+                    disabled={isCompiling || isVerifying}
+                    className={`flex items-center gap-2 px-5 py-2 text-sm font-bold text-white rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50 ${isVerified ? "bg-emerald-500 hover:bg-emerald-600" : "bg-violet-600 hover:bg-violet-700"}`}
+                  >
+                    {isVerifying ? <Loader2 size={12} className="animate-spin" /> : <SendHorizontal size={12} />}
+                    {isVerifying ? "Verifying..." : (isVerified ? "Verified ✅" : "Submit & Verify")}
+                  </button>
+                </div>
+                </div>
+                <div className="flex-1 p-4 overflow-y-auto custom-scrollbar font-mono text-sm text-text-main bg-canvas">
+                  {output ? (
+                    <pre className="whitespace-pre-wrap leading-relaxed">{output}</pre>
+                  ) : (
+                    <div className="text-text-muted/50 italic h-full flex items-center justify-center">
+                      Run your code to see the output here...
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Panel>
+        </Group>
 
           {/* Footer Actions */}
           <div className="h-[80px] bg-surface border-t border-border-subtle flex items-center justify-between px-8">
@@ -116,18 +240,16 @@ const CodingQuestion = memo(function CodingQuestion({
 
             <button
               onClick={onNext}
-              className={`flex items-center justify-center gap-2 px-10 py-3.5 rounded-full text-lg font-black transition-colors shadow-md cursor-pointer ${
-                isLast
-                  ? "bg-greenui text-text-main dark:text-[#1f2937] hover:brightness-105"
-                  : "bg-brand-secondary text-white hover:brightness-95"
-              }`}
+              disabled={!isVerified}
+              className={`flex items-center justify-center gap-2 px-10 py-3.5 rounded-full text-lg font-black transition-colors shadow-md ${!isVerified ? 'opacity-50 cursor-not-allowed bg-border-subtle text-text-muted' : (isLast
+                  ? "bg-greenui text-text-main dark:text-[#1f2937] hover:brightness-105 cursor-pointer"
+                  : "bg-brand-secondary text-white hover:brightness-95 cursor-pointer"
+              )}`}
             >
-              <span>{isLast ? "Submit" : "Next"}</span>
+              <span>{isLast ? "Finish Assessment" : "Next"}</span>
               {isLast ? <SendHorizontal size={18} className="ml-1" /> : <ChevronRight size={20} />}
             </button>
           </div>
-        </div>
-      </div>
     </div>
   );
 });

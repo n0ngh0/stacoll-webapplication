@@ -21,7 +21,12 @@ export const authController = {
           // await sendOTPEmail(email, otp); // Bypassed for testing
           return { status: 200, body: { success: true, message: "User updated and verified successfully (OTP Bypassed for testing)" } };
         }
-        return { status: 400, body: { success: false, message: "User already exists" } };
+        return { status: 400, body: { success: false, message: "Email already exists" } };
+      }
+
+      let existingUsername = await User.findOne({ username });
+      if (existingUsername) {
+        return { status: 400, body: { success: false, message: "Username already exists" } };
       }
 
       const hashedPassword = await Bun.password.hash(password);
@@ -51,6 +56,14 @@ export const authController = {
         }
       };
     } catch (err: any) {
+      if (err.code === 11000) {
+        if (err.keyPattern?.username) {
+          return { status: 400, body: { success: false, message: "Username already exists" } };
+        }
+        if (err.keyPattern?.email) {
+          return { status: 400, body: { success: false, message: "Email already exists" } };
+        }
+      }
       return { status: 500, body: { success: false, message: "Error registering user", error: err.message } };
     }
   },

@@ -9,6 +9,7 @@ import { exportRoutes } from "./routes/exportRoutes";
 import { skillRoutes } from "./routes/skillRoutes";
 import { adminRoutes } from "./routes/adminRoutes";
 import { assessmentRoutes } from "./routes/assessmentRoutes";
+import { languageRoutes } from "./routes/languageRoutes";
 
 configDotenv()
 connectDB()
@@ -24,6 +25,7 @@ const app = new Elysia()
   .use(skillRoutes)
   .use(adminRoutes)
   .use(assessmentRoutes)
+  .use(languageRoutes)
   .listen({
     port: port,
     maxRequestBodySize: 200 * 1024 * 1024 // 200MB to be absolutely safe

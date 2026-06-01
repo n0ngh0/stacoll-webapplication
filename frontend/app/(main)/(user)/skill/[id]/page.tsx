@@ -143,13 +143,13 @@ export default function SkillDetailPage() {
             >
                 {/* Header Navigation */}
                 <div className="px-8 py-4 border-b border-border-subtle transition-colors duration-300">
-                    <button
-                        onClick={() => router.back()}
-                        className="flex items-center text-text-muted hover:text-text-main transition-colors text-sm font-semibold gap-1 cursor-pointer"
-                    >
-                        <ChevronLeft size={18} />
-                        Back to Skills
-                    </button>
+                      <button
+                        onClick={() => router.push('/explore')}
+                        className="flex items-center text-text-muted hover:text-text-main transition-colors text-[13px] font-bold gap-1 cursor-pointer w-fit"
+                      >
+                        <ChevronLeft size={16} />
+                        Back to Explore
+                      </button>
                 </div>
 
                 {/* Skill Title  */}
@@ -252,6 +252,7 @@ export default function SkillDetailPage() {
                             const isPassed = userProgress?.passedLevels[selectedLevel] || false;
                             const cooldown = userProgress?.cooldownLevels[selectedLevel];
                             const cooldownDays = cooldown?.active ? cooldown.daysRemaining : 0;
+                            const hasNoQuestions = (currentLevel?.actualQuestionCount || 0) === 0;
 
                             if (isPassed) {
                                 return (
@@ -279,6 +280,17 @@ export default function SkillDetailPage() {
                                             <Clock size={20} /> Cooldown: {cooldownDays} Days Left
                                         </button>
                                         <p className="text-xs text-text-muted mt-2 font-medium text-center absolute top-full left-0 w-full">You must wait {cooldownDays} days before retaking this assessment.</p>
+                                    </div>
+                                );
+                            }
+
+                            if (hasNoQuestions) {
+                                return (
+                                    <div className="flex flex-col items-center w-[320px] max-w-full relative">
+                                        <button disabled className="max-h-[60px] w-full bg-canvas border border-border-subtle text-text-muted font-bold py-4 flex justify-center items-center rounded-full text-xl shadow-sm cursor-not-allowed gap-2 transition-colors">
+                                            <Lock size={20} /> Coming Soon
+                                        </button>
+                                        <p className="text-xs text-text-muted mt-2 font-medium text-center absolute top-full left-0 w-full">Questions for this level will be available soon.</p>
                                     </div>
                                 );
                             }

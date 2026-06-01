@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Award, CheckCircle, Clock, Search, ExternalLink, Activity, AlertTriangle, History, Loader2 } from "lucide-react";
 
@@ -22,12 +22,19 @@ export default function MySkillPage() {
                 
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
                 const [profileRes, historyRes] = await Promise.all([
-                    fetch(`${apiUrl}/profile`, { headers: { "Authorization": `Bearer ${token}` } }),
+                    fetch(`${apiUrl}/profile/me`, { headers: { "Authorization": `Bearer ${token}` } }),
                     fetch(`${apiUrl}/assessment/history`, { headers: { "Authorization": `Bearer ${token}` } })
                 ]);
                 
-                const profileData = await profileRes.json();
-                const historyData = await historyRes.json();
+                // Read text first to handle non-JSON error responses gracefully
+                const profileText = await profileRes.text();
+                const historyText = await historyRes.text();
+
+                let profileData = { success: false, user: { verifiedSkills: [] } };
+                let historyData = { success: false, history: [] };
+
+                try { profileData = JSON.parse(profileText); } catch (e) { console.error("Profile parse error:", profileText); }
+                try { historyData = JSON.parse(historyText); } catch (e) { console.error("History parse error:", historyText); }
 
                 if (profileData.success) {
                     const verified = profileData.user.verifiedSkills || [];

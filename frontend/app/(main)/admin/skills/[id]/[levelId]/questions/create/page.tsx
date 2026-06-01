@@ -15,10 +15,39 @@ export default function CreateQuestionPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    const fetchSkill = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        const res = await fetch(`${apiUrl}/skills/${skillId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success && data.skill) {
+          // Adapt DB skill to UI skill format expected by QuestionForm
+          setSkill({
+            id: data.skill._id,
+            title: data.skill.title,
+            icon: data.skill.icon,
+            desc: data.skill.description,
+            category: data.skill.category,
+            levels: data.skill.levels.map((l: any) => ({
+              id: l.level,
+              title: l.level.charAt(0).toUpperCase() + l.level.slice(1),
+              description: l.description,
+              estimatedTime: l.estimatedTime
+            }))
+          } as any);
+        }
+      } catch (err) {
+        console.error("Failed to fetch skill", err);
+      } finally {
+        setMounted(true);
+      }
+    };
     if (skillId) {
-      setSkill(getSkillById(skillId));
+      fetchSkill();
     }
-    setMounted(true);
   }, [skillId]);
 
   if (!mounted) return null;
@@ -32,8 +61,49 @@ export default function CreateQuestionPage() {
     );
   }
 
-  const handleCreate = (data: CreateQuestionPayload) => {
-    createQuestion(data);
+  const handleCreate = async (data: CreateQuestionPayload) => {
+    try {
+      const token = localStorage.getItem("token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      
+      const payload = {
+        skillId,
+        level: levelId,
+        question: data.title,
+        questionType: data.type,
+        explanation: data.description,
+        ...(data.type === "choice" ? {
+            options: data.options,
+            correctAnswer: data.correctAnswer,
+            codeSnippet: data.codeSnippet
+        } : {
+            languageId: data.languageId,
+            templateCode: data.templateCode,
+            testCases: data.testCases
+        })
+      };
+
+      const res = await fetch(`${apiUrl}/admin/skills/${skillId}/problems`, {
+        method: "POST",
+        headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` 
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      const result = await res.json();
+      if (result.success) {
+        // Go back to the skill management page
+        router.push(`/admin/skills/${skillId}`);
+      } else {
+        console.error("Failed to create question:", result.message);
+        alert(`Error: ${result.message}`);
+      }
+    } catch (err) {
+      console.error("Failed to create question", err);
+      alert("Something went wrong");
+    }
   };
 
   return <QuestionForm mode="create" skill={skill} levelId={levelId as any} onSubmit={handleCreate} />;

@@ -176,11 +176,16 @@ export default function ExamPage() {
             />
 
             <div className="flex-1 flex overflow-hidden">
-                {currentQuestion.type === "coding" ? (
+                {currentQuestion.questionType === "coding" ? (
                     <CodingQuestion
                         title={currentQuestion.question}
                         description={currentQuestion.explanation || currentQuestion.question}
-                        code={answers[currentQuestion._id] ?? (currentQuestion.initialCode || "def solve():\n    pass")}
+                        code={answers[currentQuestion._id] ?? (currentQuestion.templateCode || "def solve():\n    pass")}
+                        language={currentQuestion.languageId?.monaco_identifier || "python"}
+                        languageId={currentQuestion.languageId?.judge0_id || 71}
+                        testCases={currentQuestion.testCases || []}
+                        problemId={currentQuestion._id}
+                        skillId={rawSkillId}
                         onChange={handleUpdateAnswer}
                         onNext={handleNext}
                         onBack={handleBack}

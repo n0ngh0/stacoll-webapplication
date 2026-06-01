@@ -331,10 +331,17 @@ export default function SkillManagementPage() {
                     {questions.map((q) => (
                       <tr key={q._id} className="group hover:bg-surface-hover transition-colors">
                         <td className="px-6 py-4">
-                          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase ${q.questionType === 'multiple_choice' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-violet-500/10 text-violet-500'
-                            }`}>
-                            {q.questionType === 'multiple_choice' ? <ListChecks size={12} /> : <Code2 size={12} />}
-                            {q.questionType.replace("_", " ")}
+                          <div className="flex flex-col gap-1 items-start">
+                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase ${q.questionType === 'multiple_choice' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-violet-500/10 text-violet-500'
+                              }`}>
+                              {q.questionType === 'multiple_choice' ? <ListChecks size={12} /> : <Code2 size={12} />}
+                              {q.questionType.replace("_", " ")}
+                            </div>
+                            {q.questionType === 'coding' && (
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase bg-brand-secondary/10 text-brand-secondary">
+                                <Monitor size={12} /> Desktop Only
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4">

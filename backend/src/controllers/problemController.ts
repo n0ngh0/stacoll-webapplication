@@ -63,10 +63,16 @@ export const problemController = {
   // POST /api/admin/skills/:skillId/problems — เพิ่มคำถามใหม่ (admin only)
   async createProblem(skillId: string, body: any) {
     try {
-      if (!body || !body.question || !body.correctAnswer) {
+      if (!body || !body.question) {
         return {
           status: 400,
-          body: { success: false, message: "Question and correctAnswer are required" },
+          body: { success: false, message: "Question is required" },
+        };
+      }
+      if (body.questionType !== "coding" && !body.correctAnswer) {
+        return {
+          status: 400,
+          body: { success: false, message: "correctAnswer is required for this question type" },
         };
       }
 
