@@ -5,8 +5,6 @@ import { useEffect, useState } from "react";
 import { Skill } from "@/types/skill";
 import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
 
-
-
 export default function SkillDetailPage() {
     const params = useParams();
     const router = useRouter();
