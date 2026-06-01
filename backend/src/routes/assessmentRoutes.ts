@@ -53,4 +53,34 @@ export const assessmentRoutes = new Elysia({ prefix: "/api/assessment" })
     const { status, body } = await assessmentController.getUserAssessmentHistory(authUser._id.toString());
     set.status = status;
     return body;
+  })
+
+  // POST /api/assessment/:skillId/verify-problem/:problemId
+  .post("/:skillId/verify-problem/:problemId", async ({ params, body, user, set }) => {
+    const authUser = user as AuthUser;
+    const { status, body: responseBody } = await assessmentController.verifySingleProblem(
+      authUser._id.toString(),
+      params.skillId,
+      params.problemId,
+      body.source_code
+    );
+    set.status = status;
+    return responseBody;
+  }, {
+    body: t.Object({
+      source_code: t.String(),
+    })
+  })
+
+  // POST /api/assessment/execute — Execute code via Judge0 (Proxy)
+  .post("/execute", async ({ body, set }) => {
+    const { status, body: responseBody } = await assessmentController.executeCode(body as any);
+    set.status = status;
+    return responseBody;
+  }, {
+    body: t.Object({
+      language_id: t.Number(),
+      source_code: t.String(),
+      stdin: t.Optional(t.String()),
+    })
   });

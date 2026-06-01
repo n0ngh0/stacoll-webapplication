@@ -145,7 +145,7 @@ export const assessmentController = {
       }
 
       // 2. ดึงคำถามพร้อมเฉลย
-      const problems = await Problem.find({ skillId, level, isActive: true }).lean();
+      const problems = await Problem.find({ skillId, level, isActive: true }).populate("languageId").lean();
       
       if (problems.length === 0) {
         return { status: 404, body: { success: false, message: "No problems found." } };
@@ -157,7 +157,54 @@ export const assessmentController = {
 
       for (const p of problems) {
         const userAnswer = submittedAnswers[p._id.toString()];
-        const isCorrect = userAnswer === p.correctAnswer;
+        let isCorrect = false;
+
+        if (p.questionType === "coding") {
+          // Eval with Judge0
+          if (!userAnswer || userAnswer.trim() === "") {
+            isCorrect = false;
+          } else if (p.testCases && p.testCases.length > 0) {
+            const judge0Url = process.env.JUDGE0_API_URL || "https://ce.judge0.com";
+            const lang = p.languageId as any; // populated
+            let allTestsPassed = true;
+
+            for (const tc of p.testCases) {
+              try {
+                let finalSourceCode = userAnswer;
+                if (lang.driverTemplate) {
+                  finalSourceCode = lang.driverTemplate.replace("{{USER_CODE}}", userAnswer);
+                }
+
+                const res = await fetch(`${judge0Url}/submissions?wait=true&base64_encoded=false`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    language_id: lang.judge0_id,
+                    source_code: finalSourceCode,
+                    stdin: tc.input || "",
+                    expected_output: tc.expectedOutput,
+                  }),
+                });
+                const data = await res.json();
+                // Judge0 status 3 is "Accepted"
+                if (data.status?.id !== 3) {
+                  allTestsPassed = false;
+                  break;
+                }
+              } catch (e) {
+                allTestsPassed = false;
+                break;
+              }
+            }
+            isCorrect = allTestsPassed;
+          } else {
+            // No test cases? Automatically fail or pass? Let's say pass if code exists.
+            isCorrect = true;
+          }
+        } else {
+          isCorrect = userAnswer === p.correctAnswer;
+        }
+
         if (isCorrect) correctCount++;
         
         answerRecords.push({
@@ -214,6 +261,93 @@ export const assessmentController = {
     }
   },
 
+  // POST /api/assessment/:skillId/verify-problem/:problemId
+  async verifySingleProblem(userId: string, skillId: string, problemId: string, source_code: string) {
+    try {
+      const problem = await Problem.findOne({ _id: problemId, skillId }).populate("languageId");
+      if (!problem) {
+        return { status: 404, body: { success: false, message: "Problem not found." } };
+      }
+
+      if (problem.questionType !== "coding") {
+        return { status: 400, body: { success: false, message: "Only coding problems can be verified." } };
+      }
+
+      if (!source_code || source_code.trim() === "") {
+        return { status: 400, body: { success: false, message: "Source code is empty." } };
+      }
+
+      const judge0Url = process.env.JUDGE0_API_URL || "https://ce.judge0.com";
+      const lang = problem.languageId as any;
+
+      if (!problem.testCases || problem.testCases.length === 0) {
+        return { status: 200, body: { success: true, passed: true, results: [] } };
+      }
+
+      const results = [];
+      let allTestsPassed = true;
+
+      // Evaluate against all test cases (both public and hidden)
+      for (let i = 0; i < problem.testCases.length; i++) {
+        const tc = problem.testCases[i];
+        try {
+          let finalSourceCode = source_code;
+          if (lang.driverTemplate) {
+            finalSourceCode = lang.driverTemplate.replace("{{USER_CODE}}", source_code);
+          }
+
+          const res = await fetch(`${judge0Url}/submissions?wait=true&base64_encoded=false`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              language_id: lang.judge0_id,
+              source_code: finalSourceCode,
+              stdin: tc.input || "",
+              expected_output: tc.expectedOutput,
+            }),
+          });
+          
+          const data = await res.json();
+          const passed = data.status?.id === 3; // 3 = Accepted
+          
+          if (!passed) allTestsPassed = false;
+          
+          results.push({
+            testCaseIndex: i + 1,
+            passed,
+            isHidden: tc.isHidden,
+            input: tc.isHidden ? "Hidden Test Case" : tc.input,
+            expectedOutput: tc.isHidden ? "Hidden Output" : tc.expectedOutput,
+            actualOutput: tc.isHidden ? (passed ? "Correct" : "Incorrect") : (data.stdout || data.stderr || data.compile_output || ""),
+            status: data.status?.description || "Unknown Error",
+          });
+          
+          // Fast-fail: optionally we can stop at first failure, but giving all results is better.
+        } catch (e: any) {
+          allTestsPassed = false;
+          results.push({
+            testCaseIndex: i + 1,
+            passed: false,
+            isHidden: tc.isHidden,
+            error: e.message
+          });
+        }
+      }
+
+      return {
+        status: 200,
+        body: {
+          success: true,
+          passed: allTestsPassed,
+          results
+        }
+      };
+
+    } catch (err: any) {
+      return { status: 500, body: { success: false, message: err.message } };
+    }
+  },
+
   // ดึงประวัติทั้งหมดสำหรับ MySkill Page
   async getUserAssessmentHistory(userId: string) {
     try {
@@ -224,13 +358,38 @@ export const assessmentController = {
 
       return {
         status: 200,
-        body: {
-          success: true,
-          history: results,
-        },
+        body: { success: true, message: "History fetched successfully", history: results },
       };
     } catch (err: any) {
-      return { status: 500, body: { success: false, message: err.message } };
+      return { status: 500, body: { success: false, message: "Error fetching history", error: err.message } };
     }
-  }
+  },
+
+  // POST /api/assessment/execute — Proxy to Judge0 to run code safely from backend
+  async executeCode(body: { language_id: number; source_code: string; stdin?: string }) {
+    try {
+      const judge0Url = process.env.JUDGE0_API_URL || "https://ce.judge0.com";
+      
+      const res = await fetch(`${judge0Url}/submissions?wait=true&base64_encoded=false`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          language_id: body.language_id,
+          source_code: body.source_code,
+          stdin: body.stdin || "",
+        }),
+      });
+
+      const data = await res.json();
+      
+      return {
+        status: res.status,
+        body: { success: res.ok, data },
+      };
+    } catch (err: any) {
+      return { status: 500, body: { success: false, message: "Error executing code", error: err.message } };
+    }
+  },
 };

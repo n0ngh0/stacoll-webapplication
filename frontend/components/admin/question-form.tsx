@@ -6,11 +6,11 @@ import ReactMarkdown from "react-markdown";
 import {
   ArrowLeft,
   Save, Eye, EyeOff, Plus,
-  Trash2, ListChecks, Code2,
+  Trash2, ListChecks, Code2, Monitor,
   AlertTriangle, CheckCircle2, Pencil,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
-import type { Question, ChoiceQuestion, CodingQuestion, Skill } from "@/types/question";
+import type { Question, ChoiceQuestion, CodingQuestion, Skill, TestCase } from "@/types/question";
 
 interface QuestionFormProps {
   mode: "create" | "edit";
@@ -41,17 +41,16 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
   );
 
   // Coding-specific
-  const [initialCode, setInitialCode] = useState(
-    initialData?.type === "coding" ? (initialData as CodingQuestion).initialCode : ""
+  const [templateCode, setTemplateCode] = useState(
+    initialData?.type === "coding" ? (initialData as CodingQuestion).templateCode : ""
   );
-  const [testCases, setTestCases] = useState<string[]>(
-    initialData?.type === "coding" ? (initialData as CodingQuestion).testCases || [""] : [""]
+  const [languageId, setLanguageId] = useState(
+    initialData?.type === "coding" ? (initialData as CodingQuestion).languageId : ""
   );
-  const [expectedInput, setExpectedInput] = useState(
-    initialData?.type === "coding" ? (initialData as CodingQuestion).expectedInput || "" : ""
-  );
-  const [expectedOutput, setExpectedOutput] = useState(
-    initialData?.type === "coding" ? (initialData as CodingQuestion).expectedOutput || "" : ""
+  const [testCases, setTestCases] = useState<any[]>(
+    initialData?.type === "coding" && (initialData as CodingQuestion).testCases 
+      ? (initialData as CodingQuestion).testCases 
+      : [{ input: "", expectedOutput: "", isHidden: false }]
   );
 
   // UI state
@@ -104,7 +103,8 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
     }
 
     if (type === "coding") {
-      if (!initialCode.trim()) newErrors.initialCode = "Initial code is required";
+      if (!templateCode.trim()) newErrors.templateCode = "Template code is required";
+      if (!languageId.trim()) newErrors.languageId = "Language ID is required (Please type a language string for now)";
     }
 
     setErrors(newErrors);
@@ -138,10 +138,9 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
     } else {
       payload = {
         ...baseData,
-        initialCode,
-        testCases: testCases.filter((t) => t.trim()),
-        expectedInput: expectedInput.trim() || undefined,
-        expectedOutput: expectedOutput.trim() || undefined,
+        templateCode,
+        languageId,
+        testCases: testCases.filter((t) => t.expectedOutput.trim()),
       };
     }
 
@@ -176,15 +175,54 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
   };
 
   // Test case management
-  const addTestCase = () => setTestCases([...testCases, ""]);
-  const removeTestCase = (index: number) => {
-    if (testCases.length <= 1) return;
-    setTestCases(testCases.filter((_, i) => i !== index));
+  const addTestCase = () => {
+    setTestCases([...testCases, { input: "", expectedOutput: "", isHidden: false }]);
   };
-  const updateTestCase = (index: number, value: string) => {
-    const newCases = [...testCases];
-    newCases[index] = value;
-    setTestCases(newCases);
+
+  const removeTestCase = (index: number) => {
+    const newTc = [...testCases];
+    newTc.splice(index, 1);
+    setTestCases(newTc);
+  };
+
+  const updateTestCase = (index: number, field: keyof TestCase, value: any) => {
+    const newTc = [...testCases];
+    newTc[index] = { ...newTc[index], [field]: value };
+    setTestCases(newTc);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, isHidden: boolean) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    // Group files by base name (e.g., "exam.in" and "exam.out" -> "exam")
+    const pairs: Record<string, { in?: File, out?: File }> = {};
+    for (const file of files) {
+      const match = file.name.match(/^(.*)\.(in|out)$/i);
+      if (match) {
+        const [, name, ext] = match;
+        if (!pairs[name]) pairs[name] = {};
+        if (ext.toLowerCase() === 'in') pairs[name].in = file;
+        else pairs[name].out = file;
+      }
+    }
+
+    const newTestCases = [...testCases];
+    for (const name in pairs) {
+      const pair = pairs[name];
+      if (pair.in && pair.out) {
+        const inText = await pair.in.text();
+        const outText = await pair.out.text();
+        newTestCases.push({
+          input: inText,
+          expectedOutput: outText.endsWith('\n') ? outText : outText + '\n',
+          isHidden
+        });
+      }
+    }
+    
+    setTestCases(newTestCases);
+    e.target.value = '';
   };
 
   const renderPreview = () => {
@@ -253,28 +291,6 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
             <div className="prose prose-sm dark:prose-invert max-w-none text-text-muted leading-relaxed whitespace-pre-wrap">
               <ReactMarkdown>{description || "*No description*"}</ReactMarkdown>
             </div>
-
-            {/* Expected I/O section */}
-            {(expectedInput || expectedOutput) && (
-              <div className="mt-6 space-y-3">
-                {expectedInput && (
-                  <div>
-                    <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.15em] mb-2">Input</div>
-                    <div className="bg-canvas border border-border-subtle rounded-lg px-4 py-2.5 font-mono text-sm text-text-main">
-                      <pre className="whitespace-pre-wrap">{expectedInput}</pre>
-                    </div>
-                  </div>
-                )}
-                {expectedOutput && (
-                  <div>
-                    <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.15em] mb-2">Output</div>
-                    <div className="bg-canvas border border-border-subtle rounded-lg px-4 py-2.5 font-mono text-sm text-text-main">
-                      <pre className="whitespace-pre-wrap">{expectedOutput}</pre>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Code editor side */}
@@ -286,24 +302,29 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
             {/* Code content */}
             <div className="flex-1 flex overflow-hidden">
               <div className="w-10 bg-surface-hover flex flex-col items-end py-4 pr-2 text-text-muted/40 font-mono text-sm leading-relaxed select-none overflow-hidden border-r border-border-subtle">
-                {(initialCode || "").split("\n").map((_, i) => <div key={i}>{i + 1}</div>)}
+                {(templateCode || "").split("\n").map((_, i) => <div key={i}>{i + 1}</div>)}
               </div>
               <div className="flex-1 bg-surface p-4 font-mono text-sm leading-relaxed text-text-main overflow-auto custom-scrollbar">
-                <pre>{initialCode || "// No code yet"}</pre>
+                <pre>{templateCode || "// No code yet"}</pre>
               </div>
             </div>
           </div>
         </div>
 
         {/* Test cases */}
-        {testCases.filter(t => t.trim()).length > 0 && (
+        {testCases.filter(t => t.expectedOutput.trim()).length > 0 && (
           <div className="border-t border-border-subtle p-6 md:p-8">
             <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.15em] mb-3">Test Cases</div>
             <div className="space-y-2">
-              {testCases.filter(t => t.trim()).map((tc, i) => (
-                <div key={i} className="flex items-center gap-3 bg-canvas rounded-lg px-4 py-2.5 border border-border-subtle">
-                  <span className="text-xs font-mono text-text-muted">{i + 1}</span>
-                  <code className="text-sm font-mono text-text-main">{tc}</code>
+              {testCases.filter(t => t.expectedOutput.trim()).map((tc, i) => (
+                <div key={i} className="flex flex-col gap-2 bg-canvas rounded-lg px-4 py-2.5 border border-border-subtle">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-text-main">Test Case {i + 1} {tc.isHidden && "(Hidden)"}</span>
+                  </div>
+                  {tc.input && (
+                    <div className="text-xs text-text-muted font-mono whitespace-pre-wrap border-l-2 pl-2">Input: {tc.input}</div>
+                  )}
+                  <div className="text-xs text-text-muted font-mono whitespace-pre-wrap border-l-2 pl-2">Output: {tc.expectedOutput}</div>
                 </div>
               ))}
             </div>
@@ -400,9 +421,14 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
                     }`}>
                     <Code2 size={20} />
                   </div>
-                  <div className="text-left">
-                    <div className="font-bold text-text-main text-sm">Coding</div>
-                    <div className="text-xs text-text-muted">Write code</div>
+                  <div className="text-left flex-1 flex items-center justify-between">
+                    <div>
+                      <div className="font-bold text-text-main text-sm">Coding</div>
+                      <div className="text-xs text-text-muted">Write code</div>
+                    </div>
+                    <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black uppercase bg-brand-secondary/10 text-brand-secondary border border-brand-secondary/20">
+                      <Monitor size={10} /> Desktop Only
+                    </div>
                   </div>
                 </button>
               </div>
@@ -605,98 +631,125 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
               <div className="space-y-6">
                 <h2 className="text-lg font-bold text-text-main border-b border-border-subtle pb-2">Coding Settings</h2>
 
-                {/* Expected Input */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-bold text-text-main">Expected Input</label>
-                    <span className="px-3 py-1 bg-surface-hover border border-border-subtle text-text-muted text-[10px] uppercase font-black tracking-widest rounded-lg">Optional</span>
-                  </div>
-                  <textarea
-                    value={expectedInput}
-                    onChange={(e) => setExpectedInput(e.target.value)}
-                    placeholder="e.g. nums = [2, 7, 11, 15], target = 9"
-                    rows={2}
-                    className="w-full bg-canvas border border-border-subtle rounded-xl px-4 py-3 text-sm text-text-main font-mono placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 transition-all resize-y"
-                  />
-                </div>
-
-                {/* Expected Output */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-bold text-text-main">Expected Output</label>
-                    <span className="px-3 py-1 bg-surface-hover border border-border-subtle text-text-muted text-[10px] uppercase font-black tracking-widest rounded-lg">Optional</span>
-                  </div>
-                  <textarea
-                    value={expectedOutput}
-                    onChange={(e) => setExpectedOutput(e.target.value)}
-                    placeholder="e.g. [0, 1]"
-                    rows={2}
-                    className="w-full bg-canvas border border-border-subtle rounded-xl px-4 py-3 text-sm text-text-main font-mono placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 transition-all resize-y"
-                  />
-                </div>
-
-                {/* Initial Code */}
+                {/* Language ID */}
                 <div>
                   <label className="block text-sm font-bold text-text-main mb-2">
-                    Initial Code <span className="text-red-500">*</span>
+                    Language Object ID <span className="text-red-500">*</span>
                   </label>
-                  <div className={`bg-canvas border border-border-subtle rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-brand-secondary/40 transition-shadow ${errors.initialCode ? "ring-2 ring-red-500/40" : ""}`}>
+                  <input
+                    type="text"
+                    value={languageId}
+                    onChange={(e) => { setLanguageId(e.target.value); setErrors((p) => ({ ...p, languageId: "" })); }}
+                    placeholder="Enter Language ID..."
+                    className={`w-full bg-canvas border ${errors.languageId ? "border-red-500" : "border-border-subtle"} rounded-xl px-4 py-3 text-sm text-text-main placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 transition-all`}
+                  />
+                  {errors.languageId && <p className="text-xs text-red-500 mt-1.5 font-semibold">{errors.languageId}</p>}
+                </div>
+
+                {/* Template Code */}
+                <div>
+                  <label className="block text-sm font-bold text-text-main mb-2">
+                    Template Code <span className="text-red-500">*</span>
+                  </label>
+                  <div className={`bg-canvas border border-border-subtle rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-brand-secondary/40 transition-shadow ${errors.templateCode ? "ring-2 ring-red-500/40" : ""}`}>
                     <div className="bg-surface-hover border-b border-border-subtle px-4 py-2.5 flex items-center gap-2">
                       <Code2 size={14} className="text-text-muted" />
                       <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Starter Code</span>
                     </div>
                     <textarea
-                      value={initialCode}
-                      onChange={(e) => { setInitialCode(e.target.value); setErrors((p) => ({ ...p, initialCode: "" })); }}
+                      value={templateCode}
+                      onChange={(e) => { setTemplateCode(e.target.value); setErrors((p) => ({ ...p, templateCode: "" })); }}
                       placeholder={"def solve():\n    # Write your code here\n    pass"}
                       rows={8}
                       className={`w-full bg-transparent px-4 py-3 text-sm text-text-main font-mono placeholder:text-text-muted/50 focus:outline-none resize-y}`}
                       style={{ tabSize: 4 }}
                     />
                   </div>
-                  {errors.initialCode && <p className="text-xs text-red-500 mt-1.5 font-semibold">{errors.initialCode}</p>}
+                  {errors.templateCode && <p className="text-xs text-red-500 mt-1.5 font-semibold">{errors.templateCode}</p>}
                 </div>
 
                 {/* Test Cases */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <label className="block text-sm font-bold text-text-main">Test Cases</label>
-                    <span className="px-3 py-1 bg-surface-hover border border-border-subtle text-text-muted text-[10px] uppercase font-black tracking-widest rounded-lg">Optional</span>
+                    <label className="block text-sm font-bold text-text-main">Test Cases <span className="text-red-500">*</span></label>
                   </div>
                   <div className="space-y-3">
                     {testCases.map((tc, i) => (
-                      <div key={i} className="flex items-start gap-3">
-                        <span className="text-xs font-mono text-text-muted mt-3 shrink-0 w-4 text-right">
-                          {i + 1}
-                        </span>
-                        <input
-                          type="text"
-                          value={tc}
-                          onChange={(e) => updateTestCase(i, e.target.value)}
-                          placeholder='e.g. assert solve([2,7,11,15], 9) == [0,1]'
-                          className="flex-1 bg-canvas border border-border-subtle rounded-xl px-4 py-2.5 text-sm text-text-main font-mono placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 transition-all"
-                        />
+                      <div key={i} className="flex flex-col gap-3 bg-canvas border border-border-subtle rounded-xl p-4">
+                        <div className="flex items-center justify-between">
+                           <span className="text-sm font-bold text-text-main">Test Case {i + 1}</span>
+                           <label className="flex items-center gap-2 text-sm text-text-muted cursor-pointer">
+                              <input type="checkbox" checked={tc.isHidden} onChange={(e) => updateTestCase(i, 'isHidden', e.target.checked)} className="rounded border-border-subtle" />
+                              Hidden
+                           </label>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <textarea
+                            value={tc.input}
+                            onChange={(e) => updateTestCase(i, 'input', e.target.value)}
+                            placeholder='Input (e.g. 2 3)'
+                            rows={2}
+                            className="flex-1 bg-surface border border-border-subtle rounded-lg px-4 py-2.5 text-sm text-text-main font-mono placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 transition-all"
+                          />
+                          <textarea
+                            value={tc.expectedOutput}
+                            onChange={(e) => updateTestCase(i, 'expectedOutput', e.target.value)}
+                            placeholder='Expected Output (e.g. 5)'
+                            rows={2}
+                            className="flex-1 bg-surface border border-border-subtle rounded-lg px-4 py-2.5 text-sm text-text-main font-mono placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-secondary/40 transition-all"
+                          />
+                        </div>
+                        
                         {testCases.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeTestCase(i)}
-                            className="p-2 rounded-lg hover:bg-red-500/10 text-text-muted hover:text-red-500 transition-colors cursor-pointer mt-0.5"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => removeTestCase(i)}
+                              className="px-3 py-1.5 rounded-lg bg-red-500/10 text-xs font-bold text-red-500 hover:bg-red-500/20 transition-colors cursor-pointer"
+                            >
+                              Remove
+                            </button>
+                          </div>
                         )}
                       </div>
                     ))}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={addTestCase}
-                    className="inline-flex items-center gap-1.5 mt-3 text-sm font-bold text-brand-secondary hover:text-brand-secondary-hover transition-colors cursor-pointer"
-                  >
-                    <Plus size={14} />
-                    Add Test Case
-                  </button>
+                  <div className="flex items-center gap-3 mt-3">
+                    <button
+                      type="button"
+                      onClick={addTestCase}
+                      className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-secondary hover:text-brand-secondary-hover transition-colors cursor-pointer"
+                    >
+                      <Plus size={14} />
+                      Add Manual
+                    </button>
+                    <span className="text-border-subtle">|</span>
+                    
+                    <label className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-500 hover:text-blue-600 transition-colors cursor-pointer">
+                      <Plus size={14} />
+                      Upload Public (.in/.out)
+                      <input 
+                        type="file" 
+                        multiple 
+                        accept=".in,.out" 
+                        className="hidden" 
+                        onChange={(e) => handleFileUpload(e, false)} 
+                      />
+                    </label>
+                    <span className="text-border-subtle">|</span>
+                    <label className="inline-flex items-center gap-1.5 text-sm font-bold text-violet-500 hover:text-violet-600 transition-colors cursor-pointer">
+                      <Plus size={14} />
+                      Upload Hidden (.in/.out)
+                      <input 
+                        type="file" 
+                        multiple 
+                        accept=".in,.out" 
+                        className="hidden" 
+                        onChange={(e) => handleFileUpload(e, true)} 
+                      />
+                    </label>
+                  </div>
                 </div>
               </div>
             )}

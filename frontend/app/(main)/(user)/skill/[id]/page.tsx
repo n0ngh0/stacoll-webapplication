@@ -2,10 +2,9 @@
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, CircleQuestionMark, Clock, Monitor, Loader2, ListChecks, Lock, Award } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Skill } from "@/types/skill";
+import { Skill, SkillLevel } from "@/types/skill";
 import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
-
-
+import { getLevelQuestionCount } from "@/lib/api/problems";
 
 export default function SkillDetailPage() {
     const params = useParams();
@@ -133,6 +132,7 @@ export default function SkillDetailPage() {
 
     // Get current level info for stats
     const currentLevel = skill.levels.find((l) => l.level === selectedLevel) || skill.levels[0];
+    const questionCountForLevel = getLevelQuestionCount(currentLevel as SkillLevel);
     const themeColor = categoryTheme[skill.category] || "#19c3af";
 
     return (
@@ -143,13 +143,13 @@ export default function SkillDetailPage() {
             >
                 {/* Header Navigation */}
                 <div className="px-8 py-4 border-b border-border-subtle transition-colors duration-300">
-                    <button
-                        onClick={() => router.back()}
-                        className="flex items-center text-text-muted hover:text-text-main transition-colors text-sm font-semibold gap-1 cursor-pointer"
-                    >
-                        <ChevronLeft size={18} />
-                        Back to Skills
-                    </button>
+                      <button
+                        onClick={() => router.push('/explore')}
+                        className="flex items-center text-text-muted hover:text-text-main transition-colors text-[13px] font-bold gap-1 cursor-pointer w-fit"
+                      >
+                        <ChevronLeft size={16} />
+                        Back to Explore
+                      </button>
                 </div>
 
                 {/* Skill Title  */}
@@ -162,7 +162,7 @@ export default function SkillDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {[
                             { icon: Clock, label: "Duration", value: `${currentLevel?.estimatedTime ?? 0} Minutes` },
-                            { icon: CircleQuestionMark, label: "Questions", value: `${currentLevel?.actualQuestionCount ?? 0} Questions` },
+                            { icon: CircleQuestionMark, label: "Questions", value: `${questionCountForLevel} Questions` },
                             { icon: Monitor, label: "Mode", value: currentLevel?.mode || "Any Device" }
                         ].map((stat, idx) => (
                             <div key={idx} className="bg-canvas border border-border-subtle rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-sm transition-all duration-300">
@@ -252,6 +252,7 @@ export default function SkillDetailPage() {
                             const isPassed = userProgress?.passedLevels[selectedLevel] || false;
                             const cooldown = userProgress?.cooldownLevels[selectedLevel];
                             const cooldownDays = cooldown?.active ? cooldown.daysRemaining : 0;
+                            const hasNoQuestions = questionCountForLevel === 0;
 
                             if (isPassed) {
                                 return (
@@ -283,6 +284,17 @@ export default function SkillDetailPage() {
                                 );
                             }
 
+                            if (hasNoQuestions) {
+                                return (
+                                    <div className="flex flex-col items-center w-[320px] max-w-full relative">
+                                        <button disabled className="max-h-[60px] w-full bg-canvas border border-border-subtle text-text-muted font-bold py-4 flex justify-center items-center rounded-full text-xl shadow-sm cursor-not-allowed gap-2 transition-colors">
+                                            <Lock size={20} /> Coming Soon
+                                        </button>
+                                        <p className="text-xs text-text-muted mt-2 font-medium text-center absolute top-full left-0 w-full">Questions for this level will be available soon.</p>
+                                    </div>
+                                );
+                            }
+
                             return (
                                 <button onClick={handleStartAssessment} className="cursor-pointer bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold py-4 w-[320px] max-w-full flex justify-center items-center rounded-full text-xl shadow-lg shadow-brand-secondary/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 gap-2">
                                     Start Assessment
@@ -303,7 +315,7 @@ export default function SkillDetailPage() {
                         <p className="text-[15px] text-text-muted leading-relaxed mb-8">
                             You are about to start the <strong className="text-text-main font-bold">{skill.title.toUpperCase()}</strong> assessment
                             at <strong className="capitalize">{selectedLevel}</strong> level.
-                            You will have <strong>{currentLevel?.estimatedTime || 30} minutes</strong> to complete <strong>{currentLevel?.questionCount || 15} questions</strong>.
+                            You will have <strong>{currentLevel?.estimatedTime || 30} minutes</strong> to complete <strong>{questionCountForLevel || 0} questions</strong>.
                             The timer cannot be paused once started.
                         </p>
 

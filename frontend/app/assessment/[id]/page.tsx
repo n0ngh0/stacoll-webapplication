@@ -72,19 +72,29 @@ export default function ExamPage() {
                 if (!token) return router.push("/");
                 
                 const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-                const res = await fetch(`${apiUrl}/assessment/${rawSkillId}/start`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ level: selectedLevel })
-                });
-                
-                const data = await res.json();
+                const [skillRes, assessRes] = await Promise.all([
+                    fetch(`${apiUrl}/skills/${rawSkillId}`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }),
+                    fetch(`${apiUrl}/assessment/${rawSkillId}/start`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({ level: selectedLevel }),
+                    }),
+                ]);
+
+                const skillData = await skillRes.json();
+                const data = await assessRes.json();
                 if (data.success) {
                     setProblems(data.problems);
-                    setTimeLeft(30 * 60); // Could get from skill.estimatedTime ideally
+                    const levelMeta = skillData.success
+                        ? skillData.skill?.levels?.find((l: { level: string }) => l.level === selectedLevel)
+                        : null;
+                    const minutes = levelMeta?.estimatedTime ?? 30;
+                    setTimeLeft(minutes * 60);
                 } else {
                     setError(data.message);
                 }
@@ -176,11 +186,16 @@ export default function ExamPage() {
             />
 
             <div className="flex-1 flex overflow-hidden">
-                {currentQuestion.type === "coding" ? (
+                {currentQuestion.questionType === "coding" ? (
                     <CodingQuestion
                         title={currentQuestion.question}
                         description={currentQuestion.explanation || currentQuestion.question}
-                        code={answers[currentQuestion._id] ?? (currentQuestion.initialCode || "def solve():\n    pass")}
+                        code={answers[currentQuestion._id] ?? (currentQuestion.templateCode || "def solve():\n    pass")}
+                        language={currentQuestion.languageId?.monaco_identifier || "python"}
+                        languageId={currentQuestion.languageId?.judge0_id || 71}
+                        testCases={currentQuestion.testCases || []}
+                        problemId={currentQuestion._id}
+                        skillId={rawSkillId}
                         onChange={handleUpdateAnswer}
                         onNext={handleNext}
                         onBack={handleBack}
@@ -193,7 +208,7 @@ export default function ExamPage() {
                             id: currentQuestion._id,
                             title: currentQuestion.question,
                             description: currentQuestion.explanation || "Select the best answer.",
-                            options: currentQuestion.choices
+                            options: currentQuestion.choices ?? []
                         }}
                         selected={answers[currentQuestion._id] ?? null}
                         onChange={handleUpdateAnswer}

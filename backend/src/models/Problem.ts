@@ -6,15 +6,25 @@ export interface IChoice {
   text: string;  // เนื้อหาของตัวเลือก
 }
 
+export interface ITestCase {
+  input: string;
+  expectedOutput: string;
+  isHidden: boolean;
+}
+
 // Interface หลักของ Problem (ข้อสอบ)
 export interface IProblem {
   skillId: Types.ObjectId;
   level: "beginner" | "intermediate" | "advanced";
   question: string;
-  questionType: "multiple_choice" | "true_false";
-  choices: IChoice[];
-  correctAnswer: string; // label ของคำตอบที่ถูก เช่น "A"
+  questionType: "multiple_choice" | "true_false" | "coding";
+  choices?: IChoice[]; // Optional for coding
+  correctAnswer?: string; // Optional for coding
   explanation?: string;
+  // Fields for coding problems
+  languageId?: Types.ObjectId;
+  templateCode?: string;
+  testCases?: ITestCase[];
   points: number;
   order: number;
   isActive: boolean;
@@ -31,6 +41,24 @@ const choiceSchema = new Schema<IChoice>(
     text: {
       type: String,
       required: true,
+    },
+  },
+  { _id: false }
+);
+
+const testCaseSchema = new Schema<ITestCase>(
+  {
+    input: {
+      type: String,
+      default: "",
+    },
+    expectedOutput: {
+      type: String,
+      required: true,
+    },
+    isHidden: {
+      type: Boolean,
+      default: false,
     },
   },
   { _id: false }
@@ -55,21 +83,34 @@ const problemSchema = new Schema<IProblem>(
     },
     questionType: {
       type: String,
-      enum: ["multiple_choice", "true_false"],
+      enum: ["multiple_choice", "true_false", "coding"],
       default: "multiple_choice",
     },
     choices: {
       type: [choiceSchema],
       validate: {
-        validator: function (v: IChoice[]) {
-          return v.length >= 2; // ต้องมีตัวเลือกอย่างน้อย 2 ตัว
+        validator: function (this: any, v: IChoice[]) {
+          if (this.questionType === "coding") return true;
+          return v && v.length >= 2;
         },
-        message: "At least 2 choices are required",
+        message: "At least 2 choices are required for multiple choice questions",
       },
     },
     correctAnswer: {
       type: String,
-      required: [true, "Correct answer is required"],
+      required: function(this: any) {
+        return this.questionType !== "coding";
+      },
+    },
+    languageId: {
+      type: Schema.Types.ObjectId,
+      ref: "Language",
+    },
+    templateCode: {
+      type: String,
+    },
+    testCases: {
+      type: [testCaseSchema],
     },
     explanation: {
       type: String,

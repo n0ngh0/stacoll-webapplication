@@ -61,7 +61,7 @@ const ChoiceQuestion = memo(function ChoiceQuestion({
                     <p className="text-[11px] font-black text-text-muted uppercase tracking-[0.2em] mb-6">Select your answer:</p>
 
                     <div className="grid grid-cols-1 gap-4" role="radiogroup" aria-label="Question options">
-                        {data.options.map((option: { label: string, text: string }) => {
+                        {(data.options ?? []).map((option: { label: string, text: string }) => {
                             const isSelected = selected === option.label;
 
                             const buttonBaseClass = "w-full flex items-center justify-between p-6 rounded-2xl border-2 transition-colors duration-200 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary cursor-pointer";

@@ -2,49 +2,84 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Check, AlertCircle } from "lucide-react";
+import { ChevronLeft, Check, AlertCircle, Loader2 } from "lucide-react";
 import { useExportContext } from "@/components/providers/export-context";
 import { getLevelColorClass, getLevelBgColorClass } from "@/types/question";
 
-// Mock Data (Should match the one in profile/page.tsx eventually)
-const mockUser = {
-  name: "Winny Pooh",
-  role: "AI / Developer",
-  bio: "Interested in AI, software development, and building efficient systems. Passionate about learning new technologies and applying them to real-world projects.",
-};
-
-const allSkills = [
-  { name: "React.js", level: "INTERMEDIATE", score: 82, date: "Oct 12, 2025" },
-  { name: "Node.js", level: "BEGINNER", score: 67, date: "Oct 12, 2025" },
-  { name: "Python", level: "ADVANCED", score: 95, date: "Sep 28, 2025" },
-  { name: "JavaScript", level: "ADVANCED", score: 91, date: "Jan 15, 2026" },
-  { name: "SQL", level: "INTERMEDIATE", score: 85, date: "Nov 05, 2025" },
-];
-
-const allProjects = [
-  {
-    title: "Neural Analytics Engine",
-    description: "Machine learning pipeline for processing real-time developer telemetry to predict career paths based on coding patterns.",
-    tags: ["REACT", "SOLIDITY", "NODE.JS", "WEB3.JS"],
-  },
-  {
-    title: "Stacoll Verified Identity",
-    description: "A decentralized identity verification platform using ZK-proofs for academic and skill credentials. Built to scale with millions of users.",
-    tags: ["HTML", "PYTHON", "NODE.JS"],
-  }
-];
-
 export default function ExportPreparePage() {
   const router = useRouter();
-  const { selectedSkills, selectedProjects, setSelectedSkills, setSelectedProjects } = useExportContext();
+  const { selectedSkills, selectedProjects, setSelectedSkills, setSelectedProjects, userData, setUserData } = useExportContext();
+  const [isLoading, setIsLoading] = useState(!userData);
+  const [error, setError] = useState("");
   
   // Initialize on first mount
   useEffect(() => {
-    if (selectedSkills.size === 0 && selectedProjects.size === 0) {
-      setSelectedSkills(new Set(allSkills.map((_, i) => i)));
-      setSelectedProjects(new Set(allProjects.map((_, i) => i)));
-    }
-  }, []);
+    const fetchData = async () => {
+      try {
+        if (!userData) {
+          const token = localStorage.getItem("token");
+          if (!token) {
+            router.push("/");
+            return;
+          }
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+          const res = await fetch(`${apiUrl}/profile/me`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (data.success) {
+            const user = data.user;
+            
+            // Helper to get highest skills
+            const getLevelWeight = (level: string) => {
+              if (!level) return 0;
+              switch (level.toUpperCase()) {
+                case 'BEGINNER': return 1;
+                case 'INTERMEDIATE': return 2;
+                case 'ADVANCED': return 3;
+                default: return 0;
+              }
+            };
+            
+            if (user.verifiedSkills) {
+              const skillMap = new Map();
+              user.verifiedSkills.forEach((skill: any) => {
+                const name = skill.skillName || skill.name;
+                if (!skillMap.has(name)) {
+                  skillMap.set(name, skill);
+                } else {
+                  const currentSkill = skillMap.get(name);
+                  if (getLevelWeight(skill.level) > getLevelWeight(currentSkill.level)) {
+                    skillMap.set(name, skill);
+                  } else if (getLevelWeight(skill.level) === getLevelWeight(currentSkill.level) && skill.score > currentSkill.score) {
+                    skillMap.set(name, skill);
+                  }
+                }
+              });
+              user.verifiedSkills = Array.from(skillMap.values());
+            }
+
+            setUserData(user);
+            // Select all by default
+            if (selectedSkills.size === 0 && selectedProjects.size === 0) {
+              setSelectedSkills(new Set((user.verifiedSkills || []).map((_: any, i: number) => i)));
+              setSelectedProjects(new Set((user.projects || []).map((_: any, i: number) => i)));
+            }
+          } else {
+            setError(data.message || "Failed to load profile");
+          }
+        }
+      } catch (err) {
+        setError("Error connecting to server");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, [userData, selectedSkills.size, selectedProjects.size, router, setSelectedProjects, setSelectedSkills, setUserData]);
+
+  const allSkills = userData?.verifiedSkills || [];
+  const allProjects = userData?.projects || [];
 
   const toggleSkill = (index: number) => {
     const newSet = new Set(selectedSkills);
@@ -61,16 +96,33 @@ export default function ExportPreparePage() {
   };
 
   const selectAllSkills = (select: boolean) => {
-    setSelectedSkills(select ? new Set(allSkills.map((_, i) => i)) : new Set());
+    setSelectedSkills(select ? new Set(allSkills.map((_: any, i: number) => i)) : new Set());
   };
 
   const selectAllProjects = (select: boolean) => {
-    setSelectedProjects(select ? new Set(allProjects.map((_, i) => i)) : new Set());
+    setSelectedProjects(select ? new Set(allProjects.map((_: any, i: number) => i)) : new Set());
   };
 
   const canPreview = selectedSkills.size > 0;
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-[70vh]">
+        <Loader2 className="w-10 h-10 animate-spin text-greenui" />
+      </div>
+    );
+  }
 
+  if (error || !userData) {
+    return (
+      <div className="text-center py-20 flex flex-col items-center justify-center">
+        <p className="text-text-muted mb-4">{error || "Failed to load data"}</p>
+        <button onClick={() => router.push("/profile")} className="px-6 py-2 bg-surface border border-border-subtle font-bold rounded-xl hover:bg-surface-hover transition-all">
+          Go Back
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8 transition-colors duration-300 pb-32">
@@ -88,9 +140,9 @@ export default function ExportPreparePage() {
       {/* User Info Preview */}
       <section className="bg-bg-brand-subtle dark:bg-bg-brand-subtle/10 border border-border-subtle rounded-2xl p-6 mb-10 flex flex-col md:flex-row gap-6 items-center md:items-start transition-colors">
         <div className="flex-1 text-center md:text-left">
-          <h2 className="text-2xl font-bold text-text-main">{mockUser.name}</h2>
-          <p className="font-semibold text-brand-secondary mt-1">{mockUser.role}</p>
-          <p className="text-text-muted text-sm mt-3 leading-relaxed">{mockUser.bio}</p>
+          <h2 className="text-2xl font-bold text-text-main">{userData.username}</h2>
+          <p className="font-semibold text-brand-secondary mt-1">{userData.title || "No Title Set"}</p>
+          <p className="text-text-muted text-sm mt-3 leading-relaxed">{userData.bio || "No bio available."}</p>
         </div>
         <div className="text-xs text-text-muted bg-canvas px-3 py-1.5 rounded-md border border-border-subtle shrink-0">
           * Editable in Profile settings
@@ -113,7 +165,7 @@ export default function ExportPreparePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {allSkills.map((skill, idx) => {
+          {allSkills.map((skill: any, idx: number) => {
             const isSelected = selectedSkills.has(idx);
             return (
               <div 
@@ -124,7 +176,7 @@ export default function ExportPreparePage() {
                 }`}
               >
                 <div>
-                  <h3 className="font-bold text-text-main mb-1">{skill.name}</h3>
+                  <h3 className="font-bold text-text-main mb-1">{skill.skillName || skill.name}</h3>
                   <div className="flex items-center gap-3">
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase border ${getLevelColorClass(skill.level)} ${getLevelBgColorClass(skill.level)}`}>
                       {skill.level}

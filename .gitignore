@@ -1,0 +1,46 @@
+# --- OS ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- IDE / local tooling ---
+.idea/
+.cursor/
+*.swp
+*.swo
+*~
+
+# --- Secrets & environment (never commit real credentials) ---
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# --- Dependencies ---
+node_modules/
+
+# --- Logs & debug ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+debug-*.log
+
+# --- Build & cache ---
+dist/
+build/
+.next/
+out/
+.turbo/
+.cache/
+.vercel/
+*.tsbuildinfo
+
+# --- Local / scratch artifacts ---
+*.tmp
+*.temp
+test.pdf
+test2.pdf
+uploads/
+
+.cursor/

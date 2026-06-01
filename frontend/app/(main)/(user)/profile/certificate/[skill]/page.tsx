@@ -27,10 +27,58 @@ export default function CertificatePage() {
   useEffect(() => {
     setMounted(true);
     window.scrollTo(0, 0);
-    // Find the skill in our mock data
-    const found = mockSkills.find(s => s.name.toLowerCase() === decodedSkill);
-    setSkillData(found || null);
+    fetchData();
   }, [decodedSkill]);
+
+  const fetchData = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      
+      // Fetch user profile to get verified skills
+      const profileRes = await fetch(`${apiUrl}/profile/me`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const profileData = await profileRes.json();
+      
+      if (profileData.success && profileData.user?.verifiedSkills) {
+        // Find the skill by ID (since URL param is the skill ID)
+        const vSkill = profileData.user.verifiedSkills.find((s: any) => s.skillId === rawSkillId);
+        
+        if (vSkill) {
+          setSkillData({
+            name: vSkill.skillName,
+            category: "programming", // Default or we could fetch skill details
+            level: vSkill.level.toUpperCase(),
+            score: vSkill.score,
+            date: new Date(vSkill.verifiedAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+            expires: new Date(new Date(vSkill.verifiedAt).getTime() + 2 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+            fullDescription: "### Competencies\n\n- Demonstrated foundational knowledge\n- Successfully completed all required assessments\n- Met all the criteria for this skill level"
+          });
+          return;
+        }
+      }
+
+      // Fallback logic for mock data or if not found in verifiedSkills
+      let found = mockSkills.find(s => s.name.toLowerCase() === decodedSkill);
+      if (!found) {
+        found = {
+          name: decodeURIComponent(rawSkillId).split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
+          category: "programming",
+          level: "VERIFIED",
+          score: 100,
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+          expires: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+          fullDescription: "### Competencies\n\n- Demonstrated foundational knowledge\n- Successfully completed all required assessments\n- Met all the criteria for this skill level"
+        };
+      }
+      setSkillData(found);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (!mounted) {
     return <div className="fixed inset-0 z-[9999] bg-canvas animate-pulse transition-colors duration-300"></div>;

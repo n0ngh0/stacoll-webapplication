@@ -5,6 +5,9 @@ export interface SkillLevel {
   description: string;
   questionCount: number;
   estimatedTime: number;
+  /** จำนวนข้อสอบจริงจาก MongoDB (จาก getSkillById) */
+  actualQuestionCount?: number;
+  mode?: string;
 }
 
 export interface Skill {
@@ -29,7 +32,11 @@ export interface Problem {
   skillId: string;
   level: string;
   question: string;
-  questionType: "multiple_choice" | "true_false";
-  choices: ProblemChoice[];
-  // correctAnswer จะไม่ส่งมาให้ user endpoint
+  questionType: "multiple_choice" | "true_false" | "coding";
+  choices?: ProblemChoice[];
+  correctAnswer?: string;
+  explanation?: string;
+  languageId?: string | { _id: string; monaco_identifier?: string; judge0_id?: number };
+  templateCode?: string;
+  testCases?: { input: string; expectedOutput: string; isHidden: boolean }[];
 }

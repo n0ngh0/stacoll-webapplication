@@ -47,7 +47,12 @@ export default function UserDashboardPage() {
     try {
       setIsLoading(true);
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-      const res = await fetch(`${apiUrl}/skills`);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${apiUrl}/skills`, {
+        headers: {
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        }
+      });
       const data = await res.json();
 
       if (data.success) {
@@ -176,7 +181,7 @@ export default function UserDashboardPage() {
                       {isImageIcon ? (
                         <img src={skill.icon} alt={skill.title} className="w-8 h-8 object-contain" />
                       ) : (
-                        skill.icon
+                        skill.icon ? skill.icon.substring(0, 2).toUpperCase() : skill.title.substring(0, 2).toUpperCase()
                       )}
                     </div>
 

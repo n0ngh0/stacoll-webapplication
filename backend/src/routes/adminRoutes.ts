@@ -65,17 +65,31 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
     body: t.Object({
       level: t.Union([t.Literal("beginner"), t.Literal("intermediate"), t.Literal("advanced")]),
       question: t.String(),
-      questionType: t.Optional(t.Union([t.Literal("multiple_choice"), t.Literal("true_false")])),
-      choices: t.Array(t.Object({
+      questionType: t.Optional(t.Union([t.Literal("multiple_choice"), t.Literal("true_false"), t.Literal("coding")])),
+      choices: t.Optional(t.Array(t.Object({
         label: t.String(),
         text: t.String(),
-      })),
-      correctAnswer: t.String(),
+      }))),
+      correctAnswer: t.Optional(t.String()),
       explanation: t.Optional(t.String()),
+      languageId: t.Optional(t.String()),
+      templateCode: t.Optional(t.String()),
+      testCases: t.Optional(t.Array(t.Object({
+        input: t.Optional(t.String()),
+        expectedOutput: t.String(),
+        isHidden: t.Optional(t.Boolean()),
+      }))),
       points: t.Optional(t.Number()),
       order: t.Optional(t.Number()),
       isActive: t.Optional(t.Boolean()),
     })
+  })
+
+  // GET /api/admin/problems/:id — ดึงคำถามเดียว
+  .get("/problems/:id", async ({ params, set }) => {
+    const { status, body: responseBody } = await problemController.getProblemById(params.id);
+    set.status = status;
+    return responseBody;
   })
 
   // PUT /api/admin/problems/:id — แก้ไขคำถาม

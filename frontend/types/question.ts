@@ -5,6 +5,7 @@ export interface SkillLevel {
   description: string;
   fullDescription?: string;
   estimatedTime: number;
+  mode?: string;
 }
 
 // --- SKILL ---
@@ -41,18 +42,25 @@ export interface ChoiceQuestion extends BaseQuestion {
   codeSnippet?: string;
 }
 
+export interface TestCase {
+  input: string;
+  expectedOutput: string;
+  isHidden: boolean;
+}
+
 export interface CodingQuestion extends BaseQuestion {
   type: "coding";
-  initialCode: string;
-  testCases?: string[];
-  expectedInput?: string;
-  expectedOutput?: string;
+  templateCode: string;
+  languageId: string;
+  testCases: TestCase[];
 }
 
 export type Question = ChoiceQuestion | CodingQuestion;
 
-export type CreateQuestionPayload = Omit<Question, "id" | "createdAt" | "updatedAt">;
-export type UpdateQuestionPayload = Partial<Omit<Question, "id" | "createdAt" | "skillId">>;
+type DistributiveOmit<T, K extends keyof any> = T extends any ? Omit<T, K> : never;
+
+export type CreateQuestionPayload = DistributiveOmit<Question, "id" | "createdAt" | "updatedAt">;
+export type UpdateQuestionPayload = Partial<DistributiveOmit<Question, "id" | "createdAt" | "skillId">>;
 
 // --- MISC ---
 export const LEVEL_OPTIONS = [

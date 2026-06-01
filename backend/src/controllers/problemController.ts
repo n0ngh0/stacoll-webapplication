@@ -63,10 +63,16 @@ export const problemController = {
   // POST /api/admin/skills/:skillId/problems — เพิ่มคำถามใหม่ (admin only)
   async createProblem(skillId: string, body: any) {
     try {
-      if (!body || !body.question || !body.correctAnswer) {
+      if (!body || !body.question) {
         return {
           status: 400,
-          body: { success: false, message: "Question and correctAnswer are required" },
+          body: { success: false, message: "Question is required" },
+        };
+      }
+      if (body.questionType !== "coding" && !body.correctAnswer) {
+        return {
+          status: 400,
+          body: { success: false, message: "correctAnswer is required for this question type" },
         };
       }
 
@@ -83,6 +89,27 @@ export const problemController = {
       return {
         status: 500,
         body: { success: false, message: "Error creating problem", error: err.message },
+      };
+    }
+  },
+
+  // GET /api/admin/problems/:id — ดึงคำถามเดียว (admin)
+  async getProblemById(id: string) {
+    try {
+      const problem = await Problem.findById(id).populate("languageId").lean();
+
+      if (!problem) {
+        return { status: 404, body: { success: false, message: "Problem not found" } };
+      }
+
+      return {
+        status: 200,
+        body: { success: true, message: "Problem fetched successfully", problem },
+      };
+    } catch (err: any) {
+      return {
+        status: 500,
+        body: { success: false, message: "Error fetching problem", error: err.message },
       };
     }
   },

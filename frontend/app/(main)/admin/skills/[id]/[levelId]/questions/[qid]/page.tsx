@@ -4,8 +4,14 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { ArrowLeft, Pencil, Trash2, ListChecks, Code2, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { getQuestionById, deleteQuestion, getSkillById } from "@/lib/question-store";
 import type { Question, ChoiceQuestion, CodingQuestion, Skill } from "@/types/question";
+import {
+  deleteAdminProblem,
+  fetchAdminProblem,
+  getApiUrl,
+  mapDbSkillToFormSkill,
+  mapProblemToForm,
+} from "@/lib/api/problems";
 
 export default function QuestionDetailPage() {
   const params = useParams();
@@ -18,13 +24,43 @@ export default function QuestionDetailPage() {
   const [skill, setSkill] = useState<Skill | null>(null);
   const [mounted, setMounted] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (qid && skillId) {
-      setQuestion(getQuestionById(qid));
-      setSkill(getSkillById(skillId));
-    }
-    setMounted(true);
+    const load = async () => {
+      if (!qid || !skillId) return;
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setLoadError("Not authenticated");
+          return;
+        }
+
+        const [skillRes, problem] = await Promise.all([
+          fetch(`${getApiUrl()}/skills/${skillId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          fetchAdminProblem(qid, token),
+        ]);
+
+        const skillData = await skillRes.json();
+        if (skillData.success && skillData.skill) {
+          setSkill(mapDbSkillToFormSkill(skillData.skill));
+        }
+
+        if (problem) {
+          setQuestion(mapProblemToForm(problem));
+        } else {
+          setLoadError("Question not found");
+        }
+      } catch (e) {
+        console.error(e);
+        setLoadError("Error loading question");
+      } finally {
+        setMounted(true);
+      }
+    };
+    load();
   }, [qid, skillId]);
 
   if (!mounted) {
@@ -35,7 +71,9 @@ export default function QuestionDetailPage() {
     return (
       <div className="min-h-[calc(100vh-80px)] flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-text-main mb-3">Not Found</h2>
+          <h2 className="text-2xl font-bold text-text-main mb-3">
+            {loadError || "Not Found"}
+          </h2>
           <Link
             href={`/admin/skills/${skillId}`}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-secondary text-white font-bold rounded-xl text-sm"
@@ -47,17 +85,20 @@ export default function QuestionDetailPage() {
     );
   }
 
-  const handleDelete = () => {
-    deleteQuestion(question.id);
-    router.push(`/admin/skills/${skill.id}?level=${levelId}`);
-  };
+  const handleDelete = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-  const getDifficultyStyle = (d: string) => {
-    switch (d) {
-      case "beginner": return "bg-beginnerbg text-beginnertext";
-      case "intermediate": return "bg-intermediatebg text-intermediatetext";
-      case "advanced": return "bg-advancedbg text-advancedtext";
-      default: return "";
+      const result = await deleteAdminProblem(qid, token);
+      if (result.success) {
+        router.push(`/admin/skills/${skillId}?level=${levelId}`);
+      } else {
+        alert(`Error: ${result.message || "Failed to delete question"}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Failed to delete question");
     }
   };
 
@@ -65,7 +106,6 @@ export default function QuestionDetailPage() {
     <div className="min-h-[calc(100vh-80px)] animate-in fade-in slide-in-from-bottom-2 duration-500">
       <main className="max-w-[900px] mx-auto px-[5%] py-10">
 
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-10">
           <div>
             <Link
@@ -119,7 +159,6 @@ export default function QuestionDetailPage() {
           </div>
         </div>
 
-        {/* Content */}
         <div className="bg-surface rounded-2xl border border-border-subtle overflow-hidden">
           <div className="p-6 md:p-8">
             <div className="text-[11px] font-black text-brand-secondary uppercase tracking-[0.2em] mb-4">Question Description</div>
@@ -162,42 +201,42 @@ export default function QuestionDetailPage() {
 
             {question.type === "coding" && (
               <>
-                {/* Expected I/O */}
-                {((question as CodingQuestion).expectedInput || (question as CodingQuestion).expectedOutput) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    {(question as CodingQuestion).expectedInput && (
-                      <div>
-                        <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.15em] mb-2">Input</div>
-                        <div className="bg-canvas border border-border-subtle rounded-lg px-4 py-2.5 font-mono text-sm text-text-main">
-                          <pre className="whitespace-pre-wrap">{(question as CodingQuestion).expectedInput}</pre>
-                        </div>
-                      </div>
-                    )}
-                    {(question as CodingQuestion).expectedOutput && (
-                      <div>
-                        <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.15em] mb-2">Output</div>
-                        <div className="bg-canvas border border-border-subtle rounded-lg px-4 py-2.5 font-mono text-sm text-text-main">
-                          <pre className="whitespace-pre-wrap">{(question as CodingQuestion).expectedOutput}</pre>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 <div className="mb-6">
-                  <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.2em] mb-3">Initial Code</div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.2em]">Template Code</div>
+                    <div className="text-xs font-mono px-2 py-1 bg-surface border border-border-subtle rounded text-text-muted">
+                      {(question as CodingQuestion).languageId}
+                    </div>
+                  </div>
                   <div className="bg-[#1e293b] dark:bg-[#0f172a] p-5 rounded-xl font-mono text-sm text-slate-200 overflow-x-auto border border-[#334155]">
-                    <pre>{(question as CodingQuestion).initialCode}</pre>
+                    <pre>{(question as CodingQuestion).templateCode}</pre>
                   </div>
                 </div>
-                {(question as CodingQuestion).testCases && (question as CodingQuestion).testCases!.length > 0 && (
+
+                {(question as CodingQuestion).testCases?.length > 0 && (
                   <div>
                     <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.2em] mb-3">Test Cases</div>
-                    <div className="space-y-2">
-                      {(question as CodingQuestion).testCases!.map((tc, i) => (
-                        <div key={i} className="flex items-center gap-3 bg-canvas rounded-lg px-4 py-2.5 border border-border-subtle">
-                          <span className="text-xs font-mono text-text-muted">{i + 1}</span>
-                          <code className="text-sm font-mono text-text-main">{tc}</code>
+                    <div className="space-y-4">
+                      {(question as CodingQuestion).testCases.map((tc, i) => (
+                        <div key={i} className="bg-canvas rounded-lg p-4 border border-border-subtle space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black text-text-muted uppercase">Test Case {i + 1}</span>
+                            {tc.isHidden && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 uppercase">Hidden</span>}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-[10px] font-black text-text-muted uppercase mb-1.5">Input</div>
+                              <div className="bg-surface border border-border-subtle rounded px-3 py-2 font-mono text-xs text-text-main">
+                                <pre className="whitespace-pre-wrap">{tc.input}</pre>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] font-black text-text-muted uppercase mb-1.5">Expected Output</div>
+                              <div className="bg-surface border border-border-subtle rounded px-3 py-2 font-mono text-xs text-text-main">
+                                <pre className="whitespace-pre-wrap">{tc.expectedOutput}</pre>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -209,7 +248,6 @@ export default function QuestionDetailPage() {
         </div>
       </main>
 
-      {/* Delete Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[49] flex items-center justify-center bg-canvas/80 backdrop-blur-sm p-4">
           <div className="bg-surface p-6 rounded-2xl border border-border-subtle max-w-[420px] w-full">
