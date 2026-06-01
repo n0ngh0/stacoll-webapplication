@@ -162,42 +162,42 @@ export default function QuestionDetailPage() {
 
             {question.type === "coding" && (
               <>
-                {/* Expected I/O */}
-                {((question as CodingQuestion).expectedInput || (question as CodingQuestion).expectedOutput) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    {(question as CodingQuestion).expectedInput && (
-                      <div>
-                        <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.15em] mb-2">Input</div>
-                        <div className="bg-canvas border border-border-subtle rounded-lg px-4 py-2.5 font-mono text-sm text-text-main">
-                          <pre className="whitespace-pre-wrap">{(question as CodingQuestion).expectedInput}</pre>
-                        </div>
-                      </div>
-                    )}
-                    {(question as CodingQuestion).expectedOutput && (
-                      <div>
-                        <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.15em] mb-2">Output</div>
-                        <div className="bg-canvas border border-border-subtle rounded-lg px-4 py-2.5 font-mono text-sm text-text-main">
-                          <pre className="whitespace-pre-wrap">{(question as CodingQuestion).expectedOutput}</pre>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 <div className="mb-6">
-                  <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.2em] mb-3">Initial Code</div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.2em]">Template Code</div>
+                    <div className="text-xs font-mono px-2 py-1 bg-surface border border-border-subtle rounded text-text-muted">
+                      {(question as CodingQuestion).languageId}
+                    </div>
+                  </div>
                   <div className="bg-[#1e293b] dark:bg-[#0f172a] p-5 rounded-xl font-mono text-sm text-slate-200 overflow-x-auto border border-[#334155]">
-                    <pre>{(question as CodingQuestion).initialCode}</pre>
+                    <pre>{(question as CodingQuestion).templateCode}</pre>
                   </div>
                 </div>
-                {(question as CodingQuestion).testCases && (question as CodingQuestion).testCases!.length > 0 && (
+
+                {(question as CodingQuestion).testCases && (question as CodingQuestion).testCases.length > 0 && (
                   <div>
                     <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.2em] mb-3">Test Cases</div>
-                    <div className="space-y-2">
-                      {(question as CodingQuestion).testCases!.map((tc, i) => (
-                        <div key={i} className="flex items-center gap-3 bg-canvas rounded-lg px-4 py-2.5 border border-border-subtle">
-                          <span className="text-xs font-mono text-text-muted">{i + 1}</span>
-                          <code className="text-sm font-mono text-text-main">{tc}</code>
+                    <div className="space-y-4">
+                      {(question as CodingQuestion).testCases.map((tc, i) => (
+                        <div key={i} className="bg-canvas rounded-lg p-4 border border-border-subtle space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-black text-text-muted uppercase">Test Case {i + 1}</span>
+                            {tc.isHidden && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 uppercase">Hidden</span>}
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-[10px] font-black text-text-muted uppercase mb-1.5">Input</div>
+                              <div className="bg-surface border border-border-subtle rounded px-3 py-2 font-mono text-xs text-text-main">
+                                <pre className="whitespace-pre-wrap">{tc.input}</pre>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] font-black text-text-muted uppercase mb-1.5">Expected Output</div>
+                              <div className="bg-surface border border-border-subtle rounded px-3 py-2 font-mono text-xs text-text-main">
+                                <pre className="whitespace-pre-wrap">{tc.expectedOutput}</pre>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
