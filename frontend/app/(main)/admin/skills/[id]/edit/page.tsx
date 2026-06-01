@@ -5,8 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import SkillForm from "@/components/admin/skill-form";
-import { getSkillById, updateSkill } from "@/lib/question-store";
-import type { Skill, UpdateSkillPayload } from "@/types/question";
+import type { Skill } from "@/types/skill";
 
 export default function EditSkillPage() {
   const params = useParams();
@@ -17,10 +16,29 @@ export default function EditSkillPage() {
 
   useEffect(() => {
     if (id) {
-      setSkill(getSkillById(id));
+      loadSkill();
+    } else {
+      setMounted(true);
     }
-    setMounted(true);
   }, [id]);
+
+  const loadSkill = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      const res = await fetch(`${apiUrl}/skills/${id}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSkill(data.skill);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setMounted(true);
+    }
+  };
 
   if (!mounted) {
     return (
@@ -44,8 +62,29 @@ export default function EditSkillPage() {
     );
   }
 
-  const handleUpdate = (data: UpdateSkillPayload) => {
-    updateSkill(id, data);
+  const handleUpdate = async (data: any) => {
+    try {
+      const token = localStorage.getItem("token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      
+      const res = await fetch(`${apiUrl}/admin/skills/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+      
+      if (!result.success) {
+        throw new Error(result.message || "Failed to update skill");
+      }
+    } catch (error: any) {
+      console.error("Update skill error:", error);
+      throw error;
+    }
   };
 
   return <SkillForm mode="edit" initialData={skill} onSubmit={handleUpdate} />;

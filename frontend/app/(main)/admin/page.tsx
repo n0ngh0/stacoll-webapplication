@@ -6,14 +6,15 @@ import {
   Filter, ChevronDown, Check,
   Plus
 } from "lucide-react";
-import { getSkills, getQuestionCountBySkill } from "@/lib/question-store";
-import type { Skill } from "@/types/question";
+import { getQuestionCountBySkill } from "@/lib/question-store"; // Keep this for now if problems aren't fully migrated
+import type { Skill } from "@/types/skill";
 import { CATEGORY_THEMES } from "@/types/question";
 import AdminSkillCard from "@/components/admin/AdminSkillCard";
 
 export default function AdminDashboardPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [mounted, setMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<string[]>(["analyst", "programming", "systems"]);
@@ -41,9 +42,29 @@ export default function AdminDashboardPage() {
   }, []);
 
   useEffect(() => {
-    setSkills(getSkills());
+    fetchSkills();
     setMounted(true);
   }, []);
+
+  const fetchSkills = async () => {
+    try {
+      setIsLoading(true);
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      // Using public skills endpoint for listing
+      const res = await fetch(`${apiUrl}/skills`);
+      const data = await res.json();
+      
+      if (data.success) {
+        setSkills(data.skills);
+      } else {
+        console.error("Failed to fetch skills:", data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching skills:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (!mounted) {
     return (
@@ -87,10 +108,29 @@ export default function AdminDashboardPage() {
     }, 100);
   };
 
-  const handleDeleteSkill = (id: string, title: string) => {
+  const handleDeleteSkill = async (id: string, title: string) => {
     if (confirm(`Are you sure you want to delete ${title}?`)) {
-      setSkills(skills.filter(s => s.id !== id));
-      setActiveMenuId(null);
+      try {
+        const token = localStorage.getItem("token");
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+        const res = await fetch(`${apiUrl}/admin/skills/${id}`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          setSkills(skills.filter(s => s._id !== id));
+          setActiveMenuId(null);
+        } else {
+          alert(`Failed to delete skill: ${data.message}`);
+        }
+      } catch (error) {
+        console.error("Error deleting skill:", error);
+        alert("An error occurred while deleting the skill.");
+      }
     }
   };
 
@@ -98,7 +138,7 @@ export default function AdminDashboardPage() {
     const matchCategory = activeFilters.length === 0 || activeFilters.includes(skill.category.toLowerCase());
     const matchSearch =
       skill.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      skill.desc.toLowerCase().includes(searchQuery.toLowerCase());
+      skill.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchCategory && matchSearch;
   });
 
@@ -241,12 +281,16 @@ export default function AdminDashboardPage() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredSkills.map((skill) => {
-              const qCount = getQuestionCountBySkill(skill.id);
+            {isLoading ? (
+               <div className="col-span-full py-10 flex justify-center">
+                 <div className="w-8 h-8 border-4 border-gray-300 border-t-greenui rounded-full animate-spin" />
+               </div>
+            ) : filteredSkills.map((skill) => {
+              const qCount = (skill as any).actualQuestionCount || 0;
               const themeColor = CATEGORY_THEMES[skill.category] || "#19c3af";
 
               return (
-                <AdminSkillCard key={skill.id} skill={skill} qCount={qCount} themeColor={themeColor} onDelete={handleDeleteSkill} />
+                <AdminSkillCard key={skill._id} skill={skill} qCount={qCount} themeColor={themeColor} onDelete={handleDeleteSkill} />
               );
             })}
           </div>

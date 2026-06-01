@@ -6,34 +6,7 @@ import AssessmentHeader from "@/components/layouts/assessment-header";
 import CodingQuestion from "@/components/layouts/coding-question";
 import ChoiceQuestion from "@/components/layouts/choice-question";
 
-const MOCK_QUESTIONS = [
-    {
-        id: 1,
-        type: "coding",
-        title: "Two Sum",
-        description: "Given an array of integers, return indices of the two numbers such that they add up to a specific target.",
-        initialCode: "def solve(nums, target):\n    # Write your code here\n    pass"
-    },
-    {
-        id: 2,
-        type: "choice",
-        title: "Python Memory Management",
-        description: "Which of the following mechanisms does Python primarily use for automatic memory management and reclaiming unused objects?",
-        options: [
-            "Reference Counting & Garbage Collection",
-            "Manual Memory Deallocation (free())",
-            "Mark-and-Sweep Only without reference counts",
-            "Python does not manage memory automatically"
-        ]
-    },
-    {
-        id: 3,
-        type: "coding",
-        title: "Reverse String",
-        description: "Write a function that reverses a string. The input string is given as an array of characters.",
-        initialCode: "def reverseString(s):\n    # Write your code here\n    pass"
-    }
-];
+import { useSearchParams } from "next/navigation";
 
 export default function ExamPage() {
     const params = useParams();
@@ -41,14 +14,22 @@ export default function ExamPage() {
     const rawSkillId = (params?.id || "skill-assessment") as string;
     const displaySkillName = decodeURIComponent(rawSkillId as string).toUpperCase();
 
+    const searchParams = useSearchParams();
+    const selectedLevel = searchParams?.get("level") || "beginner";
+
+    const [problems, setProblems] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     const [currentIndex, setCurrentIndex] = useState(0);
     const [timeLeft, setTimeLeft] = useState(30 * 60);
     const [isFinished, setIsFinished] = useState(false);
-    const [answers, setAnswers] = useState<{ [key: number]: any }>({});
+    const [answers, setAnswers] = useState<{ [key: string]: any }>({});
 
-    const currentQuestion = MOCK_QUESTIONS[currentIndex];
+    const currentQuestion = problems[currentIndex];
     const isFirst = currentIndex === 0;
-    const isLast = currentIndex === MOCK_QUESTIONS.length - 1;
+    const isLast = currentIndex === problems.length - 1;
 
     // ระบบ Timer + Auto Submit
     useEffect(() => {
@@ -67,8 +48,9 @@ export default function ExamPage() {
     };
 
     const handleUpdateAnswer = useCallback((val: any) => {
-        setAnswers(prev => ({ ...prev, [currentQuestion.id]: val }));
-    }, [currentQuestion.id]);
+        if (!currentQuestion) return;
+        setAnswers(prev => ({ ...prev, [currentQuestion._id]: val }));
+    }, [currentQuestion]);
 
     const handleNext = useCallback(() => {
         if (!isLast) {
@@ -82,16 +64,89 @@ export default function ExamPage() {
         if (!isFirst) setCurrentIndex(prev => prev - 1);
     }, [isFirst]);
 
-    // Effect to redirect when finished
+    // Fetch problems from API
     useEffect(() => {
-        if (isFinished) {
-            // Mock a delay and then redirect to result page
-            const timer = setTimeout(() => {
-                router.push(`/assessment/${rawSkillId}/result?score=85&passed=true&level=BEGINNER`);
-            }, 1500);
-            return () => clearTimeout(timer);
+        const fetchProblems = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) return router.push("/");
+                
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+                const res = await fetch(`${apiUrl}/assessment/${rawSkillId}/start`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ level: selectedLevel })
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    setProblems(data.problems);
+                    setTimeLeft(30 * 60); // Could get from skill.estimatedTime ideally
+                } else {
+                    setError(data.message);
+                }
+            } catch (err) {
+                setError("Error starting assessment");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchProblems();
+    }, [rawSkillId, selectedLevel, router]);
+
+    // Effect to submit when finished
+    useEffect(() => {
+        if (isFinished && !isSubmitting && problems.length > 0) {
+            setIsSubmitting(true);
+            const submitAnswers = async () => {
+                try {
+                    const token = localStorage.getItem("token");
+                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+                    
+                    const res = await fetch(`${apiUrl}/assessment/${rawSkillId}/submit`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({ level: selectedLevel, answers })
+                    });
+                    
+                    const data = await res.json();
+                    if (data.success) {
+                        router.push(`/assessment/${rawSkillId}/result?score=${data.score}&passed=${data.passed}&level=${selectedLevel}`);
+                    } else {
+                        setError(data.message);
+                    }
+                } catch (err) {
+                    setError("Error submitting assessment");
+                }
+            };
+            submitAnswers();
         }
-    }, [isFinished, router, rawSkillId]);
+    }, [isFinished, isSubmitting, answers, problems, rawSkillId, selectedLevel, router]);
+
+    if (isLoading) {
+        return (
+            <div className="h-screen w-full flex items-center justify-center bg-canvas p-4 text-center">
+                <Loader2 className="w-12 h-12 text-greenui animate-spin" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="h-screen w-full flex items-center justify-center bg-canvas p-4 text-center">
+                <div className="bg-surface p-8 rounded-3xl shadow-xl border border-border-subtle max-w-md w-full flex flex-col items-center">
+                    <p className="text-red-500 font-bold text-lg mb-4">{error}</p>
+                    <button onClick={() => router.push(`/skill/${rawSkillId}`)} className="text-brand-secondary hover:underline cursor-pointer">Go Back</button>
+                </div>
+            </div>
+        );
+    }
 
     if (isFinished) {
         return (
@@ -113,7 +168,7 @@ export default function ExamPage() {
         <div className="h-screen w-full flex flex-col bg-canvas overflow-hidden">
             <AssessmentHeader
                 current={currentIndex + 1}
-                total={MOCK_QUESTIONS.length}
+                total={problems.length}
                 title={displaySkillName}
                 timeLeft={formatTime(timeLeft)}
                 isUrgent={timeLeft < 300}
@@ -123,9 +178,9 @@ export default function ExamPage() {
             <div className="flex-1 flex overflow-hidden">
                 {currentQuestion.type === "coding" ? (
                     <CodingQuestion
-                        title={currentQuestion.title}
-                        description={currentQuestion.description}
-                        code={answers[currentQuestion.id] ?? currentQuestion.initialCode}
+                        title={currentQuestion.question}
+                        description={currentQuestion.explanation || currentQuestion.question}
+                        code={answers[currentQuestion._id] ?? (currentQuestion.initialCode || "def solve():\n    pass")}
                         onChange={handleUpdateAnswer}
                         onNext={handleNext}
                         onBack={handleBack}
@@ -134,8 +189,13 @@ export default function ExamPage() {
                     />
                 ) : (
                     <ChoiceQuestion
-                        data={currentQuestion}
-                        selected={answers[currentQuestion.id] ?? null}
+                        data={{
+                            id: currentQuestion._id,
+                            title: currentQuestion.question,
+                            description: currentQuestion.explanation || "Select the best answer.",
+                            options: currentQuestion.choices
+                        }}
+                        selected={answers[currentQuestion._id] ?? null}
                         onChange={handleUpdateAnswer}
                         onNext={handleNext}
                         onBack={handleBack}

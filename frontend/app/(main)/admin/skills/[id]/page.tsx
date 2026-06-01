@@ -7,9 +7,8 @@ import {
   Settings, Clock, Eye, Code2, ListChecks, Monitor, CircleQuestionMark
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
-import { getSkillById, deleteSkill, getQuestionsByLevel, deleteQuestion, getLevelMode, updateSkill } from "@/lib/question-store";
-import type { Skill, Question, SkillLevel } from "@/types/question";
-import { LEVEL_OPTIONS, CATEGORY_THEMES } from "@/types/question";
+import type { Skill, SkillLevel, Problem } from "@/types/skill";
+import { LEVEL_OPTIONS, CATEGORY_THEMES } from "@/types/question"; // using constants for UI
 import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
 
 export default function SkillManagementPage() {
@@ -17,12 +16,11 @@ export default function SkillManagementPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = params?.id as string;
-  const initialLevel = (searchParams?.get("level") as SkillLevel["id"]) || "beginner";
+  const initialLevel = (searchParams?.get("level") as string) || "beginner";
 
   const [skill, setSkill] = useState<Skill | null>(null);
-  const [activeLevel, setActiveLevel] = useState<SkillLevel["id"]>(initialLevel);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [levelMode, setLevelMode] = useState<string>("Any Device");
+  const [activeLevel, setActiveLevel] = useState<string>(initialLevel);
+  const [questions, setQuestions] = useState<Problem[]>([]);
 
   const [mounted, setMounted] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -42,13 +40,37 @@ export default function SkillManagementPage() {
     if (skill) { loadLevelData(activeLevel); }
   }, [skill, activeLevel]);
 
-  const loadSkill = () => {
-    setSkill(getSkillById(id));
+  const loadSkill = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      const res = await fetch(`${apiUrl}/skills/${id}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) setSkill(data.skill);
+      else toast.error("Failed to load skill");
+    } catch (e) {
+      console.error(e);
+      toast.error("Error loading skill");
+    }
   };
 
-  const loadLevelData = (levelId: string) => {
-    setQuestions(getQuestionsByLevel(id, levelId));
-    setLevelMode(getLevelMode(id, levelId));
+  const loadLevelData = async (levelId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      const res = await fetch(`${apiUrl}/admin/skills/${id}/problems?level=${levelId}`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setQuestions(data.problems);
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Error loading questions");
+    }
   };
 
   if (!mounted) { return <div className="fixed inset-0 z-[9999] bg-canvas animate-pulse" />; }
@@ -62,15 +84,33 @@ export default function SkillManagementPage() {
     );
   }
 
-  const handleDeleteSkill = () => {
-    deleteSkill(id);
-    router.push("/admin");
+  const handleDeleteSkill = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      await fetch(`${apiUrl}/admin/skills/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      router.push("/admin");
+    } catch (e) {
+      toast.error("Failed to delete skill");
+    }
   };
 
-  const confirmDeleteQuestion = (qId: string) => {
-    deleteQuestion(qId);
-    setQuestionToDelete(null);
-    loadLevelData(activeLevel);
+  const confirmDeleteQuestion = async (qId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      await fetch(`${apiUrl}/admin/problems/${qId}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      setQuestionToDelete(null);
+      loadLevelData(activeLevel);
+    } catch (e) {
+      toast.error("Failed to delete question");
+    }
   };
 
   const handleOpenEditLevel = (levelData: SkillLevel) => {
@@ -78,7 +118,7 @@ export default function SkillManagementPage() {
     setShowEditLevelModal(true);
   };
 
-  const handleSaveLevel = () => {
+  const handleSaveLevel = async () => {
     if (!skill || !editingLevelData) return;
 
     if (!editingLevelData.description?.trim()) {
@@ -91,12 +131,29 @@ export default function SkillManagementPage() {
       return;
     }
 
-    const newLevels = skill.levels.map(l => l.id === editingLevelData.id ? editingLevelData : l);
-    const updated = updateSkill(skill.id, { levels: newLevels });
+    const newLevels = skill.levels.map(l => l.level === editingLevelData.level ? editingLevelData : l);
     
-    if (updated) { 
-      setSkill(updated);
-      toast.success(`${editingLevelData.title} Level updated successfully!`);
+    try {
+      const token = localStorage.getItem("token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      const res = await fetch(`${apiUrl}/admin/skills/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ levels: newLevels })
+      });
+      const data = await res.json();
+      
+      if (data.success) { 
+        setSkill(data.skill);
+        toast.success(`${editingLevelData.level.toUpperCase()} Level updated successfully!`);
+      } else {
+        toast.error("Update failed");
+      }
+    } catch (e) {
+      toast.error("Error updating level");
     }
     
     setShowEditLevelModal(false);
@@ -110,7 +167,7 @@ export default function SkillManagementPage() {
     return `text-${diff.color} border-${diff.color} bg-${diff.bg}/50`;
   };
 
-  const activeLevelData = skill.levels?.find(l => l.id === activeLevel);
+  const activeLevelData = skill.levels?.find(l => l.level === activeLevel);
   const isImageUrl = (url: string) => url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:");
 
   const themeColor = CATEGORY_THEMES[skill.category] || "#19c3af";
@@ -143,7 +200,7 @@ export default function SkillManagementPage() {
                 <h1 className="text-3xl font-extrabold text-text-main tracking-tight">
                   {skill.title}
                 </h1>
-                <p className="text-text-muted text-sm mt-1">{skill.desc}</p>
+                <p className="text-text-muted text-sm mt-1">{skill.description}</p>
               </div>
             </div>
 
@@ -156,7 +213,7 @@ export default function SkillManagementPage() {
 
           <div className="flex items-center gap-2 shrink-0">
             <Link
-              href={`/admin/skills/${skill.id}/edit`}
+              href={`/admin/skills/${skill._id}/edit`}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-surface border border-border-subtle text-text-main font-bold rounded-xl text-sm hover:border-brand-secondary-hover hover:text-brand-secondary-hover transition-colors text-center"
             >
               <Settings size={14} /> Edit Skill
@@ -175,11 +232,11 @@ export default function SkillManagementPage() {
           <div className="flex gap-2 flex-1">
             {(skill.levels || []).map(level => (
               <button
-                key={level.id}
-                onClick={() => setActiveLevel(level.id as SkillLevel["id"])}
-                className={`px-6 py-3 font-bold text-sm rounded-t-xl border-b-2 transition-all cursor-pointer whitespace-nowrap ${getLevelStyle(level.id, activeLevel === level.id)}`}
+                key={level.level}
+                onClick={() => setActiveLevel(level.level)}
+                className={`px-6 py-3 font-bold text-sm rounded-t-xl border-b-2 transition-all cursor-pointer whitespace-nowrap capitalize ${getLevelStyle(level.level, activeLevel === level.level)}`}
               >
-                {level.title}
+                {level.level}
               </button>
             ))}
           </div>
@@ -196,7 +253,7 @@ export default function SkillManagementPage() {
           <div className="bg-surface rounded-2xl border border-border-subtle p-6 mb-8 flex flex-col md:flex-row md:items-start justify-between gap-6 shadow-sm">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                <h3 className="text-lg font-bold text-text-main">{activeLevelData.title} Level</h3>
+                <h3 className="text-lg font-bold text-text-main capitalize">{activeLevelData.level} Level</h3>
                 <button
                   onClick={() => handleOpenEditLevel(activeLevelData)}
                   className="p-1.5 text-text-muted hover:text-greenui hover:bg-greenui/10 rounded-lg transition-colors cursor-pointer"
@@ -207,17 +264,7 @@ export default function SkillManagementPage() {
               </div>
               <div className="text-text-muted text-sm relative mt-2">
                 <p className="line-clamp-3">{activeLevelData.description}</p>
-                {activeLevelData.fullDescription && (
-                  <button
-                    onClick={() => {
-                      setActiveCompareTab(activeLevelData.id as SkillLevel["id"]);
-                      setShowCompareModal(true);
-                    }}
-                    className="text-greenui font-semibold text-xs mt-2 hover:underline cursor-pointer flex items-center gap-1"
-                  >
-                    <Eye size={12} /> Read full criteria
-                  </button>
-                )}
+                {/* Note: backend doesn't store fullDescription currently, skip for now or add to model later */}
               </div>
             </div>
 
@@ -232,7 +279,7 @@ export default function SkillManagementPage() {
               </div>
               <div className="bg-canvas border border-border-subtle rounded-xl p-3 flex flex-col items-center min-w-[90px]">
                 <Monitor size={16} className="text-text-muted mb-1" />
-                <span className="text-xs font-bold text-text-main">{levelMode}</span>
+                <span className="text-xs font-bold text-text-main">{(activeLevelData as any).mode || "Any Device"}</span>
               </div>
             </div>
           </div>
@@ -243,10 +290,10 @@ export default function SkillManagementPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold text-text-main flex items-center gap-2">
               <ListChecks className="text-greenui" size={24} />
-              Questions for {activeLevelData?.title}
+              <span className="capitalize">Questions for {activeLevelData?.level}</span>
             </h2>
             <Link
-              href={`/admin/skills/${skill.id}/${activeLevel}/questions/create`}
+              href={`/admin/skills/${skill._id}/${activeLevel}/questions/create`}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-greenbutton text-white dark:text-black font-extrabold rounded-xl hover:bg-greenbutton/90 transition-colors text-sm cursor-pointer shadow-sm"
             >
               <Plus size={16} /> Add Question
@@ -259,12 +306,12 @@ export default function SkillManagementPage() {
                 <div className="w-16 h-16 rounded-full bg-surface-hover flex items-center justify-center text-text-muted mb-4">
                   <ListChecks size={32} />
                 </div>
-                <h3 className="text-lg font-bold text-text-main mb-2">No questions yet in {activeLevelData?.title}</h3>
+                <h3 className="text-lg font-bold text-text-main mb-2 capitalize">No questions yet in {activeLevelData?.level}</h3>
                 <p className="text-text-muted text-sm max-w-md mb-6">
                   Add questions to this level to evaluate candidates.
                 </p>
                 <Link
-                  href={`/admin/skills/${skill.id}/${activeLevel}/questions/create`}
+                  href={`/admin/skills/${skill._id}/${activeLevel}/questions/create`}
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-secondary text-white font-bold rounded-xl shadow-md hover:bg-brand-secondary-hover transition-colors"
                 >
                   <Plus size={16} /> Create First Question
@@ -282,36 +329,36 @@ export default function SkillManagementPage() {
                   </thead>
                   <tbody className="divide-y divide-border-subtle text-sm">
                     {questions.map((q) => (
-                      <tr key={q.id} className="group hover:bg-surface-hover transition-colors">
+                      <tr key={q._id} className="group hover:bg-surface-hover transition-colors">
                         <td className="px-6 py-4">
-                          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase ${q.type === 'choice' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-violet-500/10 text-violet-500'
+                          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black uppercase ${q.questionType === 'multiple_choice' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-violet-500/10 text-violet-500'
                             }`}>
-                            {q.type === 'choice' ? <ListChecks size={12} /> : <Code2 size={12} />}
-                            {q.type}
+                            {q.questionType === 'multiple_choice' ? <ListChecks size={12} /> : <Code2 size={12} />}
+                            {q.questionType.replace("_", " ")}
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <div className="font-bold text-text-main mb-1 truncate max-w-[300px]">{q.title}</div>
-                          <div className="text-xs text-text-muted truncate max-w-[300px]">{q.description}</div>
+                          <div className="font-bold text-text-main mb-1 truncate max-w-[300px]">{q.question}</div>
+                          <div className="text-xs text-text-muted truncate max-w-[300px]">Choices: {q.choices?.length || 0}</div>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Link
-                              href={`/admin/skills/${skill.id}/${activeLevel}/questions/${q.id}`}
+                              href={`/admin/skills/${skill._id}/${activeLevel}/questions/${q._id}`}
                               className="p-2 text-text-muted hover:text-greenbutton hover:bg-greenbutton/10 rounded-lg transition-colors"
                               title="Preview"
                             >
                               <Eye size={16} />
                             </Link>
                             <Link
-                              href={`/admin/skills/${skill.id}/${activeLevel}/questions/${q.id}/edit`}
+                              href={`/admin/skills/${skill._id}/${activeLevel}/questions/${q._id}/edit`}
                               className="p-2 text-text-muted hover:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors"
                               title="Edit"
                             >
                               <Pencil size={16} />
                             </Link>
                             <button
-                              onClick={() => setQuestionToDelete(q.id)}
+                              onClick={() => setQuestionToDelete(q._id)}
                               className="p-2 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
                               title="Delete"
                             >
@@ -402,8 +449,8 @@ export default function SkillManagementPage() {
             {/* Header */}
             <div className="px-6 md:px-8 py-6 border-b border-border-subtle flex items-center gap-4 bg-surface">
               <div>
-                <h3 className="text-xl font-extrabold text-text-main tracking-tight">
-                  Configure : {editingLevelData.title} Level
+                <h3 className="text-xl font-extrabold text-text-main tracking-tight capitalize">
+                  Configure : {editingLevelData.level} Level
                 </h3>
               </div>
             </div>
@@ -441,29 +488,7 @@ export default function SkillManagementPage() {
                 />
               </div>
 
-              {/* Full Criteria */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-bold text-text-main">Full Criteria</label>
-                  <span className="px-3 py-1 bg-surface-hover border border-border-subtle text-text-muted text-[10px] uppercase font-black tracking-widest rounded-lg">Optional</span>
-                </div>
-
-                {/* Markdown Container */}
-                <div className="bg-canvas border border-border-subtle rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-brand-secondary/40 transition-shadow">
-                  <div className="bg-surface-hover border-b border-border-subtle px-4 py-2.5 flex items-center gap-2">
-                    <Code2 size={16} className="text-text-muted" />
-                    <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Markdown Supported</span>
-                  </div>
-                  <textarea
-                    rows={5}
-                    value={editingLevelData.fullDescription || ""}
-                    onChange={(e) => setEditingLevelData({ ...editingLevelData, fullDescription: e.target.value })}
-                    placeholder="## Pass Criteria&#10;- Must finish under 20 mins&#10;- Code is clean and optimized"
-                    className="w-full px-4 py-4 bg-transparent text-sm text-text-main font-mono outline-none resize-y placeholder:text-text-muted/50 leading-relaxed"
-                  />
-                </div>
-                <p className="text-xs text-text-muted mt-2.5 font-medium">Use markdown to format lists, bold text, and headings.</p>
-              </div>
+              {/* Full Criteria removed as unsupported currently */}
 
             </div>
 
@@ -489,8 +514,8 @@ export default function SkillManagementPage() {
       {/* Compare All Levels Modal */}
       {showCompareModal && (
         <CompareLevelsModal
-          levels={skill.levels || []}
-          initialTab={activeCompareTab}
+          levels={skill.levels.map((l: any) => ({ ...l, id: l.level, title: l.level })) as any || []}
+          initialTab={activeCompareTab as any}
           themeColor={themeColor}
           onClose={() => setShowCompareModal(false)}
         />

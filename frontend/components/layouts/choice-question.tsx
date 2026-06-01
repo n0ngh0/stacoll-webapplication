@@ -8,7 +8,7 @@ export interface QuestionData {
     title: string;
     description: string;
     codeSnippet?: string;
-    options: string[];
+    options: { label: string, text: string }[];
 }
 
 interface ChoiceProps {
@@ -61,8 +61,8 @@ const ChoiceQuestion = memo(function ChoiceQuestion({
                     <p className="text-[11px] font-black text-text-muted uppercase tracking-[0.2em] mb-6">Select your answer:</p>
 
                     <div className="grid grid-cols-1 gap-4" role="radiogroup" aria-label="Question options">
-                        {data.options.map((option: string) => {
-                            const isSelected = selected === option;
+                        {data.options.map((option: { label: string, text: string }) => {
+                            const isSelected = selected === option.label;
 
                             const buttonBaseClass = "w-full flex items-center justify-between p-6 rounded-2xl border-2 transition-colors duration-200 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary cursor-pointer";
                             const buttonSelectedClass = isSelected 
@@ -71,14 +71,15 @@ const ChoiceQuestion = memo(function ChoiceQuestion({
 
                             return (
                                 <button
-                                    key={option}
+                                    key={option.label}
                                     role="radio"
                                     aria-checked={isSelected}
-                                    onClick={() => onChange(option)}
+                                    onClick={() => onChange(option.label)}
                                     className={`${buttonBaseClass} ${buttonSelectedClass}`}
                                 >
                                     <span className={`text-lg font-bold ${isSelected ? "text-text-main" : ""}`}>
-                                        {option}
+                                        <span className="mr-3 text-text-muted opacity-70">{option.label}.</span>
+                                        {option.text}
                                     </span>
                                     {/* วงกลมติ๊กถูก */}
                                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isSelected ? "border-brand-secondary bg-brand-secondary" : "border-border-subtle"}`}>

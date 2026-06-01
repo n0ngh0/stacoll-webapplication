@@ -9,17 +9,17 @@ import type { Skill } from "@/types/question";
 
 interface SkillFormProps {
   mode: "create" | "edit";
-  initialData?: Skill;
-  onSubmit: (data: any) => void;
+  initialData?: any;
+  onSubmit: (data: any) => Promise<void>;
 }
 
 export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProps) {
   const router = useRouter();
 
   const [title, setTitle] = useState(initialData?.title || "");
-  const [desc, setDesc] = useState(initialData?.desc || "");
+  const [desc, setDesc] = useState(initialData?.description || initialData?.desc || "");
   const [icon, setIcon] = useState(initialData?.icon || "");
-  const [category, setCategory] = useState<Skill['category']>(initialData?.category || "programming");
+  const [category, setCategory] = useState<any>(initialData?.category || "programming");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -32,7 +32,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) {
       toast.error("กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง");
       return;
@@ -40,17 +40,21 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
 
     const payload = {
       title: title.trim(),
-      desc: desc.trim(),
+      description: desc.trim(),
       icon: icon.trim() || title.trim().substring(0, 3).toUpperCase(),
       category,
     };
 
-    onSubmit(payload);
-    toast.success(mode === "create" ? "Skill created successfully!" : "Skill updated successfully!");
+    try {
+      await onSubmit(payload);
+      toast.success(mode === "create" ? "Skill created successfully!" : "Skill updated successfully!");
 
-    setTimeout(() => {
-      router.push(mode === "create" ? "/admin" : `/admin/skills/${initialData?.id}`);
-    }, 1000);
+      setTimeout(() => {
+        router.push(mode === "create" ? "/admin" : `/admin/skills/${initialData?._id}`);
+      }, 1000);
+    } catch (error: any) {
+      toast.error(error.message || "Something went wrong.");
+    }
   };
 
   const isImageUrl = (url: string) => url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:");
@@ -64,7 +68,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
 
           <div className="mb-8">
             <Link
-              href={mode === "create" ? "/admin" : `/admin/skills/${initialData?.id}`}
+              href={mode === "create" ? "/admin" : `/admin/skills/${initialData?._id}`}
               className="inline-flex items-center gap-1.5 text-sm font-bold text-text-muted hover:text-text-main transition-colors mb-3 cursor-pointer"
             >
               <ArrowLeft size={16} />

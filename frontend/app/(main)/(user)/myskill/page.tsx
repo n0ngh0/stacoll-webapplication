@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { Award, CheckCircle, Clock, Search, ExternalLink, Activity, AlertTriangle, History } from "lucide-react";
+import { Award, CheckCircle, Clock, Search, ExternalLink, Activity, AlertTriangle, History, Loader2 } from "lucide-react";
 
 import { getLevelColorClass } from "@/types/question";
 
@@ -9,28 +9,93 @@ export default function MySkillPage() {
   const [activeTab, setActiveTab] = useState<"verified" | "pending" | "history">("verified");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const mockSkills = [
-    { name: "JavaScript", level: "ADVANCED", score: 91, date: "Jan 15, 2026", expires: "Jan 15, 2028" },
-    { name: "SQL", level: "INTERMEDIATE", score: 85, date: "Nov 05, 2025", expires: "Nov 05, 2027" },
-    { name: "React.js", level: "INTERMEDIATE", score: 82, date: "Oct 12, 2025", expires: "Oct 12, 2027" },
-    { name: "Node.js", level: "BEGINNER", score: 67, date: "Oct 12, 2025", expires: "Oct 12, 2027" },
-    { name: "Python", level: "ADVANCED", score: 95, date: "Sep 28, 2025", expires: "Sep 28, 2027" },
-  ];
+    const [skills, setSkills] = useState<any[]>([]);
+    const [pendingRetakes, setPendingRetakes] = useState<any[]>([]);
+    const [history, setHistory] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-  const mockPendingRetakes = [
-    { name: "Python", level: "ADVANCED", score: 45, date: "Oct 01, 2025", cooldown: "Oct 15, 2025" },
-    { name: "JavaScript", level: "ADVANCED", score: 30, date: "Aug 20, 2025", cooldown: "Available Now" },
-  ];
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) return;
+                
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+                const [profileRes, historyRes] = await Promise.all([
+                    fetch(`${apiUrl}/profile`, { headers: { "Authorization": `Bearer ${token}` } }),
+                    fetch(`${apiUrl}/assessment/history`, { headers: { "Authorization": `Bearer ${token}` } })
+                ]);
+                
+                const profileData = await profileRes.json();
+                const historyData = await historyRes.json();
 
-  const mockHistory = [
-    { name: "JavaScript", level: "ADVANCED", score: 91, date: "Jan 15, 2026", status: "PASSED" },
-    { name: "SQL", level: "INTERMEDIATE", score: 85, date: "Nov 05, 2025", status: "PASSED" },
-    { name: "React.js", level: "INTERMEDIATE", score: 82, date: "Oct 12, 2025", status: "PASSED" },
-    { name: "Node.js", level: "BEGINNER", score: 67, date: "Oct 12, 2025", status: "PASSED" },
-    { name: "Python", level: "ADVANCED", score: 45, date: "Oct 01, 2025", status: "FAILED" },
-    { name: "Python", level: "ADVANCED", score: 95, date: "Sep 28, 2025", status: "PASSED" },
-    { name: "JavaScript", level: "ADVANCED", score: 30, date: "Aug 20, 2025", status: "FAILED" },
-  ];
+                if (profileData.success) {
+                    const verified = profileData.user.verifiedSkills || [];
+                    setSkills(verified.map((vs: any) => ({
+                        id: vs.skillId,
+                        name: vs.skillName,
+                        level: vs.level,
+                        score: vs.score,
+                        date: new Date(vs.verifiedAt).toLocaleDateString(),
+                        expires: new Date(new Date(vs.verifiedAt).getTime() + 2 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+                    })));
+                }
+
+                if (historyData.success) {
+                    const allHistory = historyData.history.map((h: any) => ({
+                        id: h.skillId?._id,
+                        name: h.skillId?.title || "Unknown Skill",
+                        level: h.level,
+                        score: h.score,
+                        status: h.passed ? "PASSED" : "FAILED",
+                        date: new Date(h.createdAt).toLocaleDateString(),
+                        createdAt: h.createdAt
+                    }));
+                    setHistory(allHistory);
+
+                    // Calculate pending retakes
+                    const latestFails: Record<string, any> = {};
+                    for (const h of historyData.history) {
+                        const key = `${h.skillId?._id}_${h.level}`;
+                        // Since history is sorted by createdAt desc, we want to know if the most recent attempt is failed
+                        // Actually, if they passed it later, it's not pending.
+                        if (!latestFails[key]) {
+                            latestFails[key] = h;
+                        }
+                    }
+
+                    const pending = [];
+                    for (const [key, attempt] of Object.entries(latestFails)) {
+                        if (!attempt.passed) {
+                            const timePassed = Date.now() - new Date(attempt.createdAt).getTime();
+                            const daysPassed = timePassed / (1000 * 60 * 60 * 24);
+                            
+                            const cooldownDays = 14;
+                            let cooldownText = "Available Now";
+                            if (daysPassed < cooldownDays) {
+                                cooldownText = `${Math.ceil(cooldownDays - daysPassed)} days left`;
+                            }
+                            
+                            pending.push({
+                                id: attempt.skillId?._id,
+                                name: attempt.skillId?.title || "Unknown Skill",
+                                level: attempt.level,
+                                score: attempt.score,
+                                date: new Date(attempt.createdAt).toLocaleDateString(),
+                                cooldown: cooldownText
+                            });
+                        }
+                    }
+                    setPendingRetakes(pending);
+                }
+            } catch (err) {
+                console.error("Failed to fetch myskill data", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-12 transition-colors duration-300 min-h-screen">
@@ -61,8 +126,8 @@ export default function MySkillPage() {
         {/* Filters / Tabs (Match Explore page filters) */}
         <div className="flex justify-center gap-3 md:gap-4 mb-10 flex-wrap">
           {[
-            { id: "verified", label: "Verified Skills", count: mockSkills.length },
-            { id: "pending", label: "Pending Retakes", count: mockPendingRetakes.length },
+            { id: "verified", label: "Verified Skills", count: skills.length },
+            { id: "pending", label: "Pending Retakes", count: pendingRetakes.length },
             { id: "history", label: "Assessment History", count: null }
           ].map((tab) => (
             <button
@@ -88,12 +153,11 @@ export default function MySkillPage() {
       {/* Content Area */}
       <div className="space-y-6">
         
-        {/* --- VERIFIED SKILLS --- */}
         {activeTab === "verified" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 fade-in duration-500">
-            {mockSkills.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map((skill, idx) => (
+            {isLoading ? <div className="col-span-full py-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-greenui"/></div> : skills.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map((skill, idx) => (
               <Link
-                href={`/profile/certificate/${skill.name.toLowerCase()}`}
+                href={`/profile/certificate/${skill.id}`}
                 key={idx}
                 className="bg-surface border-2 border-border-subtle rounded-2xl p-6 shadow-sm flex flex-col relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-brand-secondary cursor-pointer group"
               >
@@ -109,7 +173,7 @@ export default function MySkillPage() {
 
                 <div className="mb-6">
                   <h3 className="font-extrabold text-text-main text-xl mb-2">{skill.name}</h3>
-                  <p className={`text-[10px] font-bold mt-0.5 ${getLevelColorClass(skill.level)} transition-colors`}>
+                  <p className={`text-[10px] font-bold mt-0.5 uppercase ${getLevelColorClass(skill.level)} transition-colors`}>
                     {skill.level}
                   </p>
                 </div>
@@ -124,7 +188,7 @@ export default function MySkillPage() {
                 </div>
               </Link>
             ))}
-            {mockSkills.length === 0 && (
+            {!isLoading && skills.length === 0 && (
               <div className="col-span-full py-20 text-center border-2 border-dashed border-border-subtle rounded-3xl bg-surface">
                 <Award size={48} className="mx-auto text-border-subtle mb-4" />
                 <h3 className="text-xl font-bold text-text-main mb-2">No verified skills found.</h3>
@@ -137,9 +201,9 @@ export default function MySkillPage() {
         {/* --- PENDING RETAKES --- */}
         {activeTab === "pending" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-bottom-4 fade-in duration-500">
-            {mockPendingRetakes.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map((attempt, idx) => (
+            {isLoading ? <div className="col-span-full py-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-greenui"/></div> : pendingRetakes.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map((attempt, idx) => (
               <Link
-                href={`/skill/${attempt.name.toLowerCase()}`}
+                href={`/skill/${attempt.id}`}
                 key={idx} 
                 className="bg-surface border-2 border-border-subtle rounded-2xl p-6 shadow-sm flex flex-col relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:border-accent-orange cursor-pointer group"
               >
@@ -157,7 +221,7 @@ export default function MySkillPage() {
 
                 <div className="mb-6 ml-2">
                   <h3 className="font-extrabold text-text-main text-xl mb-2">{attempt.name}</h3>
-                  <p className={`text-[10px] font-bold mt-0.5 ${getLevelColorClass(attempt.level)}`}>
+                  <p className={`text-[10px] font-bold mt-0.5 uppercase ${getLevelColorClass(attempt.level)}`}>
                     {attempt.level}
                   </p>
                 </div>
@@ -178,7 +242,7 @@ export default function MySkillPage() {
                 </div>
               </Link>
             ))}
-            {mockPendingRetakes.length === 0 && (
+            {!isLoading && pendingRetakes.length === 0 && (
               <div className="col-span-full py-20 text-center border-2 border-dashed border-border-subtle rounded-3xl bg-surface">
                 <CheckCircle size={48} className="mx-auto text-greenui mb-4 opacity-50" />
                 <h3 className="text-xl font-bold text-text-main mb-2">You're all clear!</h3>
@@ -191,7 +255,7 @@ export default function MySkillPage() {
         {/* --- ASSESSMENT HISTORY --- */}
         {activeTab === "history" && (
           <div className="space-y-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
-            {mockHistory.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map((attempt, idx) => (
+            {isLoading ? <div className="py-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-greenui"/></div> : history.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map((attempt, idx) => (
               <div key={idx} className="bg-surface border border-border-subtle rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden transition-all duration-300">
                 <div className={`absolute left-0 top-0 bottom-0 w-1.5 transition-colors ${attempt.status === "PASSED" ? "bg-greenui" : "bg-red-500"}`}></div>
                 
@@ -199,7 +263,7 @@ export default function MySkillPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-bold text-text-main">{attempt.name}</h3>
-                      <p className={`text-[10px] font-bold mt-0.5 ${getLevelColorClass(attempt.level)}`}>
+                      <p className={`text-[10px] font-bold mt-0.5 uppercase ${getLevelColorClass(attempt.level)}`}>
                         {attempt.level}
                       </p>
                     </div>
@@ -220,7 +284,7 @@ export default function MySkillPage() {
                 </div>
               </div>
             ))}
-            {mockHistory.length === 0 && (
+            {!isLoading && history.length === 0 && (
               <div className="col-span-full py-20 text-center border-2 border-dashed border-border-subtle rounded-3xl bg-surface">
                 <History size={48} className="mx-auto text-border-subtle mb-4" />
                 <h3 className="text-xl font-bold text-text-main mb-2">No history found.</h3>

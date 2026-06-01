@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { Calendar, Clock, ArrowRight, MoreVertical, Edit2, Trash2, Database } from "lucide-react";
-import type { Skill } from "@/types/question";
+import type { Skill } from "@/types/skill";
 
 interface Props {
     skill: Skill;
@@ -40,12 +40,12 @@ export default function AdminSkillCard({ skill, qCount, themeColor, onDelete }: 
 
     const handleDelete = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (onDelete) onDelete(skill.id, skill.title);
+        if (onDelete) onDelete(skill._id, skill.title);
         setMenuOpen(false);
     };
 
     return (
-        <div onClick={() => router.push(`/admin/skills/${skill.id}`)}
+        <div onClick={() => router.push(`/admin/skills/${skill._id}`)}
             style={{ "--theme-color": themeColor } as React.CSSProperties}
             className={`group bg-surface rounded-xl p-6 shadow-sm flex flex-col transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-[var(--theme-color)]/20 dark:hover:shadow-black/30 border-2 border-[var(--theme-color)]/20 dark:border-[var(--theme-color)]/30 h-full relative cursor-pointer`}
         >
@@ -69,7 +69,7 @@ export default function AdminSkillCard({ skill, qCount, themeColor, onDelete }: 
                         </button>
                         {menuOpen && (
                             <div className="absolute right-0 top-7 bg-white border border-border-subtle rounded-md shadow-xl w-36 py-1 z-30 text-left animate-in fade-in zoom-in-95 duration-150">
-                                <Link href={`/admin/skills/${skill.id}/edit`} onClick={(e) => e.stopPropagation()} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                                <Link href={`/admin/skills/${skill._id}/edit`} onClick={(e) => e.stopPropagation()} className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                                     <Edit2 size={12} />
                                     Edit Skill
                                 </Link>
@@ -84,7 +84,7 @@ export default function AdminSkillCard({ skill, qCount, themeColor, onDelete }: 
             </div>
 
             <h3 className="text-base font-semibold text-text-main mb-1 truncate group-hover/title:text-text-muted transition-colors">{skill.title}</h3>
-            <p className="text-sm text-text-muted line-clamp-2 mb-4 flex-grow leading-relaxed">{skill.desc}</p>
+            <p className="text-sm text-text-muted line-clamp-2 mb-4 flex-grow leading-relaxed">{skill.description}</p>
 
             <div className="flex flex-row gap-4 mb-4 pb-3 border-b border-dashed border-border-subtle text-[11px] text-text-muted font-medium">
                 <div className="flex items-center gap-1.5">

@@ -1,4 +1,5 @@
 import Skill from "../models/Skill";
+import Problem from "../models/Problem";
 
 export const skillController = {
   // GET /api/skills — ดึง skill ทั้งหมด (public)
@@ -21,13 +22,21 @@ export const skillController = {
         .sort({ category: 1, title: 1 })
         .lean();
 
+      const enrichedSkills = await Promise.all(skills.map(async (skill: any) => {
+        const problemCount = await Problem.countDocuments({ skillId: skill._id, isActive: true });
+        return {
+          ...skill,
+          actualQuestionCount: problemCount
+        };
+      }));
+
       return {
         status: 200,
         body: {
           success: true,
           message: "Skills fetched successfully",
-          skills,
-          total: skills.length,
+          skills: enrichedSkills,
+          total: enrichedSkills.length,
         },
       };
     } catch (err: any) {
@@ -47,9 +56,26 @@ export const skillController = {
         return { status: 404, body: { success: false, message: "Skill not found" } };
       }
 
+      // Add mode and actualQuestionCount
+      const enrichedLevels = await Promise.all(skill.levels.map(async (levelObj: any) => {
+        const problems = await Problem.find({ skillId: skill._id, level: levelObj.level, isActive: true }).lean();
+        const hasCoding = problems.some(p => p.questionType === "coding"); // Assuming "coding" might be supported later, otherwise just checks for it. Wait, the problem schema supports "multiple_choice", "true_false", maybe we should check if any problem needs coding. In Problem model, questionType is multiple_choice or true_false. Let's say if any has "coding" (if we add it later) or we just default to "Any Device" for now since we only have choice. But to fulfill the plan exactly, let's check for "coding".
+        
+        return {
+          ...levelObj,
+          mode: hasCoding ? "Desktop Only" : "Any Device",
+          actualQuestionCount: problems.length,
+        };
+      }));
+
+      const enrichedSkill = {
+        ...skill,
+        levels: enrichedLevels,
+      };
+
       return {
         status: 200,
-        body: { success: true, message: "Skill fetched successfully", skill },
+        body: { success: true, message: "Skill fetched successfully", skill: enrichedSkill },
       };
     } catch (err: any) {
       return {

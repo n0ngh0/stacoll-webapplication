@@ -1,13 +1,11 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, CircleQuestionMark, Clock, Monitor, Loader2 } from "lucide-react";
+import { ChevronLeft, CircleQuestionMark, Clock, Monitor, Loader2, ListChecks, Lock, Award } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Skill } from "@/types/skill";
+import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
 
-const MOCK_USER_PROGRESS = {
-    passedLevels: ["beginner"],
-    cooldownLevels: { "intermediate": 14 } as Record<string, number>
-};
+
 
 export default function SkillDetailPage() {
     const params = useParams();
@@ -19,6 +17,11 @@ export default function SkillDetailPage() {
     const [selectedLevel, setSelectedLevel] = useState("beginner");
     const [isCheckingAuth, setIsCheckingAuth] = useState(true);
     const [showStartModal, setShowStartModal] = useState(false);
+    const [showCompareModal, setShowCompareModal] = useState(false);
+    const [userProgress, setUserProgress] = useState<{
+        passedLevels: Record<string, boolean>;
+        cooldownLevels: Record<string, { active: boolean; daysRemaining: number }>;
+    } | null>(null);
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -42,21 +45,31 @@ export default function SkillDetailPage() {
             setIsLoading(true);
             const token = localStorage.getItem("token");
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-            const res = await fetch(`${apiUrl}/skills/${skillId}`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                },
-            });
-            const data = await res.json();
+            
+            const [skillRes, progressRes] = await Promise.all([
+                fetch(`${apiUrl}/skills/${skillId}`, { headers: { "Authorization": `Bearer ${token}` } }),
+                fetch(`${apiUrl}/assessment/${skillId}/progress`, { headers: { "Authorization": `Bearer ${token}` } })
+            ]);
+            
+            const skillData = await skillRes.json();
+            const progressData = await progressRes.json();
 
-            if (data.success) {
-                setSkill(data.skill);
-                // Set default selected level to first available level
-                if (data.skill.levels && data.skill.levels.length > 0) {
-                    setSelectedLevel(data.skill.levels[0].level);
+            if (skillData.success) {
+                setSkill(skillData.skill);
+                if (skillData.skill.levels && skillData.skill.levels.length > 0) {
+                    setSelectedLevel(skillData.skill.levels[0].level);
                 }
             } else {
-                console.error("Failed to fetch skill:", data.message);
+                console.error("Failed to fetch skill:", skillData.message);
+            }
+            
+            if (progressData.success) {
+                setUserProgress({
+                    passedLevels: progressData.passedLevels,
+                    cooldownLevels: progressData.cooldowns,
+                });
+            } else {
+                console.error("Failed to fetch progress:", progressData.message);
             }
         } catch (error) {
             console.error("Error fetching skill:", error);
@@ -148,9 +161,9 @@ export default function SkillDetailPage() {
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {[
-                            { icon: Clock, label: "Duration", value: `${currentLevel?.estimatedTime || 30} Minutes` },
-                            { icon: CircleQuestionMark, label: "Questions", value: `${currentLevel?.questionCount || 15} Questions` },
-                            { icon: Monitor, label: "Mode", value: "Desktop Only" }
+                            { icon: Clock, label: "Duration", value: `${currentLevel?.estimatedTime ?? 0} Minutes` },
+                            { icon: CircleQuestionMark, label: "Questions", value: `${currentLevel?.actualQuestionCount ?? 0} Questions` },
+                            { icon: Monitor, label: "Mode", value: currentLevel?.mode || "Any Device" }
                         ].map((stat, idx) => (
                             <div key={idx} className="bg-canvas border border-border-subtle rounded-2xl p-6 flex flex-col items-center justify-center text-center shadow-sm transition-all duration-300">
                                 <div className="w-10 h-10 rounded-full bg-[var(--theme-color)]/15 flex items-center justify-center mb-3 transition-colors duration-300 text-[var(--theme-color)]">
@@ -186,17 +199,23 @@ export default function SkillDetailPage() {
                             {skill.levels.map((level, index) => {
                                 const style = levelStyles[level.level] || levelStyles.beginner;
                                 const isActive = selectedLevel === level.level;
+                                const isLocked = index > 0 && !(userProgress?.passedLevels[skill.levels[index - 1].level]);
+                                const isPassed = userProgress?.passedLevels[level.level] || false;
 
                                 return (
                                     <div key={level.level} className="flex-1 flex items-center w-full">
                                         <div
-                                            onClick={() => setSelectedLevel(level.level)}
-                                            className={`min-h-[125px] w-full relative p-5 rounded-2xl border-2 transition-all duration-300 text-left flex flex-col gap-2 cursor-pointer ${isActive
+                                            onClick={() => {
+                                                if (!isLocked) setSelectedLevel(level.level);
+                                            }}
+                                            title={isLocked ? "Pass the previous level first" : ""}
+                                            className={`min-h-[125px] w-full relative p-5 rounded-2xl border-2 transition-all duration-300 text-left flex flex-col gap-2 ${isLocked ? 'cursor-not-allowed bg-canvas border-border-subtle opacity-70 grayscale' : 'cursor-pointer'} ${isActive
                                                 ? style.activeBg
                                                 : 'bg-canvas border-border-subtle'
                                                 }`}
                                         >
                                             {isLocked && <Lock size={28} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-text-muted opacity-60 z-10" />}
+                                            {isPassed && <div className="absolute top-3 right-3 text-greenui"><ListChecks size={16} /></div>}
                                             
                                             <div className={`flex items-center gap-3 ${isLocked ? 'opacity-40' : ''}`}>
                                                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${isActive
@@ -228,15 +247,16 @@ export default function SkillDetailPage() {
                     {/* Action Button */}
                     <div className="flex justify-center pt-4 mb-1">
                         {(() => {
-                            const selectedIndex = skill.levels.findIndex((l: any) => l.id === selectedLevel);
-                            const isLocked = selectedIndex > 0 && !MOCK_USER_PROGRESS.passedLevels.includes(skill.levels[selectedIndex - 1].id);
-                            const isPassed = MOCK_USER_PROGRESS.passedLevels.includes(selectedLevel);
-                            const cooldownDays = MOCK_USER_PROGRESS.cooldownLevels[selectedLevel] || 0;
+                            const selectedIndex = skill.levels.findIndex((l: any) => l.level === selectedLevel);
+                            const isLocked = selectedIndex > 0 && !(userProgress?.passedLevels[skill.levels[selectedIndex - 1].level]);
+                            const isPassed = userProgress?.passedLevels[selectedLevel] || false;
+                            const cooldown = userProgress?.cooldownLevels[selectedLevel];
+                            const cooldownDays = cooldown?.active ? cooldown.daysRemaining : 0;
 
                             if (isPassed) {
                                 return (
                                     <button 
-                                        onClick={() => router.push(`/profile/certificate/${rawSkillId.toLowerCase()}`)} 
+                                        onClick={() => router.push(`/profile/certificate/${skillId.toLowerCase()}`)} 
                                         className="cursor-pointer bg-greenbutton hover:bg-greenbutton/90 text-white dark:text-black font-bold py-4 w-[320px] max-w-full flex justify-center items-center rounded-full text-xl shadow-lg shadow-greenbutton/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 gap-2"
                                     >
                                         View Certificate <Award size={20} />
@@ -308,7 +328,7 @@ export default function SkillDetailPage() {
             {/* Compare Levels Modal */}
             {showCompareModal && (
                 <CompareLevelsModal
-                    levels={skill.levels as any}
+                    levels={skill.levels.map((l: any) => ({ ...l, id: l.level, title: l.level })) as any}
                     initialTab={selectedLevel as any}
                     themeColor={themeColor}
                     onClose={() => setShowCompareModal(false)}
