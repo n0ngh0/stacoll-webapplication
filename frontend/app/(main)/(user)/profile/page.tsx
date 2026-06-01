@@ -64,7 +64,38 @@ export default function ProfilePage() {
       }
 
       if (data.success) {
-        setUser(data.user);
+        const user = data.user;
+        
+        // Filter to keep only the highest level of each skill
+        const getLevelWeight = (level: string) => {
+          if (!level) return 0;
+          switch (level.toUpperCase()) {
+            case 'BEGINNER': return 1;
+            case 'INTERMEDIATE': return 2;
+            case 'ADVANCED': return 3;
+            default: return 0;
+          }
+        };
+        
+        if (user.verifiedSkills) {
+          const skillMap = new Map();
+          user.verifiedSkills.forEach((skill: any) => {
+            const name = skill.skillName || skill.name;
+            if (!skillMap.has(name)) {
+              skillMap.set(name, skill);
+            } else {
+              const currentSkill = skillMap.get(name);
+              if (getLevelWeight(skill.level) > getLevelWeight(currentSkill.level)) {
+                skillMap.set(name, skill);
+              } else if (getLevelWeight(skill.level) === getLevelWeight(currentSkill.level) && skill.score > currentSkill.score) {
+                skillMap.set(name, skill);
+              }
+            }
+          });
+          user.verifiedSkills = Array.from(skillMap.values());
+        }
+
+        setUser(user);
         setEditForm({
           username: data.user.username || "",
           title: data.user.title || "",

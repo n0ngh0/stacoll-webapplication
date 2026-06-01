@@ -11,12 +11,22 @@ import { adminRoutes } from "./routes/adminRoutes";
 import { assessmentRoutes } from "./routes/assessmentRoutes";
 import { languageRoutes } from "./routes/languageRoutes";
 
+import { swagger } from "@elysiajs/swagger";
+
 configDotenv()
 connectDB()
 
 const port = process.env.PORT || 8000
 
 const app = new Elysia()
+  .use(swagger({
+    documentation: {
+      info: {
+        title: 'Stacoll API Documentation',
+        version: '1.0.0'
+      }
+    }
+  }))
   .use(setup)
   .use(authRoutes)
   .use(userRoutes)

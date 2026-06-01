@@ -33,6 +33,17 @@ export default function AssessmentResultPage() {
   return (
     <div className="flex-1 pt-24 pb-4 min-h-[calc(100vh-80px)] bg-canvas flex flex-col items-center justify-center p-6 relative overflow-hidden transition-colors duration-300">
       
+      {/* Top Navigation */}
+      <div className="absolute top-8 left-8">
+        <button
+          onClick={() => router.push("/explore")}
+          className="flex items-center text-text-muted hover:text-text-main transition-colors text-sm font-bold gap-2 cursor-pointer"
+        >
+          <ChevronLeft size={20} />
+          Back to Explore
+        </button>
+      </div>
+
       {/* Background Decorative */}
       <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[120px] -z-10 ${isPassed ? 'bg-greenui/10' : 'bg-red-500/10'}`}></div>
 
@@ -67,17 +78,10 @@ export default function AssessmentResultPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <button
-            onClick={() => router.push("/explore")}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-text-main bg-canvas border border-border-subtle hover:bg-surface-hover transition-all flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <ChevronLeft size={18} /> Back to Explore
-          </button>
-          
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
           <button
             onClick={() => router.push(`/skill/${rawSkillId}`)}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-text-main bg-canvas border border-border-subtle hover:bg-surface-hover transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full sm:w-1/2 px-8 py-3.5 rounded-xl font-bold text-text-main bg-canvas border border-border-subtle hover:bg-surface-hover transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             Back to Skill
           </button>
@@ -85,14 +89,14 @@ export default function AssessmentResultPage() {
           {isPassed ? (
             <button
               onClick={() => router.push(`/profile/certificate/${decodedSkill.toLowerCase()}`)}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-white dark:text-black bg-greenbutton hover:bg-greenbutton/90 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-1/2 px-8 py-3.5 rounded-xl font-bold text-white dark:text-black bg-greenbutton hover:bg-greenbutton/90 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               View Certificate <ArrowRight size={18} />
             </button>
           ) : (
             <button
               onClick={() => router.push(`/skill/${decodedSkill.toLowerCase()}`)}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-xl font-bold text-white dark:text-black bg-greenbutton hover:bg-greenbutton/90 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-1/2 px-8 py-3.5 rounded-xl font-bold text-white dark:text-black bg-greenbutton hover:bg-greenbutton/90 shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               Try Again Later <RotateCcw size={18} />
             </button>

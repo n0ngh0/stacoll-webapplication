@@ -7,59 +7,50 @@ import { useExportContext } from "@/components/providers/export-context";
 import { ResumeTemplate } from "@/components/resume/resume-template";
 import { generateResumePDF } from "@/lib/generate-pdf";
 
-// Mock Data (Should match the one in profile/page.tsx)
-const mockUser = {
-  name: "Winny Pooh",
-  role: "AI / Developer",
-  email: "niggadamdam911@gmail.com",
-  bio: "Interested in AI, software development, and building efficient systems. Passionate about learning new technologies and applying them to real-world projects.",
-};
-
-const allSkills = [
-  { name: "React.js", level: "INTERMEDIATE", score: 82, date: "Oct 12, 2025" },
-  { name: "Node.js", level: "BEGINNER", score: 67, date: "Oct 12, 2025" },
-  { name: "Python", level: "ADVANCED", score: 95, date: "Sep 28, 2025" },
-  { name: "JavaScript", level: "ADVANCED", score: 91, date: "Jan 15, 2026" },
-  { name: "SQL", level: "INTERMEDIATE", score: 85, date: "Nov 05, 2025" },
-];
-
-const allProjects = [
-  {
-    title: "Neural Analytics Engine",
-    description: "Machine learning pipeline for processing real-time developer telemetry to predict career paths based on coding patterns.",
-    tags: ["REACT", "SOLIDITY", "NODE.JS", "WEB3.JS"],
-  },
-  {
-    title: "Stacoll Verified Identity",
-    description: "A decentralized identity verification platform using ZK-proofs for academic and skill credentials. Built to scale with millions of users.",
-    tags: ["HTML", "PYTHON", "NODE.JS"],
-  }
-];
-
 export default function ExportPreviewPage() {
   const router = useRouter();
-  const { selectedSkills, selectedProjects } = useExportContext();
+  const { selectedSkills, selectedProjects, userData } = useExportContext();
   const resumeRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // Redirect if they accessed this directly without selecting anything
-    if (selectedSkills.size === 0 && selectedProjects.size === 0) {
+    // Redirect if they accessed this directly without selecting anything or without user data
+    if (!userData || (selectedSkills.size === 0 && selectedProjects.size === 0)) {
       router.push("/export");
     }
-  }, [selectedSkills, selectedProjects, router]);
+  }, [selectedSkills, selectedProjects, userData, router]);
+
+  if (!mounted || !userData || (selectedSkills.size === 0 && selectedProjects.size === 0)) {
+    return <div className="min-h-screen bg-canvas flex items-center justify-center"><Loader2 className="animate-spin text-greenui" size={32} /></div>;
+  }
+
+  const allSkills = userData.verifiedSkills || [];
+  const allProjects = userData.projects || [];
 
   // Filter based on selection
-  const skillsToRender = allSkills.filter((_, idx) => selectedSkills.has(idx));
-  const projectsToRender = allProjects.filter((_, idx) => selectedProjects.has(idx));
+  const skillsToRender = allSkills.filter((_: any, idx: number) => selectedSkills.has(idx)).map((s: any) => ({
+    name: s.skillName || s.name,
+    level: s.level,
+    score: s.score,
+    date: s.verifiedAt ? new Date(s.verifiedAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : ""
+  }));
+  const projectsToRender = allProjects.filter((_: any, idx: number) => selectedProjects.has(idx));
+
+  // Transform userData to match template interface
+  const userForTemplate = {
+    name: userData.username || "",
+    role: userData.title || "",
+    email: userData.email || "", // Assuming email might be available
+    bio: userData.bio || "",
+  };
 
   const handleDownload = async () => {
     if (!resumeRef.current) return;
     try {
       setIsGenerating(true);
-      await generateResumePDF(resumeRef.current, `${mockUser.name.replace(/\s+/g, '_')}_Resume.pdf`);
+      await generateResumePDF(resumeRef.current, `${userForTemplate.name.replace(/\s+/g, '_')}_Resume.pdf`);
     } catch (error) {
       console.error("Failed to generate PDF:", error);
       alert("Failed to generate PDF. Please try again.");
@@ -107,7 +98,7 @@ export default function ExportPreviewPage() {
         <div className="shadow-2xl rounded-sm overflow-hidden flex-shrink-0 bg-white">
             <ResumeTemplate 
               ref={resumeRef}
-              user={mockUser}
+              user={userForTemplate}
               skills={skillsToRender}
               projects={projectsToRender}
               issuedDate={issuedDateStr}
