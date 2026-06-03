@@ -47,7 +47,11 @@ export default function SignInPage() {
             document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
             document.cookie = `user=${JSON.stringify(data.user)}; path=/; max-age=86400; SameSite=Lax`;
 
-            window.location.href = "/explore";
+            if (data.user.role === "admin") {
+                window.location.href = "/admin";
+            } else {
+                window.location.href = "/explore";
+            }
         } catch (err: any) {
             setError(err.message);
         } finally {

@@ -6,6 +6,19 @@ import "./globals.css";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 
+if (typeof window !== 'undefined' && !(window as any).__fetchPatched) {
+  (window as any).__fetchPatched = true;
+  const originalFetch = window.fetch;
+  window.fetch = async (input, init) => {
+    const customInit = init || {};
+    customInit.headers = {
+      ...customInit.headers,
+      "ngrok-skip-browser-warning": "true"
+    };
+    return originalFetch(input, customInit);
+  };
+}
+
 const figtree = Figtree({
   subsets: ["latin"],
   display: "swap",
@@ -18,20 +31,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    
-    // Globally override fetch to bypass ngrok browser warning
-    if (typeof window !== 'undefined') {
-      const originalFetch = window.fetch;
-      window.fetch = async (input, init) => {
-        const customInit = init || {};
-        // Only append header if it's hitting an API (though safe to append anywhere)
-        customInit.headers = {
-          ...customInit.headers,
-          "ngrok-skip-browser-warning": "true"
-        };
-        return originalFetch(input, customInit);
-      };
-    }
   }, []);
 
   const isPublicPage = pathname === "/" || pathname === "/signin" || pathname === "/signup" || pathname === "/forgot-password" || pathname === "/verify-otp";
