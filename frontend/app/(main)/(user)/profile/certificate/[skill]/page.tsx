@@ -132,7 +132,7 @@ export default function CertificatePage() {
           >
             <Award size={40} />
           </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-text-main z-10 transition-colors duration-300 uppercase mb-2">
+          <h1 className="text-3xl md:text-5xl font-extrabold text-text-main z-10 transition-colors duration-300 uppercase mb-2 text-center text-balance px-4 w-full">
             {skillData.name}
           </h1>
           <p className={`text-lg font-bold tracking-widest ${getLevelColorClass(skillData.level)} transition-colors`}>
