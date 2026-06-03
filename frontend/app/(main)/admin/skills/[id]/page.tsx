@@ -29,7 +29,7 @@ export default function SkillManagementPage() {
   const [showEditLevelModal, setShowEditLevelModal] = useState(false);
   const [editingLevelData, setEditingLevelData] = useState<SkillLevel | null>(null);
   const [showCompareModal, setShowCompareModal] = useState(false);
-  const [activeCompareTab, setActiveCompareTab] = useState<SkillLevel["id"]>("beginner");
+  const [activeCompareTab, setActiveCompareTab] = useState<SkillLevel["level"]>("beginner");
 
   useEffect(() => {
     if (id) { loadSkill(); }

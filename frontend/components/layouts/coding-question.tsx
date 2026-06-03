@@ -127,7 +127,7 @@ const CodingQuestion = memo(function CodingQuestion({
 
   return (
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Group direction="horizontal">
+        <Group orientation="horizontal">
           
           {/* Problem Description Area (Left Panel) */}
           <Panel defaultSize={25} minSize={20}>

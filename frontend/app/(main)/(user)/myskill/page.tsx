@@ -30,8 +30,8 @@ export default function MySkillPage() {
                 const profileText = await profileRes.text();
                 const historyText = await historyRes.text();
 
-                let profileData = { success: false, user: { verifiedSkills: [] } };
-                let historyData = { success: false, history: [] };
+                let profileData: any = { success: false, user: { verifiedSkills: [] } };
+                let historyData: any = { success: false, history: [] };
 
                 try { profileData = JSON.parse(profileText); } catch (e) { console.error("Profile parse error:", profileText); }
                 try { historyData = JSON.parse(historyText); } catch (e) { console.error("History parse error:", historyText); }
