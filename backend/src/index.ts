@@ -40,7 +40,7 @@ const app = new Elysia()
   .use(languageRoutes)
   .listen({
     port: port,
-    hostname: '0.0.0.0',
+    // hostname: '0.0.0.0',
     maxRequestBodySize: 200 * 1024 * 1024 // 200MB to be absolutely safe
   });
 
