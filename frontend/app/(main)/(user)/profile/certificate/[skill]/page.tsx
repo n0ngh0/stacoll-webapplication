@@ -192,7 +192,7 @@ export default function CertificatePage() {
             </div>
             
             <button 
-              onClick={() => router.push(`/skill/skill-${skillData.name.toLowerCase().replace('.js', '')}`)}
+              onClick={() => router.push(`/skill/${rawSkillId}`)}
               className="px-6 py-3 bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold rounded-xl shadow-sm transition-all flex items-center gap-2 shrink-0 cursor-pointer"
             >
               Take Next Level Assessment <ArrowRight size={18} />
