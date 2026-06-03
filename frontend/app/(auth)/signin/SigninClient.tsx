@@ -2,8 +2,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Mail, Lock, ArrowRight, Loader2, CircleAlert } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function SignInPage() {
+    const router = useRouter();
     const [formData, setFormData] = useState({
         email: "",
         password: ""
@@ -31,6 +33,11 @@ export default function SignInPage() {
             const data = await res.json();
 
             if (!res.ok || !data.success) {
+                if (data.message === "Please verify your email first") {
+                    sessionStorage.setItem("signupEmail", formData.email);
+                    router.push("/verify-otp");
+                    return;
+                }
                 throw new Error(data.message || "Invalid credentials");
             }
 

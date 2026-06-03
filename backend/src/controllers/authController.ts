@@ -16,10 +16,10 @@ export const authController = {
           existingUser.username = username;
           existingUser.otp = otp;
           existingUser.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-          existingUser.isVerified = true; // Automatically verify for testing
+          existingUser.isVerified = false;
           await existingUser.save();
-          // await sendOTPEmail(email, otp); // Bypassed for testing
-          return { status: 200, body: { success: true, message: "User updated and verified successfully (OTP Bypassed for testing)" } };
+          await sendOTPEmail(email, otp);
+          return { status: 200, body: { success: true, message: "OTP sent to your email. Please verify." } };
         }
         return { status: 400, body: { success: false, message: "Email already exists" } };
       }
@@ -36,18 +36,18 @@ export const authController = {
         username,
         email,
         password: hashedPassword,
-        isVerified: true, // Automatically verify for testing
+        isVerified: false,
         otp,
         otpExpiry: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes expiry
       });
 
-      // await sendOTPEmail(email, otp); // Bypassed for testing
+      await sendOTPEmail(email, otp);
 
       return { 
         status: 201, 
         body: {
           success: true,
-          message: "User created successfully. (OTP Bypassed for testing)", 
+          message: "User created successfully. Please check your email for the OTP.", 
           user: { 
             id: newUser._id.toString(), 
             username: newUser.username, 
