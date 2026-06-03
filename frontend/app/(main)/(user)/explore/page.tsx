@@ -50,7 +50,6 @@ export default function UserDashboardPage() {
       const token = localStorage.getItem("token");
       const res = await fetch(`${apiUrl}/skills`, {
         headers: {
-          "ngrok-skip-browser-warning": "true",
           ...(token ? { "Authorization": `Bearer ${token}` } : {})
         }
       });
