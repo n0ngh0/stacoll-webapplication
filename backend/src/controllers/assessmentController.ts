@@ -7,6 +7,19 @@ import mongoose from "mongoose";
 const PASSING_SCORE = 60;
 const COOLDOWN_DAYS = 14;
 
+function getPistonLanguage(judge0_id: number): string {
+  const map: Record<number, string> = {
+    45: "nasm",
+    46: "bash",
+    50: "c",
+    54: "c++",
+    62: "java",
+    63: "javascript",
+    71: "python",
+  };
+  return map[judge0_id] || "python";
+}
+
 export const assessmentController = {
   // ดึง progress ของ user ใน skill นั้น
   async getUserProgress(userId: string, skillId: string) {
@@ -164,7 +177,6 @@ export const assessmentController = {
           if (!userAnswer || userAnswer.trim() === "") {
             isCorrect = false;
           } else if (p.testCases && p.testCases.length > 0) {
-            const judge0Url = process.env.JUDGE0_API_URL || "https://ce.judge0.com";
             const lang = p.languageId as any; // populated
             let allTestsPassed = true;
 
@@ -175,26 +187,23 @@ export const assessmentController = {
                   finalSourceCode = lang.driverTemplate.replace("{{USER_CODE}}", userAnswer);
                 }
 
-                const judge0Key = process.env.JUDGE0_API_KEY;
-                const headers: any = { "Content-Type": "application/json" };
-                if (judge0Key) {
-                  headers["X-RapidAPI-Key"] = judge0Key;
-                  headers["X-RapidAPI-Host"] = judge0Url.replace("https://", "").split("/")[0];
-                }
-
-                const res = await fetch(`${judge0Url}/submissions?wait=true&base64_encoded=false`, {
+                const pistonLang = getPistonLanguage(lang.judge0_id);
+                const res = await fetch("https://emkc.org/api/v2/piston/execute", {
                   method: "POST",
-                  headers,
+                  headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    language_id: lang.judge0_id,
-                    source_code: finalSourceCode,
+                    language: pistonLang,
+                    version: "*",
+                    files: [{ content: finalSourceCode }],
                     stdin: tc.input || "",
-                    expected_output: tc.expectedOutput,
                   }),
                 });
                 const data = await res.json();
-                // Judge0 status 3 is "Accepted"
-                if (data.status?.id !== 3) {
+                
+                const actualOutput = data.run?.stdout?.trim() || "";
+                const expected = tc.expectedOutput?.trim() || "";
+                
+                if (data.compile?.stderr || data.run?.code !== 0 || actualOutput !== expected) {
                   allTestsPassed = false;
                   break;
                 }
@@ -284,7 +293,6 @@ export const assessmentController = {
         return { status: 400, body: { success: false, message: "Source code is empty." } };
       }
 
-      const judge0Url = process.env.JUDGE0_API_URL || "https://ce.judge0.com";
       const lang = problem.languageId as any;
 
       if (!problem.testCases || problem.testCases.length === 0) {
@@ -303,26 +311,39 @@ export const assessmentController = {
             finalSourceCode = lang.driverTemplate.replace("{{USER_CODE}}", source_code);
           }
 
-          const judge0Key = process.env.JUDGE0_API_KEY;
-          const headers: any = { "Content-Type": "application/json" };
-          if (judge0Key) {
-            headers["X-RapidAPI-Key"] = judge0Key;
-            headers["X-RapidAPI-Host"] = judge0Url.replace("https://", "").split("/")[0];
-          }
-
-          const res = await fetch(`${judge0Url}/submissions?wait=true&base64_encoded=false`, {
+          const pistonLang = getPistonLanguage(lang.judge0_id);
+          const res = await fetch("https://emkc.org/api/v2/piston/execute", {
             method: "POST",
-            headers,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              language_id: lang.judge0_id,
-              source_code: finalSourceCode,
+              language: pistonLang,
+              version: "*",
+              files: [{ content: finalSourceCode }],
               stdin: tc.input || "",
-              expected_output: tc.expectedOutput,
             }),
           });
           
           const data = await res.json();
-          const passed = data.status?.id === 3; // 3 = Accepted
+          
+          const actualOutput = data.run?.stdout?.trim() || "";
+          const expected = tc.expectedOutput?.trim() || "";
+          
+          let passed = false;
+          let statusDesc = "Unknown";
+          
+          if (data.compile?.stderr) {
+            passed = false;
+            statusDesc = "Compilation Error";
+          } else if (data.run?.code !== 0) {
+            passed = false;
+            statusDesc = "Runtime Error";
+          } else if (actualOutput !== expected) {
+            passed = false;
+            statusDesc = "Wrong Answer";
+          } else {
+            passed = true;
+            statusDesc = "Accepted";
+          }
           
           if (!passed) allTestsPassed = false;
           
@@ -332,8 +353,8 @@ export const assessmentController = {
             isHidden: tc.isHidden,
             input: tc.isHidden ? "Hidden Test Case" : tc.input,
             expectedOutput: tc.isHidden ? "Hidden Output" : tc.expectedOutput,
-            actualOutput: tc.isHidden ? (passed ? "Correct" : "Incorrect") : (data.stdout || data.stderr || data.compile_output || ""),
-            status: data.status?.description || "Unknown Error",
+            actualOutput: tc.isHidden ? (passed ? "Correct" : "Incorrect") : (data.run?.output || data.compile?.stderr || ""),
+            status: statusDesc,
           });
           
           // Fast-fail: optionally we can stop at first failure, but giving all results is better.
@@ -379,32 +400,37 @@ export const assessmentController = {
     }
   },
 
-  // POST /api/assessment/execute — Proxy to Judge0 to run code safely from backend
+  // POST /api/assessment/execute — Proxy to Piston API to run code safely from backend
   async executeCode(body: { language_id: number; source_code: string; stdin?: string }) {
     try {
-      const judge0Url = process.env.JUDGE0_API_URL || "https://ce.judge0.com";
-      const judge0Key = process.env.JUDGE0_API_KEY;
-      const headers: any = { "Content-Type": "application/json" };
-      if (judge0Key) {
-        headers["X-RapidAPI-Key"] = judge0Key;
-        headers["X-RapidAPI-Host"] = judge0Url.replace("https://", "").split("/")[0];
-      }
+      const pistonLang = getPistonLanguage(body.language_id);
       
-      const res = await fetch(`${judge0Url}/submissions?wait=true&base64_encoded=false`, {
+      const res = await fetch("https://emkc.org/api/v2/piston/execute", {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          language_id: body.language_id,
-          source_code: body.source_code,
+          language: pistonLang,
+          version: "*",
+          files: [{ content: body.source_code }],
           stdin: body.stdin || "",
         }),
       });
 
       const data = await res.json();
       
+      const mappedData = {
+        stdout: data.run?.stdout || "",
+        stderr: data.run?.stderr || "",
+        compile_output: data.compile?.stderr || "",
+        status: {
+          id: data.compile?.stderr ? 6 : (data.run?.code !== 0 ? 11 : 3),
+          description: data.compile?.stderr ? "Compilation Error" : (data.run?.code !== 0 ? "Runtime Error" : "Accepted")
+        }
+      };
+      
       return {
         status: res.status === 200 || res.status === 201 ? 200 : res.status,
-        body: { success: res.ok, data, message: data.message || data.error || "Judge0 Error" },
+        body: { success: res.ok, data: mappedData, message: data.message || data.error || "Execution completed" },
       };
     } catch (err: any) {
       return { status: 500, body: { success: false, message: "Error executing code", error: err.message } };
