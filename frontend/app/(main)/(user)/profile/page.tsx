@@ -489,20 +489,24 @@ export default function ProfilePage() {
                 </p>
               </div>
             ) : (
-              user.verifiedSkills.map((skill, idx) => (
-                <div key={idx} className="bg-surface border border-border-subtle rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden transition-colors duration-300">
+              user.verifiedSkills.map((skill) => (
+                <Link
+                  key={String(skill.skillId)}
+                  href={`/profile/certificate/${skill.skillId}`}
+                  className="bg-surface border border-border-subtle rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:border-brand-secondary/40 cursor-pointer group"
+                >
                   
                   {/* แถบสีด้านซ้าย */}
-                  <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${idx % 2 === 0 ? "bg-greenui" : "bg-accent-orange"}`}></div>
+                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-greenui group-hover:bg-brand-secondary transition-colors"></div>
                   
-                  <div className="bg-canvas p-3 rounded-xl transition-colors">
-                    <Award className={idx % 2 === 0 ? "text-greenui" : "text-accent-orange"} size={24} />
+                  <div className="bg-canvas p-3 rounded-xl transition-colors group-hover:bg-brand-secondary/10">
+                    <Award className="text-greenui group-hover:text-brand-secondary transition-colors" size={24} />
                   </div>
                   
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="font-bold text-text-main transition-colors">{skill.skillName}</h3>
+                        <h3 className="font-bold text-text-main transition-colors group-hover:text-brand-secondary">{skill.skillName}</h3>
                         <p className={`text-[10px] font-bold mt-0.5 ${getLevelColorClass(skill.level.toUpperCase())} transition-colors`}>
                           {skill.level.toUpperCase()}
                         </p>
@@ -520,7 +524,7 @@ export default function ProfilePage() {
                       <span>{formatDate(skill.verifiedAt)}</span>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))
             )}
           </div>

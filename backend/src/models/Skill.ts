@@ -4,6 +4,7 @@ import mongoose, { Model, Schema } from "mongoose";
 export interface ISkillLevel {
   level: "beginner" | "intermediate" | "advanced";
   description: string;
+  fullDescription?: string;
   questionCount: number;
   estimatedTime: number; // นาที
 }
@@ -30,6 +31,10 @@ const skillLevelSchema = new Schema<ISkillLevel>(
     description: {
       type: String,
       required: true,
+    },
+    fullDescription: {
+      type: String,
+      default: "",
     },
     questionCount: {
       type: Number,

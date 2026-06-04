@@ -23,6 +23,7 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
       levels: t.Optional(t.Array(t.Object({
         level: t.Union([t.Literal("beginner"), t.Literal("intermediate"), t.Literal("advanced")]),
         description: t.String(),
+        fullDescription: t.Optional(t.String()),
         questionCount: t.Optional(t.Number()),
         estimatedTime: t.Optional(t.Number()),
       }))),

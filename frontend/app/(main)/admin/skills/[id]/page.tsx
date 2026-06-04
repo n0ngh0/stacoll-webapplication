@@ -10,6 +10,7 @@ import { toast, Toaster } from "react-hot-toast";
 import type { Skill, SkillLevel, Problem } from "@/types/skill";
 import { LEVEL_OPTIONS, CATEGORY_THEMES } from "@/types/question"; // using constants for UI
 import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
+import { SafeMarkdown } from "@/components/SafeMarkdown";
 import { apiFetch } from "@/lib/api/client";
 import { fetchSkillById, fetchAdminProblems } from "@/lib/api/problems";
 
@@ -32,6 +33,7 @@ export default function SkillManagementPage() {
   const [editingLevelData, setEditingLevelData] = useState<SkillLevel | null>(null);
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [activeCompareTab, setActiveCompareTab] = useState<SkillLevel["level"]>("beginner");
+  const [fullDescTab, setFullDescTab] = useState<"write" | "preview">("write");
 
   useEffect(() => {
     if (id) { loadSkill(); }
@@ -94,7 +96,11 @@ export default function SkillManagementPage() {
   };
 
   const handleOpenEditLevel = (levelData: SkillLevel) => {
-    setEditingLevelData({ ...levelData });
+    setEditingLevelData({
+      ...levelData,
+      fullDescription: levelData.fullDescription ?? "",
+    });
+    setFullDescTab("write");
     setShowEditLevelModal(true);
   };
 
@@ -238,7 +244,6 @@ export default function SkillManagementPage() {
               </div>
               <div className="text-text-muted text-sm relative mt-2">
                 <p className="line-clamp-3">{activeLevelData.description}</p>
-                {/* Note: backend doesn't store fullDescription currently, skip for now or add to model later */}
               </div>
             </div>
 
@@ -425,7 +430,7 @@ export default function SkillManagementPage() {
       {/* Edit Level Modal (Enterprise Form Style) */}
       {showEditLevelModal && editingLevelData && (
         <div className="fixed mt-16  inset-0 z-[49] flex items-center justify-center bg-canvas/80 backdrop-blur-sm p-6 animate-in fade-in duration-200">
-          <div className="bg-surface rounded-2xl shadow-xl border border-border-subtle max-w-[650px] w-full overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+          <div className="bg-surface rounded-2xl shadow-xl border border-border-subtle max-w-[750px] w-full overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
 
             {/* Header */}
             <div className="px-6 md:px-8 py-6 border-b border-border-subtle flex items-center gap-4 bg-surface">
@@ -469,7 +474,54 @@ export default function SkillManagementPage() {
                 />
               </div>
 
-              {/* Full Criteria removed as unsupported currently */}
+              {/* Full Description (Markdown) */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-bold text-text-main">Full Description</label>
+                  <div className="flex bg-surface-hover rounded-lg p-0.5 border border-border-subtle">
+                    <button
+                      type="button"
+                      onClick={() => setFullDescTab("write")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer rounded-md ${fullDescTab === "write" ? "bg-surface-hover text-text-main" : "text-text-muted hover:text-text-main"}`}
+                    >
+                      <Code2 size={12} />
+                      Write
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFullDescTab("preview")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition-colors cursor-pointer rounded-md ${fullDescTab === "preview" ? "bg-surface-hover text-text-main" : "text-text-muted hover:text-text-main"}`}
+                    >
+                      <Eye size={12} />
+                      Preview
+                    </button>
+                  </div>
+                </div>
+
+                {fullDescTab === "write" ? (
+                  <div className="bg-canvas border border-border-subtle rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-brand-secondary/40 transition-shadow">
+                    <div className="bg-surface-hover border-b border-border-subtle px-4 py-2.5 flex items-center gap-2">
+                      <Code2 size={16} className="text-text-muted" />
+                      <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Markdown Supported</span>
+                    </div>
+                    <textarea
+                      rows={8}
+                      value={editingLevelData.fullDescription ?? ""}
+                      onChange={(e) => setEditingLevelData({ ...editingLevelData, fullDescription: e.target.value })}
+                      placeholder={"### Competencies\n\n- Item 1\n- Item 2"}
+                      className="w-full bg-transparent border-0 px-4 py-3 text-sm text-text-main placeholder:text-text-muted/50 focus:outline-none resize-y font-mono leading-relaxed whitespace-pre-wrap"
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-canvas border border-border-subtle rounded-xl px-4 py-4 min-h-[160px] prose prose-sm dark:prose-invert max-w-none text-text-main">
+                    {editingLevelData.fullDescription?.trim() ? (
+                      <SafeMarkdown>{editingLevelData.fullDescription}</SafeMarkdown>
+                    ) : (
+                      <p className="text-text-muted italic">Nothing to preview</p>
+                    )}
+                  </div>
+                )}
+              </div>
 
             </div>
 

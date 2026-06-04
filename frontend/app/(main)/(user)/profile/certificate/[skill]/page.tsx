@@ -15,6 +15,7 @@ type CertificateData = {
   score: number;
   date: string;
   expires: string;
+  shortDescription: string;
   fullDescription: string;
 };
 
@@ -41,8 +42,12 @@ export default function CertificatePage() {
         return;
       }
 
-      const profileRes = await apiFetch("/profile/me");
+      const [profileRes, skillRes] = await Promise.all([
+        apiFetch("/profile/me"),
+        apiFetch(`/skills/${rawSkillId}`),
+      ]);
       const profileData = await profileRes.json();
+      const skillApiData = await skillRes.json();
 
       if (profileData.success && profileData.user?.verifiedSkills) {
         const vSkill = profileData.user.verifiedSkills.find(
@@ -50,9 +55,15 @@ export default function CertificatePage() {
         );
 
         if (vSkill) {
+          const skill = skillApiData.success ? skillApiData.skill : null;
+          const matchedLevel = skill?.levels?.find(
+            (l: { level: string }) =>
+              l.level.toLowerCase() === String(vSkill.level).toLowerCase()
+          );
+
           setSkillData({
             name: vSkill.skillName,
-            category: "programming",
+            category: skill?.category ?? "programming",
             level: vSkill.level.toUpperCase(),
             score: vSkill.score,
             date: new Date(vSkill.verifiedAt).toLocaleDateString("en-US", {
@@ -67,8 +78,8 @@ export default function CertificatePage() {
               day: "2-digit",
               year: "numeric",
             }),
-            fullDescription:
-              "### Competencies\n\n- Demonstrated foundational knowledge\n- Successfully completed all required assessments\n- Met all the criteria for this skill level",
+            shortDescription: matchedLevel?.description?.trim() ?? "",
+            fullDescription: matchedLevel?.fullDescription?.trim() ?? "",
           });
           return;
         }
@@ -100,6 +111,8 @@ export default function CertificatePage() {
   }
 
   const themeColor = CATEGORY_THEMES[skillData.category] || "#19c3af";
+  const competenciesText =
+    skillData.fullDescription || skillData.shortDescription || "*No detailed criteria available.*";
 
   return (
     <div className="flex-1 min-h-screen bg-canvas flex flex-col items-center py-10 px-4 transition-colors duration-300">
@@ -179,7 +192,7 @@ export default function CertificatePage() {
             <h2 className="text-xl font-bold text-text-main transition-colors duration-300">Competencies Demonstrated</h2>
             <div className="bg-canvas p-6 md:p-8 rounded-2xl border border-border-subtle transition-colors duration-300 prose prose-sm md:prose-base dark:prose-invert max-w-none text-text-main">
               <SafeMarkdown>
-                {skillData.fullDescription || "*No detailed criteria available.*"}
+                {competenciesText}
               </SafeMarkdown>
             </div>
           </div>
