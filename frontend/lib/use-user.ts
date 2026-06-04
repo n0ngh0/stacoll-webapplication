@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { SessionUser } from "../types/user";
-import { apiFetch } from "@/lib/api/client";
 import { clearSession, getToken } from "@/lib/auth-session";
+import { syncSessionFromApi } from "@/lib/verify-admin";
 
 export function useUser() {
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -18,24 +18,14 @@ export function useUser() {
       }
 
       try {
-        const res = await apiFetch("/profile/me");
-        const data = await res.json();
+        const freshUser = await syncSessionFromApi();
 
-        if (res.ok && data.success && data.user) {
-          const freshUser = {
-            id: data.user._id,
-            username: data.user.username,
-            email: data.user.email,
-            role: data.user.role,
-            imgUrl: data.user.imgUrl
-          };
+        if (freshUser) {
           setUser(freshUser);
           setIsAdmin(freshUser.role === "admin");
         } else {
-          if (res.status === 401 || res.status === 403) {
-            clearSession();
-            window.location.href = "/";
-          }
+          clearSession();
+          window.location.href = "/";
         }
       } catch (e) {
         console.error("Failed to verify user role from API", e);
