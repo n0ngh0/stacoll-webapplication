@@ -27,6 +27,7 @@ export default function ProfilePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [activeTab, setActiveTab] = useState<"profile" | "projects">("profile");
 
   // Edit form state
   const [editForm, setEditForm] = useState<{
@@ -129,6 +130,21 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async () => {
     try {
+      // Validate projects
+      for (let i = 0; i < editForm.projects.length; i++) {
+        const p = editForm.projects[i];
+        if (!p.title.trim()) {
+          setActiveTab("projects");
+          setErrorMsg(`Project #${i + 1} is missing a title.`);
+          return;
+        }
+        if (!p.tags || p.tags.length === 0) {
+          setActiveTab("projects");
+          setErrorMsg(`Project "${p.title}" must have at least one tag.`);
+          return;
+        }
+      }
+
       setErrorMsg("");
       setIsSaving(true);
       const res = await apiFetch("/profile/me", {
@@ -245,7 +261,7 @@ export default function ProfilePage() {
             <img src={user.imgUrl || "/profiles/default.jpg"} alt="Profile" className="w-full h-full object-cover" />
           </div>
           <button
-            onClick={() => { setErrorMsg(""); setIsEditModalOpen(true); }}
+            onClick={() => { setErrorMsg(""); setActiveTab("profile"); setIsEditModalOpen(true); }}
             className="absolute bottom-1 right-1 bg-greenui p-2 rounded-lg text-white shadow-md hover:brightness-110 transition cursor-pointer"
           >
             <Edit3 size={20} />
@@ -340,7 +356,7 @@ export default function ProfilePage() {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-text-main transition-colors">Recent Projects</h2>
             <button
-              onClick={() => { setErrorMsg(""); setIsEditModalOpen(true); }}
+              onClick={() => { setErrorMsg(""); setActiveTab("projects"); setIsEditModalOpen(true); }}
               className="text-sm font-semibold text-brand-secondary hover:underline cursor-pointer"
             >
               Edit Projects
@@ -427,8 +443,24 @@ export default function ProfilePage() {
 
           <div className="bg-surface relative z-10 w-full max-w-3xl max-h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-border-subtle animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="flex justify-between items-center p-6 border-b border-border-subtle bg-canvas/50">
-              <h2 className="text-2xl font-bold text-text-main">Edit Profile</h2>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-6 border-b border-border-subtle bg-canvas/50 gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center">
+                <h2 className="text-2xl font-bold text-text-main">Edit Profile</h2>
+                <div className="flex bg-surface border border-border-subtle rounded-xl p-1">
+                  <button
+                    onClick={() => setActiveTab("profile")}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${activeTab === 'profile' ? 'bg-canvas shadow-sm text-text-main' : 'text-text-muted hover:text-text-main'}`}
+                  >
+                    Profile Info
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("projects")}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${activeTab === 'projects' ? 'bg-canvas shadow-sm text-text-main' : 'text-text-muted hover:text-text-main'}`}
+                  >
+                    Projects
+                  </button>
+                </div>
+              </div>
               <button
                 onClick={() => setIsEditModalOpen(false)}
                 disabled={isSaving}
@@ -450,9 +482,11 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              {/* Profile Picture Upload */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-text-main border-b border-border-subtle pb-2">Profile Picture</h3>
+              {activeTab === "profile" ? (
+                <div className="space-y-8 animate-in fade-in duration-200">
+                  {/* Profile Picture Upload */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-text-main border-b border-border-subtle pb-2">Profile Picture</h3>
                 <div className="flex items-center gap-5">
                   <div className="relative group">
                     <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-greenui shadow-md">
@@ -476,7 +510,7 @@ export default function ProfilePage() {
                       {isUploadingImage ? (
                         <><Loader2 size={16} className="animate-spin" /> Uploading...</>
                       ) : (
-                        <><span>📷</span> Change Photo</>
+                        <>Change Photo</>
                       )}
                     </label>
                     <input
@@ -527,9 +561,12 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Projects Section */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-center border-b border-border-subtle pb-2">
+                </div>
+              ) : (
+                <div className="space-y-8 animate-in fade-in duration-200">
+                  {/* Projects Section */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center border-b border-border-subtle pb-2">
                   <h3 className="text-lg font-semibold text-text-main">Projects</h3>
                   <button
                     onClick={handleAddProject}
@@ -555,7 +592,7 @@ export default function ProfilePage() {
 
                         <div className="space-y-4">
                           <div>
-                            <label className="block text-xs font-bold text-text-main mb-1 ml-1">Project Title</label>
+                            <label className="block text-xs font-bold text-text-main mb-1 ml-1">Project Title <span className="text-red-500">*</span></label>
                             <input
                               value={project.title}
                               onChange={(e) => handleUpdateProject(idx, "title", e.target.value)}
@@ -565,7 +602,7 @@ export default function ProfilePage() {
                           </div>
 
                           <div>
-                            <label className="block text-xs font-bold text-text-main mb-1 ml-1">Description</label>
+                            <label className="block text-xs font-bold text-text-main mb-1 ml-1">Description <span className="text-text-muted font-normal text-[10px]">(Optional)</span></label>
                             <textarea
                               value={project.description}
                               onChange={(e) => handleUpdateProject(idx, "description", e.target.value)}
@@ -576,7 +613,7 @@ export default function ProfilePage() {
                           </div>
 
                           <div>
-                            <label className="block text-xs font-bold text-text-main mb-1 ml-1">Tags (Comma separated)</label>
+                            <label className="block text-xs font-bold text-text-main mb-1 ml-1">Tags (Comma separated) <span className="text-red-500">*</span></label>
                             <input
                               value={project.tags.join(", ")}
                               onChange={(e) => {
@@ -593,6 +630,8 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+                </div>
+              )}
 
             </div>
 
