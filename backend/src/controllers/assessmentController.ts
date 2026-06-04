@@ -175,9 +175,16 @@ export const assessmentController = {
                   finalSourceCode = lang.driverTemplate.replace("{{USER_CODE}}", userAnswer);
                 }
 
+                const judge0Key = process.env.JUDGE0_API_KEY;
+                const headers: any = { "Content-Type": "application/json" };
+                if (judge0Key) {
+                  headers["X-RapidAPI-Key"] = judge0Key;
+                  headers["X-RapidAPI-Host"] = judge0Url.replace("https://", "").split("/")[0];
+                }
+
                 const res = await fetch(`${judge0Url}/submissions?wait=true&base64_encoded=false`, {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers,
                   body: JSON.stringify({
                     language_id: lang.judge0_id,
                     source_code: finalSourceCode,
@@ -296,9 +303,16 @@ export const assessmentController = {
             finalSourceCode = lang.driverTemplate.replace("{{USER_CODE}}", source_code);
           }
 
+          const judge0Key = process.env.JUDGE0_API_KEY;
+          const headers: any = { "Content-Type": "application/json" };
+          if (judge0Key) {
+            headers["X-RapidAPI-Key"] = judge0Key;
+            headers["X-RapidAPI-Host"] = judge0Url.replace("https://", "").split("/")[0];
+          }
+
           const res = await fetch(`${judge0Url}/submissions?wait=true&base64_encoded=false`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers,
             body: JSON.stringify({
               language_id: lang.judge0_id,
               source_code: finalSourceCode,
@@ -369,12 +383,16 @@ export const assessmentController = {
   async executeCode(body: { language_id: number; source_code: string; stdin?: string }) {
     try {
       const judge0Url = process.env.JUDGE0_API_URL || "https://ce.judge0.com";
+      const judge0Key = process.env.JUDGE0_API_KEY;
+      const headers: any = { "Content-Type": "application/json" };
+      if (judge0Key) {
+        headers["X-RapidAPI-Key"] = judge0Key;
+        headers["X-RapidAPI-Host"] = judge0Url.replace("https://", "").split("/")[0];
+      }
       
       const res = await fetch(`${judge0Url}/submissions?wait=true&base64_encoded=false`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           language_id: body.language_id,
           source_code: body.source_code,
@@ -385,8 +403,8 @@ export const assessmentController = {
       const data = await res.json();
       
       return {
-        status: res.status,
-        body: { success: res.ok, data },
+        status: res.status === 200 || res.status === 201 ? 200 : res.status,
+        body: { success: res.ok, data, message: data.message || data.error || "Judge0 Error" },
       };
     } catch (err: any) {
       return { status: 500, body: { success: false, message: "Error executing code", error: err.message } };

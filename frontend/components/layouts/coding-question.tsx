@@ -70,10 +70,10 @@ const CodingQuestion = memo(function CodingQuestion({
           setOutput(`Status: ${jd0.status?.description}\n\nError/Output:\n${jd0.compile_output || jd0.stderr || jd0.stdout || ""}`);
         }
       } else {
-        setOutput("Failed to execute code on server.");
+        setOutput(`Failed to execute code on server.\nReason: ${data.message || "Unknown Error"}\nDetails: ${data.error || JSON.stringify(data.data || {})}`);
       }
-    } catch (err) {
-      setOutput("Network Error.");
+    } catch (err: any) {
+      setOutput(`Network Error or Server Crash: ${err.message}`);
     } finally {
       setIsCompiling(false);
     }
