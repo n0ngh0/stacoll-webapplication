@@ -90,7 +90,6 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
     const newErrors: Record<string, string> = {};
 
     if (!title.trim()) newErrors.title = "Title is required";
-    if (!description.trim()) newErrors.description = "Description is required";
 
     if (type === "choice") {
       const filledOptions = options.filter((o) => o.trim());
@@ -458,9 +457,11 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-bold text-text-main">
-                    Description <span className="text-red-500">*</span>
+                    Description
                   </label>
-                  <div className="flex items-center rounded-lg border border-border-subtle overflow-hidden">
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 bg-surface-hover border border-border-subtle text-text-muted text-[10px] uppercase font-black tracking-widest rounded-lg">Optional</span>
+                    <div className="flex items-center rounded-lg border border-border-subtle overflow-hidden">
                     <button
                       type="button"
                       onClick={() => setDescTab("write")}
@@ -479,6 +480,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
                       <Eye size={12} />
                       Preview
                     </button>
+                  </div>
                   </div>
                 </div>
 

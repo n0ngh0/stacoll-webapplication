@@ -4,7 +4,7 @@ export interface BaseQuestion {
   skillId: string;
   type: "choice" | "coding";
   title: string;
-  description: string;
+  description?: string;
   difficulty: "beginner" | "intermediate" | "advanced";
   createdAt: string;
   updatedAt: string;
