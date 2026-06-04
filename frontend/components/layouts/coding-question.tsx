@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import { Panel, Group, Separator } from "react-resizable-panels";
 import { Play, Terminal, ChevronRight, ChevronLeft, SendHorizontal, Loader2 } from "lucide-react";
 import Editor from "@monaco-editor/react";
+import { apiFetch } from "@/lib/api/client";
 
 interface CodingProps {
   title: string;
@@ -46,20 +47,18 @@ const CodingQuestion = memo(function CodingQuestion({
     setIsCompiling(true);
     setOutput("Executing code...");
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-      
       // Let's test against the first public test case
       const publicTestCase = testCases?.find(tc => !tc.isHidden);
       const stdin = publicTestCase ? publicTestCase.input : "";
 
-      const res = await fetch(`${apiUrl}/assessment/execute`, {
+      const res = await apiFetch("/assessment/execute", {
+        auth: false,
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           language_id: languageId,
           source_code: code,
           stdin: stdin,
-        })
+        }),
       });
       const data = await res.json();
       
@@ -88,15 +87,8 @@ const CodingQuestion = memo(function CodingQuestion({
     setOutput("Verifying against all test cases (including hidden)...");
     setIsVerified(false);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-      const token = localStorage.getItem("token");
-      
-      const res = await fetch(`${apiUrl}/assessment/${skillId}/verify-problem/${problemId}`, {
+      const res = await apiFetch(`/assessment/${skillId}/verify-problem/${problemId}`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` 
-        },
         body: JSON.stringify({
           source_code: code,
         })

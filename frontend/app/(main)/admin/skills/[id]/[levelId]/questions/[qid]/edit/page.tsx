@@ -3,15 +3,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import QuestionForm from "@/components/admin/question-form";
-import type { Question, CreateQuestionPayload, UpdateQuestionPayload, Skill } from "@/types/question";
+import type { Question, CreateQuestionPayload, UpdateQuestionPayload } from "@/types/question";
+import type { Skill } from "@/types/skill";
 import {
   fetchAdminProblem,
-  getApiUrl,
-  mapDbSkillToFormSkill,
+  fetchSkillById,
   mapFormToProblemPayload,
   mapProblemToForm,
   updateAdminProblem,
 } from "@/lib/api/problems";
+import { getToken } from "@/lib/auth-session";
 
 export default function EditQuestionPage() {
   const params = useParams();
@@ -29,23 +30,17 @@ export default function EditQuestionPage() {
     const load = async () => {
       if (!qid || !skillId) return;
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
+        if (!getToken()) {
           setLoadError("Not authenticated");
           return;
         }
 
-        const [skillRes, problem] = await Promise.all([
-          fetch(`${getApiUrl()}/skills/${skillId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetchAdminProblem(qid, token),
+        const [loadedSkill, problem] = await Promise.all([
+          fetchSkillById(skillId),
+          fetchAdminProblem(qid),
         ]);
 
-        const skillData = await skillRes.json();
-        if (skillData.success && skillData.skill) {
-          setSkill(mapDbSkillToFormSkill(skillData.skill));
-        }
+        if (loadedSkill) setSkill(loadedSkill);
 
         if (problem) {
           setQuestion(mapProblemToForm(problem));
@@ -83,11 +78,8 @@ export default function EditQuestionPage() {
 
   const handleUpdate = async (data: UpdateQuestionPayload) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
       const payload = mapFormToProblemPayload(data as CreateQuestionPayload, levelId);
-      const result = await updateAdminProblem(qid, payload, token);
+      const result = await updateAdminProblem(qid, payload);
 
       if (result.success) {
         router.push(`/admin/skills/${skillId}?level=${levelId}`);
@@ -104,7 +96,7 @@ export default function EditQuestionPage() {
     <QuestionForm
       mode="edit"
       skill={skill}
-      levelId={levelId as any}
+      levelId={levelId as "beginner" | "intermediate" | "advanced"}
       initialData={question}
       onSubmit={handleUpdate}
     />

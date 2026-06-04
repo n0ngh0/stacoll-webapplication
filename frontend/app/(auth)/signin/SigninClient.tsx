@@ -3,6 +3,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { Mail, Lock, ArrowRight, Loader2, CircleAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api/client";
+import { setSession } from "@/lib/auth-session";
 
 export default function SignInPage() {
     const router = useRouter();
@@ -23,11 +25,10 @@ export default function SignInPage() {
         setIsLoading(true);
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-            const res = await fetch(`${apiUrl}/auth/login`, {
+            const res = await apiFetch("/auth/login", {
+                auth: false,
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(formData),
             });
 
             const data = await res.json();
@@ -41,11 +42,13 @@ export default function SignInPage() {
                 throw new Error(data.message || "Invalid credentials");
             }
 
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("user", JSON.stringify(data.user));
-
-            document.cookie = `token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
-            document.cookie = `user=${JSON.stringify(data.user)}; path=/; max-age=86400; SameSite=Lax`;
+            setSession(data.token, {
+                id: data.user._id ?? data.user.id,
+                username: data.user.username,
+                email: data.user.email,
+                role: data.user.role,
+                imgUrl: data.user.imgUrl,
+            });
 
             if (data.user.role === "admin") {
                 window.location.href = "/admin";

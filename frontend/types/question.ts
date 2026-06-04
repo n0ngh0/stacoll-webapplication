@@ -1,28 +1,3 @@
-// --- SkillLevel ---
-export interface SkillLevel {
-  id: "beginner" | "intermediate" | "advanced";
-  title: string;
-  description: string;
-  fullDescription?: string;
-  estimatedTime: number;
-  mode?: string;
-}
-
-// --- SKILL ---
-export interface Skill {
-  id: string;
-  title: string;
-  icon: string;
-  desc: string;
-  category: string;
-  levels: SkillLevel[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type CreateSkillPayload = Omit<Skill, "id" | "createdAt" | "updatedAt">;
-export type UpdateSkillPayload = Partial<Omit<Skill, "id" | "createdAt">>;
-
 // --- QUESTION ---
 export interface BaseQuestion {
   id: string;

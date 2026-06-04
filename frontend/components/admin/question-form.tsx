@@ -10,7 +10,8 @@ import {
   AlertTriangle, CheckCircle2, Pencil,
 } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
-import type { Question, ChoiceQuestion, CodingQuestion, Skill, TestCase } from "@/types/question";
+import type { Question, ChoiceQuestion, CodingQuestion, TestCase } from "@/types/question";
+import type { Skill } from "@/types/skill";
 
 interface QuestionFormProps {
   mode: "create" | "edit";
@@ -123,7 +124,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
       type,
       title: title.trim(),
       description: description.trim(),
-      skillId: skill.id,
+      skillId: skill._id as string,
       difficulty,
     };
 
@@ -149,7 +150,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
       toast.success(mode === "create" ? "Question created successfully!" : "Question updated successfully!");
 
       setTimeout(() => {
-        router.push(`/admin/skills/${skill.id}?level=${levelId}`);
+        router.push(`/admin/skills/${skill._id}?level=${levelId}`);
       }, 1000);
     } catch (err) {
       toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
@@ -344,7 +345,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
           {/* Header */}
           <div className="mb-8">
             <Link
-              href={`/admin/skills/${skill.id}?level=${levelId}`}
+              href={`/admin/skills/${skill._id}?level=${levelId}`}
               className="inline-flex items-center gap-1.5 text-sm font-bold text-text-muted hover:text-text-main transition-colors mb-3 cursor-pointer"
             >
               <ArrowLeft size={16} />
@@ -760,7 +761,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => router.push(`/admin/skills/${skill.id}?level=${levelId}`)}
+                onClick={() => router.push(`/admin/skills/${skill._id}?level=${levelId}`)}
                 className="px-6 py-3 text-sm font-bold text-text-muted hover:text-text-main hover:bg-surface-hover rounded-xl transition-colors cursor-pointer"
               >
                 Cancel

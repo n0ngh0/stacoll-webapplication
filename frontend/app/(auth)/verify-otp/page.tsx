@@ -54,11 +54,11 @@ export default function VerifyOTPPage() {
 
         setIsLoading(true);
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-            const res = await fetch(`${apiUrl}/auth/verify-otp`, {
+            const { apiFetch } = await import("@/lib/api/client");
+            const res = await apiFetch("/auth/verify-otp", {
+                auth: false,
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, otp: otpCode })
+                body: JSON.stringify({ email, otp: otpCode }),
             });
 
             const data = await res.json();

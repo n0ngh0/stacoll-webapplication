@@ -3,14 +3,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BookOpenCheck, Briefcase, WalletCards } from "lucide-react";
+import { getToken } from "@/lib/auth-session";
 
 export default function LandingPage() {
     const router = useRouter();
     const [shouldRender, setShouldRender] = useState(false);
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (token && token !== "undefined" && token !== "null") {
+        if (getToken()) {
             window.location.href = "/explore";
         } else {
             setShouldRender(true);

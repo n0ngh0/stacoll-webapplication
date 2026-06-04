@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { User, Mail, Lock, CheckCircle2, Loader2, ArrowRight, CircleAlert } from "lucide-react";
+import { apiFetch } from "@/lib/api/client";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -30,15 +31,14 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-      const res = await fetch(`${apiUrl}/auth/register`, {
+      const res = await apiFetch("/auth/register", {
+        auth: false,
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           username: formData.username,
           email: formData.email,
           password: formData.password
-        })
+        }),
       });
 
       const data = await res.json();

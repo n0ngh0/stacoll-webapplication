@@ -10,6 +10,8 @@ import { toast, Toaster } from "react-hot-toast";
 import type { Skill, SkillLevel, Problem } from "@/types/skill";
 import { LEVEL_OPTIONS, CATEGORY_THEMES } from "@/types/question"; // using constants for UI
 import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
+import { apiFetch } from "@/lib/api/client";
+import { fetchSkillById, fetchAdminProblems } from "@/lib/api/problems";
 
 export default function SkillManagementPage() {
   const params = useParams();
@@ -42,13 +44,8 @@ export default function SkillManagementPage() {
 
   const loadSkill = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-      const res = await fetch(`${apiUrl}/skills/${id}`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) setSkill(data.skill);
+      const loaded = await fetchSkillById(id);
+      if (loaded) setSkill(loaded);
       else toast.error("Failed to load skill");
     } catch (e) {
       console.error(e);
@@ -58,15 +55,8 @@ export default function SkillManagementPage() {
 
   const loadLevelData = async (levelId: string) => {
     try {
-      const token = localStorage.getItem("token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-      const res = await fetch(`${apiUrl}/admin/skills/${id}/problems?level=${levelId}`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setQuestions(data.problems);
-      }
+      const problems = await fetchAdminProblems(id, levelId);
+      setQuestions(problems);
     } catch (e) {
       console.error(e);
       toast.error("Error loading questions");
@@ -86,12 +76,7 @@ export default function SkillManagementPage() {
 
   const handleDeleteSkill = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-      await fetch(`${apiUrl}/admin/skills/${id}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      await apiFetch(`/admin/skills/${id}`, { method: "DELETE" });
       router.push("/admin");
     } catch (e) {
       toast.error("Failed to delete skill");
@@ -100,12 +85,7 @@ export default function SkillManagementPage() {
 
   const confirmDeleteQuestion = async (qId: string) => {
     try {
-      const token = localStorage.getItem("token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-      await fetch(`${apiUrl}/admin/problems/${qId}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      await apiFetch(`/admin/problems/${qId}`, { method: "DELETE" });
       setQuestionToDelete(null);
       loadLevelData(activeLevel);
     } catch (e) {
@@ -134,15 +114,9 @@ export default function SkillManagementPage() {
     const newLevels = skill.levels.map(l => l.level === editingLevelData.level ? editingLevelData : l);
     
     try {
-      const token = localStorage.getItem("token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-      const res = await fetch(`${apiUrl}/admin/skills/${id}`, {
+      const res = await apiFetch(`/admin/skills/${id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ levels: newLevels })
+        body: JSON.stringify({ levels: newLevels }),
       });
       const data = await res.json();
       
@@ -521,8 +495,8 @@ export default function SkillManagementPage() {
       {/* Compare All Levels Modal */}
       {showCompareModal && (
         <CompareLevelsModal
-          levels={skill.levels.map((l: any) => ({ ...l, id: l.level, title: l.level })) as any || []}
-          initialTab={activeCompareTab as any}
+          levels={skill.levels}
+          initialTab={activeCompareTab as SkillLevel["level"]}
           themeColor={themeColor}
           onClose={() => setShowCompareModal(false)}
         />

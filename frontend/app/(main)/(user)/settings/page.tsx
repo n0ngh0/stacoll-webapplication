@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Moon, Sun, Shield, Trash2, Settings } from "lucide-react";
 import Link from "next/link";
+import { getToken } from "@/lib/auth-session";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -14,9 +15,8 @@ export default function SettingsPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/");
+    if (!getToken()) {
+      router.push("/signin");
     } else {
       const timer = setTimeout(() => setIsCheckingAuth(false), 100);
       return () => clearTimeout(timer);

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Mail, ArrowLeft, Loader2, CheckCircle2, CircleAlert, ArrowRight } from "lucide-react";
+import { apiFetch } from "@/lib/api/client";
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
@@ -15,11 +16,10 @@ export default function ForgotPasswordPage() {
         setIsLoading(true);
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-            const res = await fetch(`${apiUrl}/auth/forgot-password`, {
+            const res = await apiFetch("/auth/forgot-password", {
+                auth: false,
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email })
+                body: JSON.stringify({ email }),
             });
 
             if (!res.ok) {
