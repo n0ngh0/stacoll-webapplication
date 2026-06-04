@@ -90,8 +90,8 @@ export default function SettingsPage() {
       const data = await res.json();
       
       if (data.success) {
-        const { removeToken } = await import("@/lib/auth-session");
-        removeToken();
+        const { clearSession } = await import("@/lib/auth-session");
+        clearSession();
         window.location.href = "/signin";
       } else {
         setDeleteError(data.message || "Failed to delete account.");
