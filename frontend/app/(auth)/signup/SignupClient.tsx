@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { User, Mail, Lock, CheckCircle2, Loader2, ArrowRight, CircleAlert } from "lucide-react";
 import { apiFetch } from "@/lib/api/client";
+import { validatePassword, PASSWORD_POLICY_HINT } from "@/lib/validation/password";
 
 // Google SVG Icon
 function GoogleIcon() {
@@ -39,6 +40,11 @@ export default function SignUpPage() {
 
     if (formData.password !== formData.confirmPassword) {
       return setError("Passwords do not match");
+    }
+
+    const passwordCheck = validatePassword(formData.password);
+    if (!passwordCheck.valid) {
+      return setError(passwordCheck.message);
     }
 
     setIsLoading(true);
@@ -138,6 +144,7 @@ export default function SignUpPage() {
             {/* Password */}
             <div>
               <label className="block text-sm font-bold text-text-main mb-2 ml-1">Password</label>
+              <p className="text-xs text-text-muted mb-2 ml-1">{PASSWORD_POLICY_HINT}</p>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-text-muted">
                   <Lock width={18} height={18} />

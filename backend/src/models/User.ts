@@ -28,6 +28,8 @@ export interface IUser {
   isVerified: boolean;
   otp?: string;
   otpExpiry?: Date;
+  passwordResetToken?: string;
+  passwordResetExpiry?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -55,7 +57,7 @@ const userSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      minlength: [6, "Password must be at least 6 characters"],
+      minlength: [8, "Password must be at least 8 characters"],
       // required เฉพาะ local auth users เท่านั้น
       required: function (this: any) {
         return this.authProvider === 'local';
@@ -112,6 +114,12 @@ const userSchema = new Schema<IUser>(
       type: String,
     },
     otpExpiry: {
+      type: Date,
+    },
+    passwordResetToken: {
+      type: String,
+    },
+    passwordResetExpiry: {
       type: Date,
     },
   },

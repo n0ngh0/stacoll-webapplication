@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { ChevronLeft, Award, CheckCircle, Clock, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import ReactMarkdown from "react-markdown";
+import { SafeMarkdown } from "@/components/SafeMarkdown";
 import { CATEGORY_THEMES, getLevelColorClass } from "@/types/question";
 import { apiFetch } from "@/lib/api/client";
 import { getToken } from "@/lib/auth-session";
@@ -178,9 +178,9 @@ export default function CertificatePage() {
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-text-main transition-colors duration-300">Competencies Demonstrated</h2>
             <div className="bg-canvas p-6 md:p-8 rounded-2xl border border-border-subtle transition-colors duration-300 prose prose-sm md:prose-base dark:prose-invert max-w-none text-text-main">
-              <ReactMarkdown>
+              <SafeMarkdown>
                 {skillData.fullDescription || "*No detailed criteria available.*"}
-              </ReactMarkdown>
+              </SafeMarkdown>
             </div>
           </div>
 

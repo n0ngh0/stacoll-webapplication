@@ -25,6 +25,24 @@ export const authRoutes = new Elysia({ prefix: "/api/auth" })
       otp: t.String()
     })
   })
+  .post("/forgot-password", async ({ body, set }) => {
+    const { status, body: responseBody } = await authController.forgotPassword(body);
+    set.status = status;
+    return responseBody;
+  }, {
+    body: t.Object({ email: t.String() }),
+  })
+  .post("/reset-password", async ({ body, set }) => {
+    const { status, body: responseBody } = await authController.resetPassword(body);
+    set.status = status;
+    return responseBody;
+  }, {
+    body: t.Object({
+      email: t.String(),
+      token: t.String(),
+      password: t.String(),
+    }),
+  })
   .post("/login", async ({ body, jwt, set }) => {
     const { status, body: responseBody } = await authController.login(body, jwt.sign);
     set.status = status;
