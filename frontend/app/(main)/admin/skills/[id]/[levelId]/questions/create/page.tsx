@@ -2,11 +2,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import QuestionForm from "@/components/admin/question-form";
-import type { CreateQuestionPayload, Skill } from "@/types/question";
+import type { CreateQuestionPayload } from "@/types/question";
+import type { Skill } from "@/types/skill";
 import {
   createAdminProblem,
-  getApiUrl,
-  mapDbSkillToFormSkill,
+  fetchSkillById,
   mapFormToProblemPayload,
 } from "@/lib/api/problems";
 
@@ -20,25 +20,18 @@ export default function CreateQuestionPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const fetchSkill = async () => {
+    const load = async () => {
+      if (!skillId) return;
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${getApiUrl()}/skills/${skillId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        if (data.success && data.skill) {
-          setSkill(mapDbSkillToFormSkill(data.skill));
-        }
+        const loaded = await fetchSkillById(skillId);
+        if (loaded) setSkill(loaded);
       } catch (err) {
         console.error("Failed to fetch skill", err);
       } finally {
         setMounted(true);
       }
     };
-    if (skillId) {
-      fetchSkill();
-    }
+    load();
   }, [skillId]);
 
   if (!mounted) return null;
@@ -56,11 +49,8 @@ export default function CreateQuestionPage() {
 
   const handleCreate = async (data: CreateQuestionPayload) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
       const payload = mapFormToProblemPayload(data, levelId);
-      const result = await createAdminProblem(skillId, payload, token);
+      const result = await createAdminProblem(skillId, payload);
 
       if (result.success) {
         router.push(`/admin/skills/${skillId}`);

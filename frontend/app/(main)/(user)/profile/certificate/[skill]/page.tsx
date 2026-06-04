@@ -5,78 +5,79 @@ import { ChevronLeft, Award, CheckCircle, Clock, ArrowRight } from "lucide-react
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { CATEGORY_THEMES, getLevelColorClass } from "@/types/question";
+import { apiFetch } from "@/lib/api/client";
+import { getToken } from "@/lib/auth-session";
 
-// Mock data
-const mockSkills = [
-  { name: "React.js", category: "programming", level: "INTERMEDIATE", score: 82, date: "Oct 12, 2025", expires: "Oct 12, 2027", fullDescription: "### Competencies\n\n- Build reusable and performant components\n- Manage complex state using Context and Hooks\n- Integrate effectively with REST APIs" },
-  { name: "Node.js", category: "programming", level: "BEGINNER", score: 67, date: "Oct 12, 2025", expires: "Oct 12, 2027", fullDescription: "### Competencies\n\n- Create basic HTTP servers\n- Understand CommonJS modules\n- Work with the file system and basic streams" },
-  { name: "Python", category: "programming", level: "ADVANCED", score: 95, date: "Sep 28, 2025", expires: "Sep 28, 2027", fullDescription: "### Competencies\n\n- Optimize application performance and memory usage\n- Implement advanced decorators, generators, and context managers\n- Design scalable and maintainable application architectures" },
-  { name: "JavaScript", category: "programming", level: "ADVANCED", score: 91, date: "Jan 15, 2026", expires: "Jan 15, 2028", fullDescription: "### Competencies\n\n- Master asynchronous programming (Promises/async-await)\n- Deep understanding of closures, scopes, and prototypes\n- Write efficient, modern ES6+ code patterns" },
-  { name: "SQL", category: "analyst", level: "INTERMEDIATE", score: 85, date: "Nov 05, 2025", expires: "Nov 05, 2027", fullDescription: "### Competencies\n\n- Write complex queries using subqueries\n- Perform data aggregations with GROUP BY and HAVING\n- Use multiple JOIN types effectively and efficiently" },
-];
+type CertificateData = {
+  name: string;
+  category: string;
+  level: string;
+  score: number;
+  date: string;
+  expires: string;
+  fullDescription: string;
+};
 
 export default function CertificatePage() {
   const params = useParams();
   const router = useRouter();
   const rawSkillId = (params?.skill || "") as string;
-  const decodedSkill = decodeURIComponent(rawSkillId).toLowerCase();
 
   const [mounted, setMounted] = useState(false);
-  const [skillData, setSkillData] = useState<any>(null);
+  const [skillData, setSkillData] = useState<CertificateData | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     window.scrollTo(0, 0);
     fetchData();
-  }, [decodedSkill]);
+  }, [rawSkillId]);
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+      const token = getToken();
+      if (!token) {
+        setNotFound(true);
+        return;
+      }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-      
-      // Fetch user profile to get verified skills
-      const profileRes = await fetch(`${apiUrl}/profile/me`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      const profileRes = await apiFetch("/profile/me");
       const profileData = await profileRes.json();
-      
+
       if (profileData.success && profileData.user?.verifiedSkills) {
-        // Find the skill by ID (since URL param is the skill ID)
-        const vSkill = profileData.user.verifiedSkills.find((s: any) => s.skillId === rawSkillId);
-        
+        const vSkill = profileData.user.verifiedSkills.find(
+          (s: { skillId: string }) => String(s.skillId) === rawSkillId
+        );
+
         if (vSkill) {
           setSkillData({
             name: vSkill.skillName,
-            category: "programming", // Default or we could fetch skill details
+            category: "programming",
             level: vSkill.level.toUpperCase(),
             score: vSkill.score,
-            date: new Date(vSkill.verifiedAt).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-            expires: new Date(new Date(vSkill.verifiedAt).getTime() + 2 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-            fullDescription: "### Competencies\n\n- Demonstrated foundational knowledge\n- Successfully completed all required assessments\n- Met all the criteria for this skill level"
+            date: new Date(vSkill.verifiedAt).toLocaleDateString("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+            }),
+            expires: new Date(
+              new Date(vSkill.verifiedAt).getTime() + 2 * 365 * 24 * 60 * 60 * 1000
+            ).toLocaleDateString("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+            }),
+            fullDescription:
+              "### Competencies\n\n- Demonstrated foundational knowledge\n- Successfully completed all required assessments\n- Met all the criteria for this skill level",
           });
           return;
         }
       }
 
-      // Fallback logic for mock data or if not found in verifiedSkills
-      let found = mockSkills.find(s => s.name.toLowerCase() === decodedSkill);
-      if (!found) {
-        found = {
-          name: decodeURIComponent(rawSkillId).split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-          category: "programming",
-          level: "VERIFIED",
-          score: 100,
-          date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-          expires: new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-          fullDescription: "### Competencies\n\n- Demonstrated foundational knowledge\n- Successfully completed all required assessments\n- Met all the criteria for this skill level"
-        };
-      }
-      setSkillData(found);
+      setNotFound(true);
     } catch (err) {
       console.error(err);
+      setNotFound(true);
     }
   };
 
@@ -84,16 +85,19 @@ export default function CertificatePage() {
     return <div className="fixed inset-0 z-[9999] bg-canvas animate-pulse transition-colors duration-300"></div>;
   }
 
-  if (!skillData) {
+  if (notFound || !skillData) {
     return (
       <div className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center bg-canvas transition-colors duration-300">
         <h2 className="text-2xl font-bold text-text-main mb-3">Certificate Not Found</h2>
-        <button onClick={() => router.back()} className="text-brand-secondary hover:underline font-bold cursor-pointer">Back to Profile</button>
+        <p className="text-sm text-text-muted mb-4 text-center max-w-md">
+          This certificate is only available for skills you have verified through assessment.
+        </p>
+        <button onClick={() => router.push("/profile")} className="text-brand-secondary hover:underline font-bold cursor-pointer">
+          Back to Profile
+        </button>
       </div>
     );
   }
-
-
 
   const themeColor = CATEGORY_THEMES[skillData.category] || "#19c3af";
 
@@ -104,7 +108,6 @@ export default function CertificatePage() {
         style={{ "--theme-color": themeColor } as React.CSSProperties}
       >
         
-        {/* Header Navigation */}
         <div className="px-8 py-4 border-b border-border-subtle transition-colors duration-300">
           <button
             onClick={() => router.push("/profile")}
@@ -115,7 +118,6 @@ export default function CertificatePage() {
           </button>
         </div>
 
-        {/* Certificate Title */}
         <div 
           className="py-10 flex flex-col items-center justify-center relative overflow-hidden transition-colors duration-300"
           style={{ backgroundColor: `${themeColor}33` }}
@@ -141,7 +143,6 @@ export default function CertificatePage() {
         </div>
 
         <div className="p-8 md:p-12 space-y-10">
-          {/* Main Info */}
           <div className="bg-canvas border border-border-subtle rounded-3xl p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-8 transition-colors duration-300 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-brand-secondary/5 rounded-bl-full -z-0"></div>
             
@@ -174,7 +175,6 @@ export default function CertificatePage() {
             </div>
           </div>
 
-          {/* Competencies Section */}
           <div className="space-y-4">
             <h2 className="text-xl font-bold text-text-main transition-colors duration-300">Competencies Demonstrated</h2>
             <div className="bg-canvas p-6 md:p-8 rounded-2xl border border-border-subtle transition-colors duration-300 prose prose-sm md:prose-base dark:prose-invert max-w-none text-text-main">
@@ -184,7 +184,6 @@ export default function CertificatePage() {
             </div>
           </div>
 
-          {/* Next Level Action */}
           <div className="pt-8 border-t border-border-subtle transition-colors duration-300 flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <h3 className="text-lg font-bold text-text-main transition-colors">Ready for the next challenge?</h3>

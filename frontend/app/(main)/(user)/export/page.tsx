@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ChevronLeft, Check, AlertCircle, Loader2 } from "lucide-react";
 import { useExportContext } from "@/components/providers/export-context";
 import { getLevelColorClass, getLevelBgColorClass } from "@/types/question";
+import { apiFetch } from "@/lib/api/client";
+import { getToken } from "@/lib/auth-session";
 
 export default function ExportPreparePage() {
   const router = useRouter();
@@ -17,15 +19,11 @@ export default function ExportPreparePage() {
     const fetchData = async () => {
       try {
         if (!userData) {
-          const token = localStorage.getItem("token");
-          if (!token) {
-            router.push("/");
+          if (!getToken()) {
+            router.push("/signin");
             return;
           }
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-          const res = await fetch(`${apiUrl}/profile/me`, {
-            headers: { "Authorization": `Bearer ${token}` }
-          });
+          const res = await apiFetch("/profile/me");
           const data = await res.json();
           if (data.success) {
             const user = data.user;

@@ -8,7 +8,21 @@ export interface SkillLevel {
   /** จำนวนข้อสอบจริงจาก MongoDB (จาก getSkillById) */
   actualQuestionCount?: number;
   mode?: string;
+  fullDescription?: string;
 }
+
+export function levelLabel(level: SkillLevel["level"]): string {
+  return level.charAt(0).toUpperCase() + level.slice(1);
+}
+
+export type CreateSkillPayload = {
+  title: string;
+  description: string;
+  category: Skill["category"];
+  icon?: string;
+  levels?: SkillLevel[];
+  isActive?: boolean;
+};
 
 export interface Skill {
   _id: string;

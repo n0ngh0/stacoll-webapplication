@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { SessionUser } from "../types/user";
+import { apiFetch } from "@/lib/api/client";
+import { clearSession, getToken } from "@/lib/auth-session";
 
 export function useUser() {
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -9,17 +11,14 @@ export function useUser() {
 
   useEffect(() => {
     const verifyRole = async () => {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       if (!token) {
         setIsLoading(false);
         return;
       }
 
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-        const res = await fetch(`${apiUrl}/profile/me`, {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
+        const res = await apiFetch("/profile/me");
         const data = await res.json();
 
         if (res.ok && data.success && data.user) {
@@ -34,7 +33,7 @@ export function useUser() {
           setIsAdmin(freshUser.role === "admin");
         } else {
           if (res.status === 401 || res.status === 403) {
-            localStorage.removeItem("token");
+            clearSession();
             window.location.href = "/";
           }
         }

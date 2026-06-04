@@ -68,20 +68,11 @@ export default function ExamPage() {
     useEffect(() => {
         const fetchProblems = async () => {
             try {
-                const token = localStorage.getItem("token");
-                if (!token) return router.push("/");
-                
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+                const { apiFetch } = await import("@/lib/api/client");
                 const [skillRes, assessRes] = await Promise.all([
-                    fetch(`${apiUrl}/skills/${rawSkillId}`, {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }),
-                    fetch(`${apiUrl}/assessment/${rawSkillId}/start`, {
+                    apiFetch(`/skills/${rawSkillId}`),
+                    apiFetch(`/assessment/${rawSkillId}/start`, {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${token}`,
-                        },
                         body: JSON.stringify({ level: selectedLevel }),
                     }),
                 ]);
@@ -113,15 +104,10 @@ export default function ExamPage() {
             setIsSubmitting(true);
             const submitAnswers = async () => {
                 try {
-                    const token = localStorage.getItem("token");
-                    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-                    
-                    const res = await fetch(`${apiUrl}/assessment/${rawSkillId}/submit`, {
+                    const { apiFetch } = await import("@/lib/api/client");
+
+                    const res = await apiFetch(`/assessment/${rawSkillId}/submit`, {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${token}`,
-                        },
                         body: JSON.stringify({ level: selectedLevel, answers })
                     });
                     

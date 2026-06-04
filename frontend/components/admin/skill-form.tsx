@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ArrowLeft, Save, Upload, ImageIcon, Trash } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { CATEGORY_OPTIONS } from "@/types/question";
-import type { Skill } from "@/types/question";
+import type { Skill } from "@/types/skill";
+import { fileToDataUrl, isPersistableIcon } from "@/lib/icon-upload";
 
 interface SkillFormProps {
   mode: "create" | "edit";
@@ -17,7 +18,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
   const router = useRouter();
 
   const [title, setTitle] = useState(initialData?.title || "");
-  const [desc, setDesc] = useState(initialData?.description || initialData?.desc || "");
+  const [desc, setDesc] = useState(initialData?.description || "");
   const [icon, setIcon] = useState(initialData?.icon || "");
   const [category, setCategory] = useState<any>(initialData?.category || "programming");
   const [isUploadingIcon, setIsUploadingIcon] = useState(false);
@@ -39,10 +40,14 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
       return;
     }
 
+    const iconValue = isPersistableIcon(icon)
+      ? icon.trim()
+      : icon.trim() || title.trim().substring(0, 3).toUpperCase();
+
     const payload = {
       title: title.trim(),
       description: desc.trim(),
-      icon: icon.trim() || title.trim().substring(0, 3).toUpperCase(),
+      icon: iconValue,
       category,
     };
 
@@ -58,7 +63,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
     }
   };
 
-  const isImageUrl = (url: string) => url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:");
+  const isImageUrl = (url: string) => isPersistableIcon(url);
 
   return (
     <>
