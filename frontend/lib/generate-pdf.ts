@@ -1,3 +1,6 @@
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
+
 export async function generateResumePDF(element: HTMLElement, filename: string): Promise<void> {
   try {
     const iframe = document.createElement('iframe');
