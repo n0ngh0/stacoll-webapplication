@@ -8,6 +8,20 @@ import { User } from "@/types/user";
 import { apiFetch } from "@/lib/api/client";
 import { clearSession, getToken, updateStoredUser } from "@/lib/auth-session";
 
+const JOB_ROLES = [
+  { title: "Front-end Developer", skills: ["React.js", "HTML", "CSS", "TypeScript", "Next.js", "Tailwind CSS"] },
+  { title: "Back-end Developer", skills: ["Node.js", "Express", "MongoDB", "SQL", "Python", "Docker"] },
+  { title: "Full Stack Developer", skills: ["React.js", "Node.js", "MongoDB", "TypeScript", "Next.js"] },
+  { title: "Data Analyst", skills: ["Python", "SQL", "Excel", "Tableau", "Power BI"] },
+  { title: "DevOps Engineer", skills: ["Docker", "Kubernetes", "AWS", "Linux", "CI/CD"] },
+  { title: "Mobile Developer", skills: ["React Native", "Swift", "Kotlin", "Flutter"] },
+  { title: "UI/UX Designer", skills: ["Figma", "Adobe XD", "UI Design", "UX Research"] },
+  { title: "Data Scientist", skills: ["Python", "Machine Learning", "SQL", "R", "Pandas"] },
+  { title: "Cloud Engineer", skills: ["AWS", "Azure", "GCP", "Linux", "Terraform"] },
+  { title: "Cybersecurity Analyst", skills: ["Linux", "Network Security", "Python", "Ethical Hacking"] },
+  { title: "Game Developer", skills: ["C#", "C++", "Unity", "Unreal Engine"] },
+];
+
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -260,19 +274,65 @@ export default function ProfilePage() {
       {/* --- RECOMMEND SECTION --- */}
       <section className="mb-12">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-text-main transition-colors">Job Recommen</h2>
+          <h2 className="text-2xl font-bold text-text-main transition-colors">Job Recommendations</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {["Front-end", "Back-end", "Data Analyst"].map((role, idx) => (
-            <div key={idx} className="bg-surface border-2 border-greenui dark:border-greenui/70 rounded-2xl p-6 text-center shadow-sm transition-colors duration-300">
-              <h3 className="text-xl font-bold text-text-main transition-colors">{role}</h3>
-              <div className="flex justify-center gap-2 mt-3">
-                <span className="text-[10px] bg-canvas border border-border-subtle px-2 py-1 rounded-md font-bold text-text-muted transition-colors">REACT.JS</span>
-                {idx === 1 && <span className="text-[10px] bg-canvas border border-border-subtle px-2 py-1 rounded-md font-bold text-text-muted transition-colors">NODE.JS</span>}
-              </div>
+        
+        {(() => {
+          // Calculate match for each job based on user's verified skills
+          const userSkillNames = user.verifiedSkills?.map((s: any) => s.skillName.toLowerCase()) || [];
+          
+          const rankedJobs = JOB_ROLES.map(job => {
+            const matchedSkills = job.skills.filter(s => userSkillNames.includes(s.toLowerCase()));
+            const matchCount = matchedSkills.length;
+            const matchPercentage = Math.round((matchCount / job.skills.length) * 100);
+            return {
+              ...job,
+              matchCount,
+              matchPercentage
+            };
+          }).sort((a, b) => b.matchPercentage - a.matchPercentage); // Sort descending
+
+          return (
+            <div className="flex overflow-x-auto gap-6 snap-x pb-6 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border-subtle hover:[&::-webkit-scrollbar-thumb]:bg-text-muted [&::-webkit-scrollbar-thumb]:rounded-full">
+              {rankedJobs.map((job, idx) => (
+                <div key={idx} className="min-w-[300px] md:min-w-[340px] snap-start bg-surface border-2 border-border-subtle rounded-2xl p-6 flex flex-col shadow-sm transition-colors duration-300">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-xl font-bold text-text-main transition-colors">{job.title}</h3>
+                    <div className={`px-3 py-1 rounded-full text-[11px] font-bold shrink-0 ${
+                      job.matchPercentage >= 70 ? 'bg-greenui/10 text-greenui border border-greenui/20' : 
+                      job.matchPercentage >= 40 ? 'bg-accent-orange/10 text-accent-orange border border-accent-orange/20' : 
+                      'bg-canvas border border-border-subtle text-text-muted'
+                    }`}>
+                      {job.matchPercentage}% Match
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1 mt-2">
+                    <p className="text-[10px] font-bold text-text-muted mb-3 uppercase tracking-wider">Required Skills</p>
+                    <div className="flex flex-wrap gap-2">
+                      {job.skills.map(skill => {
+                        const hasSkill = userSkillNames.includes(skill.toLowerCase());
+                        return (
+                          <span 
+                            key={skill} 
+                            className={`text-[11px] px-2.5 py-1 rounded-md font-bold transition-colors flex items-center gap-1.5 ${
+                              hasSkill 
+                                ? 'bg-greenui/10 border border-greenui/30 text-greenui' 
+                                : 'bg-canvas border border-border-subtle text-text-muted opacity-75'
+                            }`}
+                          >
+                            {hasSkill && <CheckCircle size={12} strokeWidth={3} />}
+                            {skill}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          );
+        })()}
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">

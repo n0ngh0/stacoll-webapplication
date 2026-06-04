@@ -1,5 +1,5 @@
 "use client";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, CircleQuestionMark, Clock, Monitor, Loader2, ListChecks, Lock, Award } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Skill, SkillLevel } from "@/types/skill";
@@ -22,6 +22,9 @@ export default function SkillDetailPage() {
         passedLevels: Record<string, boolean>;
         cooldownLevels: Record<string, { active: boolean; daysRemaining: number }>;
     } | null>(null);
+
+    const searchParams = useSearchParams();
+    const urlLevel = searchParams.get("level");
 
     useEffect(() => {
         const timer = setTimeout(() => setIsCheckingAuth(false), 0);
@@ -46,16 +49,9 @@ export default function SkillDetailPage() {
             const skillData = await skillRes.json();
             const progressData = await progressRes.json();
 
-            if (skillData.success) {
-                setSkill(skillData.skill);
-                if (skillData.skill.levels && skillData.skill.levels.length > 0) {
-                    setSelectedLevel(skillData.skill.levels[0].level);
-                }
-            } else {
-                console.error("Failed to fetch skill:", skillData.message);
-            }
-            
+            let passed = {};
             if (progressData.success) {
+                passed = progressData.passedLevels;
                 setUserProgress({
                     passedLevels: progressData.passedLevels,
                     cooldownLevels: progressData.cooldowns,
@@ -63,6 +59,26 @@ export default function SkillDetailPage() {
             } else {
                 console.error("Failed to fetch progress:", progressData.message);
             }
+
+            if (skillData.success) {
+                setSkill(skillData.skill);
+                if (skillData.skill.levels && skillData.skill.levels.length > 0) {
+                    if (urlLevel && skillData.skill.levels.some((l: any) => l.level === urlLevel)) {
+                        setSelectedLevel(urlLevel);
+                    } else {
+                        // Auto-select the first unpassed level
+                        const firstUnpassed = skillData.skill.levels.find((l: any) => !passed[l.level as keyof typeof passed]);
+                        if (firstUnpassed) {
+                            setSelectedLevel(firstUnpassed.level);
+                        } else {
+                            setSelectedLevel(skillData.skill.levels[skillData.skill.levels.length - 1].level);
+                        }
+                    }
+                }
+            } else {
+                console.error("Failed to fetch skill:", skillData.message);
+            }
+            
         } catch (error) {
             console.error("Error fetching skill:", error);
         } finally {
