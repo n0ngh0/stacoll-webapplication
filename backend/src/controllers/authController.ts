@@ -1,6 +1,25 @@
 import User from "../models/User";
 import { sendOTPEmail } from "../utils/email";
 
+// Helper: สร้าง username ที่ unique จาก Google display name
+async function generateUniqueUsername(baseName: string): Promise<string> {
+  // ลบ special chars และ spaces ออก
+  const base = baseName
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .substring(0, 18) || "user";
+
+  let username = base;
+  let counter = 1;
+
+  while (await User.findOne({ username })) {
+    username = `${base}${counter}`;
+    counter++;
+  }
+
+  return username;
+}
+
 export const authController = {
   async register(body: { username: string; email: string; password: string }) {
     try {
@@ -36,6 +55,7 @@ export const authController = {
         username,
         email,
         password: hashedPassword,
+        authProvider: 'local',
         isVerified: false,
         otp,
         otpExpiry: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes expiry
@@ -113,7 +133,12 @@ export const authController = {
         return { status: 403, body: { success: false, message: "Please verify your email first" } };
       }
 
-      const isMatch = await Bun.password.verify(password, user.password);
+      // ถ้า user สมัครด้วย Google ให้แจ้งให้ login ผ่าน Google แทน
+      if (user.authProvider === 'google' && !user.password) {
+        return { status: 400, body: { success: false, message: "This account uses Google Sign-In. Please login with Google." } };
+      }
+
+      const isMatch = await Bun.password.verify(password, user.password!);
       if (!isMatch) {
         return { status: 401, body: { success: false, message: "Invalid email or password" } };
       }
@@ -141,5 +166,103 @@ export const authController = {
     } catch (err: any) {
       return { status: 500, body: { success: false, message: "Error logging in", error: err.message } };
     }
-  }
+  },
+
+  async googleCallback(code: string, jwtSign: (payload: any) => Promise<string>) {
+    try {
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+      const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+
+      if (!clientId || !clientSecret || !redirectUri) {
+        return { status: 500, body: { success: false, message: "Google OAuth is not configured" } };
+      }
+
+      // Step 1: แลก authorization code เป็น access token
+      const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri: redirectUri,
+          grant_type: "authorization_code",
+        }),
+      });
+
+      const tokenData = await tokenRes.json() as any;
+      if (!tokenData.access_token) {
+        return { status: 400, body: { success: false, message: "Failed to exchange Google authorization code" } };
+      }
+
+      // Step 2: ดึงข้อมูล user จาก Google
+      const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
+
+      const googleUser = await userInfoRes.json() as {
+        id: string;
+        email: string;
+        name: string;
+        picture: string;
+        verified_email: boolean;
+      };
+
+      if (!googleUser.email || !googleUser.id) {
+        return { status: 400, body: { success: false, message: "Failed to retrieve user info from Google" } };
+      }
+
+      // Step 3: ค้นหา user ใน DB
+      let user = await User.findOne({ googleId: googleUser.id });
+
+      if (!user) {
+        // ลอง link กับ account ที่มี email เดียวกัน
+        const existingByEmail = await User.findOne({ email: googleUser.email });
+
+        if (existingByEmail) {
+          // Link Google กับ account เดิม
+          existingByEmail.googleId = googleUser.id;
+          // อัพเดท authProvider แต่เก็บ password เดิมไว้ (user อาจใช้ทั้ง 2 วิธี)
+          await existingByEmail.save();
+          user = existingByEmail;
+        } else {
+          // สร้าง user ใหม่จาก Google account
+          const uniqueUsername = await generateUniqueUsername(googleUser.name);
+          user = await User.create({
+            username: uniqueUsername,
+            email: googleUser.email,
+            googleId: googleUser.id,
+            authProvider: "google",
+            imgUrl: googleUser.picture,
+            isVerified: true, // Google ยืนยัน email แล้ว
+          });
+        }
+      }
+
+      // Step 4: สร้าง JWT token
+      const token = await jwtSign({
+        id: user._id.toString(),
+        role: user.role,
+      });
+
+      return {
+        status: 200,
+        body: {
+          success: true,
+          token,
+          user: {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            imgUrl: user.imgUrl,
+          },
+        },
+      };
+    } catch (err: any) {
+      return { status: 500, body: { success: false, message: "Google OAuth error", error: err.message } };
+    }
+  },
 };
+

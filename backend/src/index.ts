@@ -10,6 +10,7 @@ import { skillRoutes } from "./routes/skillRoutes";
 import { adminRoutes } from "./routes/adminRoutes";
 import { assessmentRoutes } from "./routes/assessmentRoutes";
 import { languageRoutes } from "./routes/languageRoutes";
+import { uploadRoutes } from "./routes/uploadRoutes";
 
 import { swagger } from "@elysiajs/swagger";
 import { cors } from "@elysiajs/cors";
@@ -38,6 +39,7 @@ const app = new Elysia()
   .use(adminRoutes)
   .use(assessmentRoutes)
   .use(languageRoutes)
+  .use(uploadRoutes)
   .listen({
     port: port,
     hostname: '0.0.0.0',

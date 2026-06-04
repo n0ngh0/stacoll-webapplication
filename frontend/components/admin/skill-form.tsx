@@ -21,6 +21,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
   const [desc, setDesc] = useState(initialData?.description || "");
   const [icon, setIcon] = useState(initialData?.icon || "");
   const [category, setCategory] = useState<any>(initialData?.category || "programming");
+  const [isUploadingIcon, setIsUploadingIcon] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -137,19 +138,45 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (!file) return;
+
+                            setIsUploadingIcon(true);
                             try {
-                              setIcon(await fileToDataUrl(file));
-                            } catch (err: unknown) {
-                              toast.error(err instanceof Error ? err.message : "Failed to upload image");
+                              const token = localStorage.getItem("token");
+                              const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
+                              const formData = new FormData();
+                              formData.append("file", file);
+                              formData.append("folder", "stacoll/skills");
+
+                              const res = await fetch(`${apiUrl}/upload/image`, {
+                                method: "POST",
+                                headers: { Authorization: `Bearer ${token}` },
+                                body: formData,
+                              });
+
+                              const data = await res.json();
+                              if (data.success) {
+                                setIcon(data.url);
+                                toast.success("Icon uploaded successfully!");
+                              } else {
+                                toast.error(data.message || "Upload failed");
+                              }
+                            } catch {
+                              toast.error("Failed to upload icon. Please try again.");
+                            } finally {
+                              setIsUploadingIcon(false);
                             }
                           }}
                         />
                         <label
                           htmlFor="skill-icon-upload"
-                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-surface border border-border-subtle text-text-main rounded-xl text-sm font-bold hover:bg-surface-hover hover:border-border-strong transition-all cursor-pointer shadow-sm"
+                          className={`inline-flex items-center gap-2 px-5 py-2.5 bg-surface border border-border-subtle text-text-main rounded-xl text-sm font-bold hover:bg-surface-hover hover:border-border-strong transition-all cursor-pointer shadow-sm ${isUploadingIcon ? 'opacity-50 pointer-events-none' : ''}`}
                         >
-                          <Upload size={16} />
-                          Choose Image
+                          {isUploadingIcon ? (
+                            <><span className="animate-spin">⏳</span> Uploading...</>
+                          ) : (
+                            <><Upload size={16} /> Choose Image</>
+                          )}
                         </label>
                         {isImageUrl(icon) && (
                           <button
