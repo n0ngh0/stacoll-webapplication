@@ -53,7 +53,7 @@ export default function CreateQuestionPage() {
       const result = await createAdminProblem(skillId, payload);
 
       if (result.success) {
-        router.push(`/admin/skills/${skillId}`);
+        router.push(`/admin/skills/${skillId}?level=${levelId}`);
       } else {
         console.error("Failed to create question:", result.message);
         alert(`Error: ${result.message || result.error || "Failed to create question"}`);
