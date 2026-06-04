@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia";
 import { agentDebug } from "../utils/debug-log";
 import { authController } from "../controllers/authController";
 import { authMiddleware } from "../middlewares/authMiddleware";
+import { getFrontendUrl } from "../config/env";
 
 export const authRoutes = new Elysia({ prefix: "/api/auth" })
   .use(authMiddleware)
@@ -78,7 +79,7 @@ export const authRoutes = new Elysia({ prefix: "/api/auth" })
   // Google OAuth2 — Callback จาก Google
   .get("/google/callback", async ({ query, jwt, redirect, set }) => {
     const { code, error } = query as { code?: string; error?: string };
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const frontendUrl = getFrontendUrl();
 
     if (error || !code) {
       return redirect(`${frontendUrl}/signin?error=google_auth_cancelled`);

@@ -24,5 +24,9 @@ export function getJwtExpiresInSeconds(): number {
 }
 
 export function getFrontendUrl(): string {
-  return (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
+  return (
+    process.env.FRONTEND_URL ||
+    process.env.NEXT_PUBLIC_FRONTEND_URL ||
+    "http://localhost:3000"
+  ).replace(/\/$/, "");
 }
