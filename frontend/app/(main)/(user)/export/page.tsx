@@ -58,10 +58,16 @@ export default function ExportPreparePage() {
             }
 
             setUserData(user);
-            // Select all by default
+            // Select up to 4 by default
             if (selectedSkills.size === 0 && selectedProjects.size === 0) {
-              setSelectedSkills(new Set((user.verifiedSkills || []).map((_: any, i: number) => i)));
-              setSelectedProjects(new Set((user.projects || []).map((_: any, i: number) => i)));
+              if (user.verifiedSkills && user.verifiedSkills.length > 0) {
+                const maxSkills = Math.min(4, user.verifiedSkills.length);
+                setSelectedSkills(new Set(Array.from({length: maxSkills}, (_, i) => i)));
+              }
+              if (user.projects && user.projects.length > 0) {
+                const maxProjects = Math.min(4, user.projects.length);
+                setSelectedProjects(new Set(Array.from({length: maxProjects}, (_, i) => i)));
+              }
             }
           } else {
             setError(data.message || "Failed to load profile");
@@ -81,24 +87,24 @@ export default function ExportPreparePage() {
 
   const toggleSkill = (index: number) => {
     const newSet = new Set(selectedSkills);
-    if (newSet.has(index)) newSet.delete(index);
-    else newSet.add(index);
+    if (newSet.has(index)) {
+      newSet.delete(index);
+    } else {
+      if (newSet.size >= 4) return alert("You can only select up to 4 skills.");
+      newSet.add(index);
+    }
     setSelectedSkills(newSet);
   };
 
   const toggleProject = (index: number) => {
     const newSet = new Set(selectedProjects);
-    if (newSet.has(index)) newSet.delete(index);
-    else newSet.add(index);
+    if (newSet.has(index)) {
+      newSet.delete(index);
+    } else {
+      if (newSet.size >= 4) return alert("You can only select up to 4 projects.");
+      newSet.add(index);
+    }
     setSelectedProjects(newSet);
-  };
-
-  const selectAllSkills = (select: boolean) => {
-    setSelectedSkills(select ? new Set(allSkills.map((_: any, i: number) => i)) : new Set());
-  };
-
-  const selectAllProjects = (select: boolean) => {
-    setSelectedProjects(select ? new Set(allProjects.map((_: any, i: number) => i)) : new Set());
   };
 
   const canPreview = selectedSkills.size > 0;
@@ -152,14 +158,8 @@ export default function ExportPreparePage() {
         <div className="flex justify-between items-end mb-4">
           <div>
             <h2 className="text-xl font-bold text-text-main">Verified Skills</h2>
-            <p className="text-sm text-text-muted mt-1">{selectedSkills.size} of {allSkills.length} selected</p>
+            <p className="text-sm text-text-muted mt-1">Select up to 4 skills to feature on your resume ({selectedSkills.size}/4)</p>
           </div>
-          <button 
-            onClick={() => selectAllSkills(selectedSkills.size !== allSkills.length)}
-            className="text-sm font-semibold text-brand-secondary hover:underline cursor-pointer"
-          >
-            {selectedSkills.size === allSkills.length ? "Deselect All" : "Select All"}
-          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -199,14 +199,8 @@ export default function ExportPreparePage() {
         <div className="flex justify-between items-end mb-4">
           <div>
             <h2 className="text-xl font-bold text-text-main">Recent Projects</h2>
-            <p className="text-sm text-text-muted mt-1">{selectedProjects.size} of {allProjects.length} selected</p>
+            <p className="text-sm text-text-muted mt-1">Select up to 4 projects to feature on your resume ({selectedProjects.size}/4)</p>
           </div>
-          <button 
-            onClick={() => selectAllProjects(selectedProjects.size !== allProjects.length)}
-            className="text-sm font-semibold text-brand-secondary hover:underline cursor-pointer"
-          >
-            {selectedProjects.size === allProjects.length ? "Deselect All" : "Select All"}
-          </button>
         </div>
 
         <div className="grid grid-cols-1 gap-4">

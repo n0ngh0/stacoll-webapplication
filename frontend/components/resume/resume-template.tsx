@@ -34,11 +34,11 @@ export const ResumeTemplate = React.forwardRef<HTMLDivElement, ResumeTemplatePro
     return (
       <div
         ref={ref}
-        className="w-[794px] min-h-[1123px] bg-white px-12 py-14 text-slate-800 font-sans mx-auto shadow-md"
+        className="w-[794px] h-[1123px] overflow-hidden bg-white px-10 py-10 text-slate-800 font-sans mx-auto shadow-md relative flex flex-col"
         style={{ fontFamily: "'Figtree', sans-serif", boxSizing: "border-box" }}
       >
         {/* Header Section */}
-        <div className="flex justify-between items-start border-b border-gray-200 pb-4 mb-8">
+        <div className="flex justify-between items-start border-b border-gray-200 pb-4 mb-5">
           <div className="flex items-center gap-2">
             <img src="/assets/LogoStacoll.png" alt="Stacoll" className="w-10 h-10 object-contain" />
             <div className="leading-tight">
@@ -61,8 +61,8 @@ export const ResumeTemplate = React.forwardRef<HTMLDivElement, ResumeTemplatePro
         </div>
 
         {/* User Info Section */}
-        <div className="mb-10 text-right">
-            <p className="text-xs text-gray-600 mb-6 flex items-center justify-end gap-1.5 font-medium">
+        <div className="mb-6 text-right">
+            <p className="text-xs text-gray-600 mb-4 flex items-center justify-end gap-1.5 font-medium">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                 {user.email}
             </p>
@@ -74,8 +74,8 @@ export const ResumeTemplate = React.forwardRef<HTMLDivElement, ResumeTemplatePro
         </div>
 
         {/* Skills Section */}
-        <div className="mb-10">
-          <div className="flex items-center gap-4 mb-6">
+        <div className="mb-6">
+          <div className="flex items-center gap-4 mb-4">
               <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">Verified Core Competencies</h4>
               <div className="h-px bg-gray-200 w-full flex-grow"></div>
           </div>
@@ -91,7 +91,7 @@ export const ResumeTemplate = React.forwardRef<HTMLDivElement, ResumeTemplatePro
               
               <div className="divide-y divide-gray-100">
                 {skills.map((skill, idx) => (
-                  <div key={idx} className="grid grid-cols-12 items-center py-4 px-2">
+                  <div key={idx} className="grid grid-cols-12 items-center py-3 px-2">
                     <div className="col-span-5 flex items-center gap-3">
                       <div className="w-6 h-6 rounded bg-gray-50 flex items-center justify-center text-[#00a3e0] border border-gray-100">
                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
@@ -120,18 +120,18 @@ export const ResumeTemplate = React.forwardRef<HTMLDivElement, ResumeTemplatePro
         </div>
 
         {/* Projects Section */}
-        <div className="mb-10">
-          <div className="flex items-center gap-4 mb-6">
+        <div className="mb-4">
+          <div className="flex items-center gap-4 mb-4">
               <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">Verified Project Evidence</h4>
               <div className="h-px bg-gray-200 w-full flex-grow"></div>
           </div>
           
           {projects.length > 0 ? (
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 gap-4">
               {projects.map((project, idx) => (
-                <div key={idx} className="bg-gray-50 border-l-4 border-[#10DFAE] p-5 rounded-r-xl">
-                  <h5 className="font-bold text-gray-900 text-[15px] mb-2">{project.title}</h5>
-                  <p className="text-[11px] text-gray-600 leading-relaxed mb-4">{project.description}</p>
+                <div key={idx} className="bg-gray-50 border-l-4 border-[#10DFAE] p-4 rounded-r-xl flex flex-col h-full">
+                  <h5 className="font-bold text-gray-900 text-[14px] mb-1.5">{project.title}</h5>
+                  <p className="text-[11px] text-gray-600 leading-relaxed mb-3 line-clamp-3">{project.description}</p>
                   <div className="flex flex-wrap gap-1.5 mt-auto">
                     {project.tags.map(tag => (
                       <span key={tag} className="text-[8px] font-bold bg-white border border-gray-200 px-1.5 py-0.5 rounded text-gray-500 uppercase tracking-wider">
@@ -148,7 +148,7 @@ export const ResumeTemplate = React.forwardRef<HTMLDivElement, ResumeTemplatePro
         </div>
 
         {/* Footer */}
-        <div className="mt-16 text-xs text-gray-400 font-medium">
+        <div className="mt-auto pt-6 text-xs text-gray-400 font-medium">
           Generated by Stacoll
         </div>
       </div>
