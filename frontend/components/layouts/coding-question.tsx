@@ -52,7 +52,6 @@ const CodingQuestion = memo(function CodingQuestion({
       const stdin = publicTestCase ? publicTestCase.input : "";
 
       const res = await apiFetch("/assessment/execute", {
-        auth: false,
         method: "POST",
         body: JSON.stringify({
           language_id: languageId,

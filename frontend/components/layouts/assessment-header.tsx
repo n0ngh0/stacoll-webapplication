@@ -3,6 +3,8 @@ import { memo, useState } from "react";
 import { Clock, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import Link from "next/link";
+
 interface HeaderProps {
   current: number;
   total: number;
@@ -34,10 +36,10 @@ const AssessmentHeader = memo(function AssessmentHeader({
       <header className="sticky top-0 z-50 w-full bg-canvas/90 backdrop-blur-md border-b border-border-subtle shadow-sm transition-colors duration-300">
         <nav className="flex justify-between items-center min-h-[70px] px-6 lg:px-[5%] max-w-[1980px] mx-auto w-full">
           {/* Logo */}
-          <div className="flex items-center gap-2 text-2xl font-bold no-underline text-greenui w-1/3">
+          <Link href="/explore" className="flex items-center gap-2 text-2xl font-bold no-underline text-greenui w-1/3 cursor-pointer hover:opacity-80 transition-opacity">
             <img className="h-10 w-auto object-contain" src="/assets/LogoStacoll.png" alt="Logo" />
             <img className="h-6 w-auto object-contain hidden sm:block" src="/assets/LogoStacoll-Text.png" alt="STACOLL" />
-          </div>
+          </Link>
 
           {/* Question Status & Progress */}
           <div className="flex flex-col items-center justify-center w-1/3">
