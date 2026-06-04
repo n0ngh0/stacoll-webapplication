@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { agentDebug } from "../utils/debug-log";
 import { authController } from "../controllers/authController";
 import { authMiddleware } from "../middlewares/authMiddleware";
 
@@ -24,6 +25,25 @@ export const authRoutes = new Elysia({ prefix: "/api/auth" })
       email: t.String(),
       otp: t.String()
     })
+  })
+  .post("/forgot-password", async ({ body, set }) => {
+    agentDebug("authRoutes.ts:forgot-password", "route hit", { emailLen: typeof body?.email === "string" ? body.email.length : 0 }, "H1");
+    const { status, body: responseBody } = await authController.forgotPassword(body);
+    set.status = status;
+    return responseBody;
+  }, {
+    body: t.Object({ email: t.String() }),
+  })
+  .post("/reset-password", async ({ body, set }) => {
+    const { status, body: responseBody } = await authController.resetPassword(body);
+    set.status = status;
+    return responseBody;
+  }, {
+    body: t.Object({
+      email: t.String(),
+      token: t.String(),
+      password: t.String(),
+    }),
   })
   .post("/login", async ({ body, jwt, set }) => {
     const { status, body: responseBody } = await authController.login(body, jwt.sign);

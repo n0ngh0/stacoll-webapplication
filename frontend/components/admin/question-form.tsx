@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
+import { SafeMarkdown } from "@/components/SafeMarkdown";
 import {
   ArrowLeft,
   Save, Eye, EyeOff, Plus,
@@ -234,7 +234,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
             <div className="text-[11px] font-black text-brand-secondary uppercase tracking-[0.2em] mb-4">Question Description</div>
             <h3 className="text-2xl font-black text-text-main mb-4 tracking-tight leading-tight">{title || "Untitled Question"}</h3>
             <div className="prose prose-sm dark:prose-invert max-w-none text-text-muted leading-relaxed whitespace-pre-wrap mb-6">
-              <ReactMarkdown>{description || "*No description*"}</ReactMarkdown>
+              <SafeMarkdown>{description || "*No description*"}</SafeMarkdown>
             </div>
             {codeSnippet && (
               <div className="mb-6">
@@ -290,7 +290,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
           <div className="md:w-[45%] p-6 md:p-8 overflow-y-auto custom-scrollbar border-b md:border-b-0 md:border-r border-border-subtle">
             <h3 className="text-xl font-black text-text-main mb-4 tracking-tight">{title || "Untitled Question"}</h3>
             <div className="prose prose-sm dark:prose-invert max-w-none text-text-muted leading-relaxed whitespace-pre-wrap">
-              <ReactMarkdown>{description || "*No description*"}</ReactMarkdown>
+              <SafeMarkdown>{description || "*No description*"}</SafeMarkdown>
             </div>
           </div>
 
@@ -499,7 +499,7 @@ export default function QuestionForm({ mode, skill, levelId, initialData, onSubm
                 ) : (
                   <div className="bg-canvas border border-border-subtle rounded-xl px-4 py-4 min-h-[160px] prose prose-sm dark:prose-invert max-w-none text-text-main whitespace-pre-wrap">
                     {description.trim() ? (
-                      <ReactMarkdown>{description}</ReactMarkdown>
+                      <SafeMarkdown>{description}</SafeMarkdown>
                     ) : (
                       <p className="text-text-muted italic">Nothing to preview</p>
                     )}

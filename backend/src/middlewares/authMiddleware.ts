@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import { jwt } from "@elysiajs/jwt";
 import User, { IUser } from "../models/User";
-import { getJwtSecret } from "../config/env";
+import { getJwtSecret, getJwtExpiresInSeconds } from "../config/env";
 
 // We can now use the clean IUser interface directly without Mongoose overhead
 export type AuthUser = Omit<IUser, "password"> & { _id: any };
@@ -11,6 +11,7 @@ export const authMiddleware = new Elysia({ name: "authMiddleware" })
     jwt({
       name: "jwt",
       secret: getJwtSecret(),
+      exp: `${getJwtExpiresInSeconds()}s`,
     })
   )
   .derive(async ({ jwt, headers }) => {

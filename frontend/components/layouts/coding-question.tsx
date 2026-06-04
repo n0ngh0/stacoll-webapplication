@@ -1,6 +1,6 @@
 "use client";
 import { useState, memo } from "react";
-import ReactMarkdown from "react-markdown";
+import { SafeMarkdown } from "@/components/SafeMarkdown";
 import { Panel, Group, Separator } from "react-resizable-panels";
 import { Play, Terminal, ChevronRight, ChevronLeft, SendHorizontal, Loader2 } from "lucide-react";
 import Editor from "@monaco-editor/react";
@@ -131,7 +131,7 @@ const CodingQuestion = memo(function CodingQuestion({
                 </div>
 
                 <div className="prose prose-invert max-w-none prose-p:text-text-muted prose-headings:text-text-main prose-strong:text-text-main prose-code:bg-surface-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-hover prose-pre:border prose-pre:border-border-subtle">
-                  {typeof description === 'string' ? <ReactMarkdown>{description}</ReactMarkdown> : description}
+                  {typeof description === 'string' ? <SafeMarkdown>{description}</SafeMarkdown> : description}
                 </div>
 
                 {/* Optional: Show public test cases here if needed */}

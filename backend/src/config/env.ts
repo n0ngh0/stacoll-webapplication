@@ -13,3 +13,16 @@ export function getMongoUri(): string {
   }
   return uri;
 }
+
+export function getJwtExpiresInSeconds(): number {
+  const raw = process.env.JWT_EXPIRES_IN_SECONDS?.trim();
+  const parsed = raw ? Number.parseInt(raw, 10) : 3600;
+  if (!Number.isFinite(parsed) || parsed < 60 || parsed > 604800) {
+    return 3600;
+  }
+  return parsed;
+}
+
+export function getFrontendUrl(): string {
+  return (process.env.FRONTEND_URL || "http://localhost:3000").replace(/\/$/, "");
+}

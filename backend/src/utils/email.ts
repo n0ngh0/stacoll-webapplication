@@ -64,3 +64,43 @@ export const sendOTPEmail = async (to: string, otp: string) => {
     return false;
   }
 };
+
+export const sendPasswordResetEmail = async (to: string, resetUrl: string) => {
+  try {
+    const t = await setupTransporter();
+    const htmlContent = `
+      <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; padding: 40px 20px; color: #18181b;">
+        <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+          <div style="background-color: #10b981; padding: 30px 20px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">Reset your password</h1>
+          </div>
+          <div style="padding: 40px 30px; text-align: center;">
+            <p style="margin: 0 0 24px 0; font-size: 16px; color: #52525b; line-height: 1.5;">
+              Click the button below to choose a new password. This link expires in <strong>1 hour</strong>.
+            </p>
+            <a href="${resetUrl}" style="display: inline-block; background-color: #10b981; color: #ffffff; text-decoration: none; font-weight: 700; padding: 14px 28px; border-radius: 12px;">Reset password</a>
+            <p style="margin: 24px 0 0 0; font-size: 12px; color: #71717a; word-break: break-all;">${resetUrl}</p>
+          </div>
+          <div style="background-color: #fafafa; padding: 20px; text-align: center; border-top: 1px solid #f4f4f5;">
+            <p style="margin: 0; font-size: 12px; color: #a1a1aa;">If you did not request this, you can ignore this email.</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const info = await t.sendMail({
+      from: process.env.SMTP_FROM || '"Stacoll Admin" <admin@stacoll.com>',
+      to,
+      subject: "Reset your Stacoll password",
+      text: `Reset your password: ${resetUrl}\n\nThis link expires in 1 hour.`,
+      html: htmlContent,
+    });
+
+    console.log("Password reset email sent: %s", info.messageId);
+    console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+    return true;
+  } catch (error) {
+    console.error("Error sending password reset email:", error);
+    return false;
+  }
+};

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import ReactMarkdown from "react-markdown";
+import { SafeMarkdown } from "@/components/SafeMarkdown";
 import { LEVEL_OPTIONS } from "@/types/question";
 import type { SkillLevel } from "@/types/skill";
 import { levelLabel } from "@/types/skill";
@@ -59,9 +59,9 @@ export function CompareLevelsModal({ levels, initialTab = "beginner", themeColor
                   <strong>Short Summary:</strong> {lvl.description}
                 </p>
                 <div className="flex-1 overflow-y-auto custom-scrollbar prose prose-sm dark:prose-invert max-w-none text-text-main pr-4">
-                  <ReactMarkdown>
+                  <SafeMarkdown>
                     {lvl.fullDescription || "*No detailed criteria provided.*"}
-                  </ReactMarkdown>
+                  </SafeMarkdown>
                 </div>
               </div>
             )

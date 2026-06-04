@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
+import { SafeMarkdown } from "@/components/SafeMarkdown";
 import { ArrowLeft, Pencil, Trash2, ListChecks, Code2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import type { Question, ChoiceQuestion, CodingQuestion } from "@/types/question";
 import type { Skill } from "@/types/skill";
@@ -155,7 +155,7 @@ export default function QuestionDetailPage() {
           <div className="p-6 md:p-8">
             <div className="text-[11px] font-black text-brand-secondary uppercase tracking-[0.2em] mb-4">Question Description</div>
             <div className="prose prose-sm dark:prose-invert max-w-none text-text-muted leading-relaxed whitespace-pre-wrap">
-              <ReactMarkdown>{question.description || "*No description*"}</ReactMarkdown>
+              <SafeMarkdown>{question.description || "*No description*"}</SafeMarkdown>
             </div>
           </div>
 

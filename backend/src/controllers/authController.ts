@@ -1,5 +1,17 @@
+import { createHash, randomBytes } from "crypto";
+import { agentDebug } from "../utils/debug-log";
 import User from "../models/User";
-import { sendOTPEmail } from "../utils/email";
+import { getFrontendUrl } from "../config/env";
+import { buildJwtPayload } from "../utils/jwt-payload";
+import { sendOTPEmail, sendPasswordResetEmail } from "../utils/email";
+import { validatePassword } from "../utils/validation";
+
+const RESET_TOKEN_BYTES = 32;
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+
+function hashResetToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
 
 // Helper: สร้าง username ที่ unique จาก Google display name
 async function generateUniqueUsername(baseName: string): Promise<string> {
@@ -24,6 +36,11 @@ export const authController = {
   async register(body: { username: string; email: string; password: string }) {
     try {
       const { username, email, password } = body;
+
+      const passwordCheck = validatePassword(password);
+      if (!passwordCheck.valid) {
+        return { status: 400, body: { success: false, message: passwordCheck.message } };
+      }
       
       let existingUser = await User.findOne({ email });
       if (existingUser) {
@@ -148,10 +165,7 @@ export const authController = {
         return { status: 401, body: { success: false, message: "Invalid email or password" } };
       }
 
-      const token = await jwtSign({ 
-        id: user._id.toString(), 
-        role: user.role 
-      });
+      const token = await jwtSign(buildJwtPayload(user._id.toString(), user.role));
 
       return {
         status: 200,
@@ -246,10 +260,7 @@ export const authController = {
       }
 
       // Step 4: สร้าง JWT token
-      const token = await jwtSign({
-        id: user._id.toString(),
-        role: user.role,
-      });
+      const token = await jwtSign(buildJwtPayload(user._id.toString(), user.role));
 
       return {
         status: 200,
@@ -267,6 +278,97 @@ export const authController = {
       };
     } catch (err: any) {
       return { status: 500, body: { success: false, message: "Google OAuth error", error: err.message } };
+    }
+  },
+
+  async forgotPassword(body: { email: string }) {
+    const generic = {
+      status: 200 as const,
+      body: {
+        success: true,
+        message: "If an account exists for this email, a reset link has been sent.",
+      },
+    };
+
+    const dbg = (message: string, data: Record<string, unknown>, hypothesisId: string) => {
+      agentDebug("authController.ts:forgotPassword", message, data, hypothesisId);
+    };
+
+    try {
+      const email = body.email?.trim().toLowerCase();
+      dbg('entry', { emailLen: email?.length ?? 0 }, 'H1');
+      if (!email) {
+        dbg('branch', { branch: 'no_email' }, 'H2');
+        return generic;
+      }
+
+      const user = await User.findOne({ email });
+      const hasPassword = Boolean(user?.password && String(user.password).length > 0);
+      dbg('user lookup', {
+        branch: !user ? 'no_user' : !hasPassword ? 'no_password' : 'will_send',
+        userFound: Boolean(user),
+        hasPassword,
+        authProvider: user?.authProvider ?? null,
+      }, 'H2');
+      if (!user || !hasPassword) {
+        return generic;
+      }
+
+      const rawToken = randomBytes(RESET_TOKEN_BYTES).toString("hex");
+      user.passwordResetToken = hashResetToken(rawToken);
+      user.passwordResetExpiry = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+      await user.save();
+      dbg('after save', { branch: 'saved' }, 'H4');
+
+      const resetUrl = `${getFrontendUrl()}/reset-password?token=${encodeURIComponent(rawToken)}&email=${encodeURIComponent(email)}`;
+      const emailSent = await sendPasswordResetEmail(email, resetUrl);
+      dbg('after send email', { emailSent, branch: emailSent ? 'sent' : 'send_failed' }, 'H5');
+
+      return generic;
+    } catch (err: any) {
+      dbg('catch', { branch: 'error', errName: err?.name, errMessage: err?.message?.slice?.(0, 80) }, 'H4');
+      console.error("forgotPassword error:", err);
+      return generic;
+    }
+  },
+
+  async resetPassword(body: { email: string; token: string; password: string }) {
+    try {
+      const email = body.email?.trim().toLowerCase();
+      const token = body.token?.trim();
+      const { password } = body;
+
+      if (!email || !token) {
+        return { status: 400, body: { success: false, message: "Invalid or expired reset link" } };
+      }
+
+      const passwordCheck = validatePassword(password);
+      if (!passwordCheck.valid) {
+        return { status: 400, body: { success: false, message: passwordCheck.message } };
+      }
+
+      const user = await User.findOne({ email });
+      if (
+        !user ||
+        !user.passwordResetToken ||
+        !user.passwordResetExpiry ||
+        user.passwordResetExpiry < new Date()
+      ) {
+        return { status: 400, body: { success: false, message: "Invalid or expired reset link" } };
+      }
+
+      if (user.passwordResetToken !== hashResetToken(token)) {
+        return { status: 400, body: { success: false, message: "Invalid or expired reset link" } };
+      }
+
+      user.password = await Bun.password.hash(password);
+      user.passwordResetToken = undefined;
+      user.passwordResetExpiry = undefined;
+      await user.save();
+
+      return { status: 200, body: { success: true, message: "Password updated successfully" } };
+    } catch (err: any) {
+      return { status: 500, body: { success: false, message: "Error resetting password", error: err.message } };
     }
   },
 };

@@ -1,8 +1,9 @@
 import type { SessionUser } from "@/types/user";
+import { SESSION_MAX_AGE_SECONDS } from "@/lib/session-constants";
 
 const TOKEN_KEY = "token";
 const USER_KEY = "user";
-const SESSION_MAX_AGE = 86400;
+const SESSION_MAX_AGE = SESSION_MAX_AGE_SECONDS;
 
 function isValidToken(value: string | null | undefined): value is string {
   return Boolean(value && value !== "undefined" && value !== "null");

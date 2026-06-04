@@ -12,7 +12,7 @@ const MEMBER_PREFIXES = [
   "/assessment",
 ];
 
-const AUTH_PAGES = ["/signin", "/signup", "/verify-otp", "/forgot-password"];
+const AUTH_PAGES = ["/signin", "/signup", "/verify-otp", "/forgot-password", "/reset-password"];
 
 function isValidToken(token: string | undefined): boolean {
   return Boolean(token && token !== "undefined" && token !== "null");
@@ -70,5 +70,7 @@ export const config = {
     "/verify-otp/:path*",
     "/forgot-password",
     "/forgot-password/:path*",
+    "/reset-password",
+    "/reset-password/:path*",
   ],
 };
