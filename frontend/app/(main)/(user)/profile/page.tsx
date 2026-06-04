@@ -241,6 +241,26 @@ export default function ProfilePage() {
     setEditForm({ ...editForm, projects: updatedProjects });
   };
 
+  const openEditModal = (tab: "profile" | "projects") => {
+    if (!user) return;
+    setErrorMsg("");
+    setActiveTab(tab);
+    setEditForm({
+      username: user.username || "",
+      title: user.title || "",
+      bio: user.bio || "",
+      imgUrl: user.imgUrl || "",
+      projects: (user.projects || []).slice(0, MAX_PROJECTS).map((p) => ({
+        title: p.title,
+        description: p.description,
+        tags: [...(p.tags || [])],
+      })),
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const atProjectLimit = editForm.projects.length >= MAX_PROJECTS;
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-[70vh]">
@@ -270,7 +290,7 @@ export default function ProfilePage() {
             <img src={user.imgUrl || "/profiles/default.jpg"} alt="Profile" className="w-full h-full object-cover" />
           </div>
           <button
-            onClick={() => { setErrorMsg(""); setActiveTab("profile"); setIsEditModalOpen(true); }}
+            onClick={() => openEditModal("profile")}
             className="absolute bottom-1 right-1 bg-greenui p-2 rounded-lg text-white shadow-md hover:brightness-110 transition cursor-pointer"
           >
             <Edit3 size={20} />
@@ -365,7 +385,7 @@ export default function ProfilePage() {
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-text-main transition-colors">Recent Projects</h2>
             <button
-              onClick={() => { setErrorMsg(""); setActiveTab("projects"); setIsEditModalOpen(true); }}
+              onClick={() => openEditModal("projects")}
               className="text-sm font-semibold text-brand-secondary hover:underline cursor-pointer"
             >
               Edit Projects
@@ -576,22 +596,25 @@ export default function ProfilePage() {
                   {/* Projects Section */}
                   <div className="space-y-4">
                     <div className="flex flex-col items-end gap-1 border-b border-border-subtle pb-2 sm:flex-row sm:justify-between sm:items-center">
-                  <h3 className="text-lg font-semibold text-text-main self-start sm:self-auto">Projects</h3>
+                  <h3 className="text-lg font-semibold text-text-main self-start sm:self-auto">
+                    Projects
+                    <span className="ml-2 text-xs font-normal text-text-muted">
+                      ({editForm.projects.length}/{MAX_PROJECTS})
+                    </span>
+                  </h3>
                   <div className="flex flex-col items-end gap-1">
-                  <button
-                    type="button"
-                    onClick={handleAddProject}
-                    disabled={editForm.projects.length >= MAX_PROJECTS}
-                    className={`text-sm font-bold flex items-center gap-1 ${
-                      editForm.projects.length >= MAX_PROJECTS
-                        ? "text-text-muted cursor-not-allowed opacity-50"
-                        : "text-brand-secondary hover:brightness-110 cursor-pointer"
-                    }`}
-                  >
-                    <Plus size={16} /> Add Project
-                  </button>
-                  {editForm.projects.length >= MAX_PROJECTS && (
-                    <p className="text-xs text-text-muted">Maximum {MAX_PROJECTS} projects.</p>
+                  {atProjectLimit ? (
+                    <p className="text-xs font-medium text-text-muted">
+                      Maximum {MAX_PROJECTS} projects reached.
+                    </p>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleAddProject}
+                      className="text-sm font-bold text-brand-secondary flex items-center gap-1 hover:brightness-110 cursor-pointer"
+                    >
+                      <Plus size={16} /> Add Project
+                    </button>
                   )}
                   </div>
                 </div>

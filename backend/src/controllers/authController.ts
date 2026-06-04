@@ -1,5 +1,4 @@
 import { createHash, randomBytes } from "crypto";
-import { agentDebug } from "../utils/debug-log";
 import User from "../models/User";
 import { getFrontendUrl } from "../config/env";
 import { buildJwtPayload } from "../utils/jwt-payload";
@@ -290,26 +289,14 @@ export const authController = {
       },
     };
 
-    const dbg = (message: string, data: Record<string, unknown>, hypothesisId: string) => {
-      agentDebug("authController.ts:forgotPassword", message, data, hypothesisId);
-    };
-
     try {
       const email = body.email?.trim().toLowerCase();
-      dbg('entry', { emailLen: email?.length ?? 0 }, 'H1');
       if (!email) {
-        dbg('branch', { branch: 'no_email' }, 'H2');
         return generic;
       }
 
       const user = await User.findOne({ email });
       const hasPassword = Boolean(user?.password && String(user.password).length > 0);
-      dbg('user lookup', {
-        branch: !user ? 'no_user' : !hasPassword ? 'no_password' : 'will_send',
-        userFound: Boolean(user),
-        hasPassword,
-        authProvider: user?.authProvider ?? null,
-      }, 'H2');
       if (!user || !hasPassword) {
         return generic;
       }
@@ -318,15 +305,12 @@ export const authController = {
       user.passwordResetToken = hashResetToken(rawToken);
       user.passwordResetExpiry = new Date(Date.now() + RESET_TOKEN_TTL_MS);
       await user.save();
-      dbg('after save', { branch: 'saved' }, 'H4');
 
       const resetUrl = `${getFrontendUrl()}/reset-password?token=${encodeURIComponent(rawToken)}&email=${encodeURIComponent(email)}`;
-      const emailSent = await sendPasswordResetEmail(email, resetUrl);
-      dbg('after send email', { emailSent, branch: emailSent ? 'sent' : 'send_failed' }, 'H5');
+      await sendPasswordResetEmail(email, resetUrl);
 
       return generic;
     } catch (err: any) {
-      dbg('catch', { branch: 'error', errName: err?.name, errMessage: err?.message?.slice?.(0, 80) }, 'H4');
       console.error("forgotPassword error:", err);
       return generic;
     }
