@@ -29,6 +29,10 @@ export default function ProfilePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [projectFieldErrors, setProjectFieldErrors] = useState<
+    Record<number, { title?: boolean; tags?: boolean }>
+  >({});
+  const [usernameFieldError, setUsernameFieldError] = useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "projects">("profile");
 
   // Edit form state
@@ -138,20 +142,39 @@ export default function ProfilePage() {
         return;
       }
 
+      if (!editForm.username.trim()) {
+        setUsernameFieldError(true);
+        setActiveTab("profile");
+        setErrorMsg("Username is required.");
+        return;
+      }
+      setUsernameFieldError(false);
+
       // Validate projects
+      const fieldErrors: Record<number, { title?: boolean; tags?: boolean }> = {};
+      let firstError = "";
       for (let i = 0; i < editForm.projects.length; i++) {
         const p = editForm.projects[i];
         if (!p.title.trim()) {
-          setActiveTab("projects");
-          setErrorMsg(`Project #${i + 1} is missing a title.`);
-          return;
+          fieldErrors[i] = { ...fieldErrors[i], title: true };
+          if (!firstError) firstError = `Project #${i + 1} is missing a title.`;
         }
         if (!p.tags || p.tags.length === 0) {
-          setActiveTab("projects");
-          setErrorMsg(`Project "${p.title}" must have at least one tag.`);
-          return;
+          fieldErrors[i] = { ...fieldErrors[i], tags: true };
+          if (!firstError) {
+            firstError = p.title.trim()
+              ? `Project "${p.title}" must have at least one tag.`
+              : `Project #${i + 1} must have at least one tag.`;
+          }
         }
       }
+      if (Object.keys(fieldErrors).length > 0) {
+        setProjectFieldErrors(fieldErrors);
+        setActiveTab("projects");
+        setErrorMsg(firstError);
+        return;
+      }
+      setProjectFieldErrors({});
 
       setErrorMsg("");
       setIsSaving(true);
@@ -229,21 +252,46 @@ export default function ProfilePage() {
     });
   };
 
-  const handleUpdateProject = (index: number, field: string, value: any) => {
+  const handleUpdateProject = (index: number, field: string, value: unknown) => {
     const updatedProjects = [...editForm.projects];
     updatedProjects[index] = { ...updatedProjects[index], [field]: value };
     setEditForm({ ...editForm, projects: updatedProjects });
+
+    if (projectFieldErrors[index]?.[field as "title" | "tags"]) {
+      setProjectFieldErrors((prev) => {
+        const next = { ...prev };
+        const entry = { ...next[index] };
+        delete entry[field as "title" | "tags"];
+        if (Object.keys(entry).length === 0) {
+          delete next[index];
+        } else {
+          next[index] = entry;
+        }
+        return next;
+      });
+    }
   };
 
   const handleRemoveProject = (index: number) => {
     const updatedProjects = [...editForm.projects];
     updatedProjects.splice(index, 1);
     setEditForm({ ...editForm, projects: updatedProjects });
+    setProjectFieldErrors((prev) => {
+      const next: Record<number, { title?: boolean; tags?: boolean }> = {};
+      Object.entries(prev).forEach(([key, value]) => {
+        const i = Number(key);
+        if (i < index) next[i] = value;
+        else if (i > index) next[i - 1] = value;
+      });
+      return next;
+    });
   };
 
   const openEditModal = (tab: "profile" | "projects") => {
     if (!user) return;
     setErrorMsg("");
+    setProjectFieldErrors({});
+    setUsernameFieldError(false);
     setActiveTab(tab);
     setEditForm({
       username: user.username || "",
@@ -260,6 +308,20 @@ export default function ProfilePage() {
   };
 
   const atProjectLimit = editForm.projects.length >= MAX_PROJECTS;
+
+  const projectInputClass = (hasError: boolean) =>
+    `w-full px-4 py-2.5 rounded-xl text-sm text-text-main bg-surface border focus:bg-white focus:outline-none transition-all ${
+      hasError
+        ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+        : "border-border-subtle focus:border-greenui"
+    }`;
+
+  const profileInputClass = (hasError: boolean) =>
+    `w-full px-4 py-3 rounded-xl text-text-main bg-canvas border focus:bg-white focus:outline-none transition-all ${
+      hasError
+        ? "border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/20"
+        : "border-border-subtle focus:border-greenui focus:ring-4 focus:ring-greenui/10"
+    }`;
 
   if (isLoading) {
     return (
@@ -302,7 +364,7 @@ export default function ProfilePage() {
             <div>
               <h1 className="text-4xl font-bold text-text-main transition-colors">{user.username}</h1>
               <p className="text-xl font-medium text-text-muted dark:text-greenui mt-1 transition-colors">
-                {user.title || "No Title Set"}
+                {user.title ? `Expected Career: ${user.title}` : "No Expected Career Set"}
               </p>
             </div>
             <Link href="/export" className="bg-brand-secondary text-white px-6 py-2 rounded-xl font-bold flex items-center gap-2 self-center md:self-start hover:bg-brand-secondary-hover shadow-sm transition cursor-pointer">
@@ -559,17 +621,28 @@ export default function ProfilePage() {
                 <h3 className="text-lg font-semibold text-text-main border-b border-border-subtle pb-2">Basic Info</h3>
 
                 <div>
-                  <label className="block text-sm font-bold text-text-main mb-1.5 ml-1">Username</label>
+                  <label className={`block text-sm font-bold mb-1.5 ml-1 ${usernameFieldError ? "text-red-600" : "text-text-main"}`}>
+                    Username<span className="text-red-500">*</span>
+                  </label>
                   <input
                     value={editForm.username}
-                    onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                    onChange={(e) => {
+                      setEditForm({ ...editForm, username: e.target.value });
+                      if (usernameFieldError && e.target.value.trim()) {
+                        setUsernameFieldError(false);
+                      }
+                    }}
                     placeholder="Your name"
-                    className="w-full px-4 py-3 rounded-xl text-text-main bg-canvas border border-border-subtle focus:bg-white focus:outline-none focus:border-greenui focus:ring-4 focus:ring-greenui/10 transition-all"
+                    aria-invalid={usernameFieldError}
+                    className={profileInputClass(usernameFieldError)}
                   />
+                  {usernameFieldError && (
+                    <p className="text-xs text-red-500 mt-1 ml-1">Username is required.</p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-text-main mb-1.5 ml-1">Title</label>
+                  <label className="block text-sm font-bold text-text-main mb-1.5 ml-1">Expected Career</label>
                   <input
                     value={editForm.title}
                     onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
@@ -624,7 +697,14 @@ export default function ProfilePage() {
                 ) : (
                   <div className="space-y-6">
                     {editForm.projects.map((project, idx) => (
-                      <div key={idx} className="bg-canvas border border-border-subtle rounded-2xl p-5 relative group">
+                      <div
+                        key={idx}
+                        className={`bg-canvas border rounded-2xl p-5 relative group ${
+                          projectFieldErrors[idx]
+                            ? "border-red-300 dark:border-red-500/40"
+                            : "border-border-subtle"
+                        }`}
+                      >
                         <button
                           onClick={() => handleRemoveProject(idx)}
                           className="absolute top-4 right-4 text-red-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
@@ -635,13 +715,19 @@ export default function ProfilePage() {
 
                         <div className="space-y-4">
                           <div>
-                            <label className="block text-xs font-bold text-text-main mb-1 ml-1">Project Title <span className="text-red-500">*</span></label>
+                            <label className={`block text-xs font-bold mb-1 ml-1 ${projectFieldErrors[idx]?.title ? "text-red-600" : "text-text-main"}`}>
+                              Project Title <span className="text-red-500">*</span>
+                            </label>
                             <input
                               value={project.title}
                               onChange={(e) => handleUpdateProject(idx, "title", e.target.value)}
                               placeholder="Project Name"
-                              className="w-full px-4 py-2.5 rounded-xl text-sm text-text-main bg-surface border border-border-subtle focus:bg-white focus:outline-none focus:border-greenui transition-all pr-10"
+                              aria-invalid={projectFieldErrors[idx]?.title}
+                              className={`${projectInputClass(Boolean(projectFieldErrors[idx]?.title))} pr-10`}
                             />
+                            {projectFieldErrors[idx]?.title && (
+                              <p className="text-xs text-red-500 mt-1 ml-1">Title is required.</p>
+                            )}
                           </div>
 
                           <div>
@@ -656,7 +742,9 @@ export default function ProfilePage() {
                           </div>
 
                           <div>
-                            <label className="block text-xs font-bold text-text-main mb-1 ml-1">Tags (Comma separated) <span className="text-red-500">*</span></label>
+                            <label className={`block text-xs font-bold mb-1 ml-1 ${projectFieldErrors[idx]?.tags ? "text-red-600" : "text-text-main"}`}>
+                              Tags (Comma separated) <span className="text-red-500">*</span>
+                            </label>
                             <input
                               value={project.tags.join(", ")}
                               onChange={(e) => {
@@ -664,8 +752,12 @@ export default function ProfilePage() {
                                 handleUpdateProject(idx, "tags", tagsArray);
                               }}
                               placeholder="e.g. React, Node.js, Python"
-                              className="w-full px-4 py-2.5 rounded-xl text-sm text-text-main bg-surface border border-border-subtle focus:bg-white focus:outline-none focus:border-greenui transition-all"
+                              aria-invalid={projectFieldErrors[idx]?.tags}
+                              className={projectInputClass(Boolean(projectFieldErrors[idx]?.tags))}
                             />
+                            {projectFieldErrors[idx]?.tags && (
+                              <p className="text-xs text-red-500 mt-1 ml-1">At least one tag is required.</p>
+                            )}
                           </div>
                         </div>
                       </div>
