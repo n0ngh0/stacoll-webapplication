@@ -90,7 +90,10 @@ export default function ExportPreparePage() {
     if (newSet.has(index)) {
       newSet.delete(index);
     } else {
-      if (newSet.size >= 4) return alert("You can only select up to 4 skills.");
+      if (newSet.size >= 4) {
+        const firstItem = newSet.values().next().value;
+        if (firstItem !== undefined) newSet.delete(firstItem);
+      }
       newSet.add(index);
     }
     setSelectedSkills(newSet);
@@ -101,7 +104,10 @@ export default function ExportPreparePage() {
     if (newSet.has(index)) {
       newSet.delete(index);
     } else {
-      if (newSet.size >= 4) return alert("You can only select up to 4 projects.");
+      if (newSet.size >= 4) {
+        const firstItem = newSet.values().next().value;
+        if (firstItem !== undefined) newSet.delete(firstItem);
+      }
       newSet.add(index);
     }
     setSelectedProjects(newSet);
