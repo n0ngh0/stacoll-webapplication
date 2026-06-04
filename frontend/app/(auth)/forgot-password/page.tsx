@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Mail, ArrowLeft, Loader2, CheckCircle2, CircleAlert, ArrowRight } from "lucide-react";
-import { apiFetch } from "@/lib/api/client";
+import { apiFetch, getApiUrl } from "@/lib/api/client";
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");
@@ -16,11 +16,18 @@ export default function ForgotPasswordPage() {
         setIsLoading(true);
 
         try {
+            // #region agent log
+            fetch('http://127.0.0.1:7267/ingest/6f4c4dd9-6c97-433d-9bb3-f408539522b2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d14199'},body:JSON.stringify({sessionId:'d14199',location:'forgot-password/page.tsx:submit',message:'fetch start',data:{apiUrl:getApiUrl(),emailLen:email.length},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+            // #endregion
             const res = await apiFetch("/auth/forgot-password", {
                 auth: false,
                 method: "POST",
                 body: JSON.stringify({ email }),
             });
+
+            // #region agent log
+            fetch('http://127.0.0.1:7267/ingest/6f4c4dd9-6c97-433d-9bb3-f408539522b2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d14199'},body:JSON.stringify({sessionId:'d14199',location:'forgot-password/page.tsx:response',message:'fetch done',data:{ok:res.ok,status:res.status},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+            // #endregion
 
             if (!res.ok) {
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -28,6 +35,9 @@ export default function ForgotPasswordPage() {
 
             setIsSubmitted(true);
         } catch (err: any) {
+            // #region agent log
+            fetch('http://127.0.0.1:7267/ingest/6f4c4dd9-6c97-433d-9bb3-f408539522b2',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'d14199'},body:JSON.stringify({sessionId:'d14199',location:'forgot-password/page.tsx:catch',message:'fetch error',data:{errMessage:String(err?.message||err).slice(0,120)},timestamp:Date.now(),hypothesisId:'H1'})}).catch(()=>{});
+            // #endregion
             setError(err.message || "Something went wrong");
         } finally {
             setIsLoading(false);

@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { agentDebug } from "../utils/debug-log";
 import { authController } from "../controllers/authController";
 import { authMiddleware } from "../middlewares/authMiddleware";
 
@@ -26,6 +27,7 @@ export const authRoutes = new Elysia({ prefix: "/api/auth" })
     })
   })
   .post("/forgot-password", async ({ body, set }) => {
+    agentDebug("authRoutes.ts:forgot-password", "route hit", { emailLen: typeof body?.email === "string" ? body.email.length : 0 }, "H1");
     const { status, body: responseBody } = await authController.forgotPassword(body);
     set.status = status;
     return responseBody;
