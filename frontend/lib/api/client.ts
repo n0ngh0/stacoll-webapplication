@@ -1,7 +1,8 @@
 import { getToken } from "@/lib/auth-session";
 
 export function getApiUrl() {
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  const url = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  return url.endsWith("/") ? url.slice(0, -1) : url;
 }
 
 export type ApiFetchOptions = RequestInit & {
