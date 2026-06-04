@@ -1,45 +1,14 @@
-import nodemailer from "nodemailer";
-
-// Reuse the transporter instance
-let transporter: nodemailer.Transporter | null = null;
-
-export const setupTransporter = async () => {
-  if (transporter) return transporter;
-
-  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-    console.log("Using production SMTP transporter");
-    return transporter;
-  }
-
-  // Fallback: Use Ethereal for testing
-  console.log("No SMTP credentials found in .env, falling back to Ethereal test account...");
-  const testAccount = await nodemailer.createTestAccount();
-  
-  transporter = nodemailer.createTransport({
-    host: "smtp.ethereal.email",
-    port: 587,
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: testAccount.user, // generated ethereal user
-      pass: testAccount.pass, // generated ethereal password
-    },
-  });
-
-  return transporter;
-};
+import { Resend } from "resend";
 
 export const sendOTPEmail = async (to: string, otp: string) => {
+  console.log("📨 Attempting to send OTP email to:", to);
   try {
-    const t = await setupTransporter();
+    const resendApiKey = process.env.RESEND_API_KEY || process.env.SMTP_PASS;
+    if (!resendApiKey) {
+      console.error("❌ Missing Resend API Key");
+      return false;
+    }
+    const resend = new Resend(resendApiKey);
     const htmlContent = `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; padding: 40px 20px; color: #18181b;">
         <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
@@ -75,21 +44,23 @@ export const sendOTPEmail = async (to: string, otp: string) => {
       </div>
     `;
 
-    const info = await t.sendMail({
-      from: process.env.SMTP_FROM || '"Stacoll Admin" <admin@stacoll.com>',
-      to,
+    const { data, error } = await resend.emails.send({
+      from: process.env.SMTP_FROM || 'onboarding@resend.dev',
+      to: [to],
       subject: "Your Stacoll Verification Code",
       text: `Your OTP code is: ${otp}. It will expire in 10 minutes.`,
       html: htmlContent,
     });
 
-    console.log("Message sent: %s", info.messageId);
-    // Preview only available when sending through an Ethereal account
-    console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-    
+    if (error) {
+      console.error("❌ Resend Error:", error);
+      return false;
+    }
+
+    console.log("✅ Resend Response:", data);
     return true;
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("❌ Resend Exception:", error);
     return false;
   }
 };

@@ -43,7 +43,8 @@ export const requireAuth = new Elysia({ name: "requireAuth" })
       set.status = 401;
       return { success: false, message: "Unauthorized: No or invalid token provided" };
     }
-  });
+  })
+  .as("scoped");
 
 export const requireAdmin = new Elysia({ name: "requireAdmin" })
   .use(requireAuth)
@@ -52,4 +53,5 @@ export const requireAdmin = new Elysia({ name: "requireAdmin" })
       set.status = 403;
       return { success: false, message: "Forbidden: Admin access required" };
     }
-  });
+  })
+  .as("scoped");

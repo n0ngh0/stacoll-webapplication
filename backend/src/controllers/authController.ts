@@ -37,7 +37,12 @@ export const authController = {
           existingUser.otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
           existingUser.isVerified = false;
           await existingUser.save();
-          await sendOTPEmail(email, otp);
+          
+          const emailSent = await sendOTPEmail(email, otp);
+          if (!emailSent) {
+            return { status: 500, body: { success: false, message: "Failed to send OTP email. Please check your email configuration or try again later." } };
+          }
+          
           return { status: 200, body: { success: true, message: "OTP sent to your email. Please verify." } };
         }
         return { status: 400, body: { success: false, message: "Email already exists" } };

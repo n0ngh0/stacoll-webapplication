@@ -13,10 +13,13 @@ export const skillRoutes = new Elysia({ prefix: "/api/skills" })
     set.status = status;
     return body;
   })
-  // GET /api/skills/:id — ดึง skill detail (ต้อง login)
-  .use(requireAuth)
-  .get("/:id", async ({ params, set }) => {
-    const { status, body } = await skillController.getSkillById(params.id);
-    set.status = status;
-    return body;
-  });
+  .group("", (app) => 
+    app
+      .use(requireAuth)
+      // GET /api/skills/:id — ดึง skill detail (ต้อง login)
+      .get("/:id", async ({ params, set }) => {
+        const { status, body } = await skillController.getSkillById(params.id);
+        set.status = status;
+        return body;
+      })
+  );
