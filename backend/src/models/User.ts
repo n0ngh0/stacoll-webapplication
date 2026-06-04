@@ -12,7 +12,9 @@ export interface IVerifiedSkill {
 export interface IUser {
   username: string;
   email: string;
-  password: string;
+  password?: string;       // Optional: Google users ไม่ต้องมี password
+  googleId?: string;       // Google OAuth user ID
+  authProvider: 'local' | 'google'; // วิธีที่ user สมัคร
   role: string;
   imgUrl?: string;
   bio?: string;
@@ -53,8 +55,21 @@ const userSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
+      // required เฉพาะ local auth users เท่านั้น
+      required: function (this: any) {
+        return this.authProvider === 'local';
+      },
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true, // อนุญาตให้ null ได้ (สำหรับ local users)
+    },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local',
     },
     role: {
       type: String,
