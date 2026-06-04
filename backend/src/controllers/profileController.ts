@@ -1,6 +1,8 @@
 import User from "../models/User";
 import { validatePassword } from "../utils/validation";
 
+const MAX_PROFILE_PROJECTS = 4;
+
 export const profileController = {
   async getProfile(userId: string) {
     try {
@@ -31,6 +33,13 @@ export const profileController = {
 
       // Disallow updating sensitive fields
       const { email, password, role, isVerified, otp, otpExpiry, createdAt, updatedAt, ...updateData } = body;
+
+      if (Array.isArray(updateData.projects) && updateData.projects.length > MAX_PROFILE_PROJECTS) {
+        return {
+          status: 400,
+          body: { success: false, message: `Maximum ${MAX_PROFILE_PROJECTS} projects allowed` },
+        };
+      }
 
       const user = await User.findByIdAndUpdate(
         userId,

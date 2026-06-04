@@ -7,6 +7,8 @@ import { User } from "@/types/user";
 import { apiFetch } from "@/lib/api/client";
 import { clearSession, getToken, updateStoredUser } from "@/lib/auth-session";
 
+const MAX_PROJECTS = 4;
+
 const JOB_ROLES = [
   { title: "Front-end Developer", skills: ["React.js", "HTML", "CSS", "TypeScript", "Next.js", "Tailwind CSS"] },
   { title: "Back-end Developer", skills: ["Node.js", "Express", "MongoDB", "SQL", "Python", "Docker"] },
@@ -113,7 +115,7 @@ export default function ProfilePage() {
           title: data.user.title || "",
           bio: data.user.bio || "",
           imgUrl: data.user.imgUrl || "",
-          projects: data.user.projects || []
+          projects: (data.user.projects || []).slice(0, MAX_PROJECTS),
         });
       } else {
         if (res.status === 401) {
@@ -130,6 +132,12 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async () => {
     try {
+      if (editForm.projects.length > MAX_PROJECTS) {
+        setActiveTab("projects");
+        setErrorMsg(`You can add at most ${MAX_PROJECTS} projects.`);
+        return;
+      }
+
       // Validate projects
       for (let i = 0; i < editForm.projects.length; i++) {
         const p = editForm.projects[i];
@@ -214,6 +222,7 @@ export default function ProfilePage() {
   };
 
   const handleAddProject = () => {
+    if (editForm.projects.length >= MAX_PROJECTS) return;
     setEditForm({
       ...editForm,
       projects: [...editForm.projects, { title: "", description: "", tags: [] }]
@@ -566,14 +575,25 @@ export default function ProfilePage() {
                 <div className="space-y-8 animate-in fade-in duration-200">
                   {/* Projects Section */}
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center border-b border-border-subtle pb-2">
-                  <h3 className="text-lg font-semibold text-text-main">Projects</h3>
+                    <div className="flex flex-col items-end gap-1 border-b border-border-subtle pb-2 sm:flex-row sm:justify-between sm:items-center">
+                  <h3 className="text-lg font-semibold text-text-main self-start sm:self-auto">Projects</h3>
+                  <div className="flex flex-col items-end gap-1">
                   <button
+                    type="button"
                     onClick={handleAddProject}
-                    className="text-sm font-bold text-brand-secondary flex items-center gap-1 hover:brightness-110 cursor-pointer"
+                    disabled={editForm.projects.length >= MAX_PROJECTS}
+                    className={`text-sm font-bold flex items-center gap-1 ${
+                      editForm.projects.length >= MAX_PROJECTS
+                        ? "text-text-muted cursor-not-allowed opacity-50"
+                        : "text-brand-secondary hover:brightness-110 cursor-pointer"
+                    }`}
                   >
                     <Plus size={16} /> Add Project
                   </button>
+                  {editForm.projects.length >= MAX_PROJECTS && (
+                    <p className="text-xs text-text-muted">Maximum {MAX_PROJECTS} projects.</p>
+                  )}
+                  </div>
                 </div>
 
                 {editForm.projects.length === 0 ? (
