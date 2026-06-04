@@ -67,7 +67,13 @@ export const sendOTPEmail = async (to: string, otp: string) => {
 
 export const sendPasswordResetEmail = async (to: string, resetUrl: string) => {
   try {
-    const t = await setupTransporter();
+    const resendApiKey = process.env.RESEND_API_KEY || process.env.SMTP_PASS;
+    if (!resendApiKey) {
+      console.error("❌ Missing Resend API Key");
+      return false;
+    }
+    const resend = new Resend(resendApiKey);
+
     const htmlContent = `
       <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f4f5; padding: 40px 20px; color: #18181b;">
         <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
@@ -88,19 +94,23 @@ export const sendPasswordResetEmail = async (to: string, resetUrl: string) => {
       </div>
     `;
 
-    const info = await t.sendMail({
-      from: process.env.SMTP_FROM || '"Stacoll Admin" <admin@stacoll.com>',
-      to,
+    const { data, error } = await resend.emails.send({
+      from: process.env.SMTP_FROM || 'onboarding@resend.dev',
+      to: [to],
       subject: "Reset your Stacoll password",
       text: `Reset your password: ${resetUrl}\n\nThis link expires in 1 hour.`,
       html: htmlContent,
     });
 
-    console.log("Password reset email sent: %s", info.messageId);
-    console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+    if (error) {
+      console.error("❌ Resend Error:", error);
+      return false;
+    }
+
+    console.log("✅ Password reset email sent via Resend:", data);
     return true;
   } catch (error) {
-    console.error("Error sending password reset email:", error);
+    console.error("❌ Resend Exception:", error);
     return false;
   }
 };

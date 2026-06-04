@@ -2,6 +2,7 @@ import AssessmentResult from "../models/AssessmentResult";
 import Problem from "../models/Problem";
 import Skill from "../models/Skill";
 import User from "../models/User";
+import Language from "../models/Language";
 import mongoose from "mongoose";
 
 const PASSING_SCORE = 60;
@@ -414,13 +415,19 @@ export const assessmentController = {
       const clientId = process.env.JDOODLE_CLIENT_ID || "";
       const clientSecret = process.env.JDOODLE_CLIENT_SECRET || "";
       
+      const lang = await Language.findOne({ judge0_id: body.language_id });
+      let finalSourceCode = body.source_code;
+      if (lang && lang.driverTemplate) {
+        finalSourceCode = lang.driverTemplate.replace("{{USER_CODE}}", body.source_code);
+      }
+      
       const res = await fetch("https://api.jdoodle.com/v1/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientId,
           clientSecret,
-          script: body.source_code,
+          script: finalSourceCode,
           language: jDoodleConfig.language,
           versionIndex: jDoodleConfig.versionIndex,
           stdin: body.stdin || "",

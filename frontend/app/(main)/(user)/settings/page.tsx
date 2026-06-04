@@ -10,6 +10,20 @@ export default function SettingsPage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  
+  // Password State
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passError, setPassError] = useState("");
+  const [passSuccess, setPassSuccess] = useState("");
+  const [isUpdatingPass, setIsUpdatingPass] = useState(false);
+
+  // Delete Account State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
   useEffect(() => setMounted(true), []);
 
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -22,6 +36,72 @@ export default function SettingsPage() {
       return () => clearTimeout(timer);
     }
   }, [router]);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPassError("");
+    setPassSuccess("");
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPassError("All fields are required.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPassError("New passwords do not match.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPassError("Password must be at least 8 characters.");
+      return;
+    }
+
+    setIsUpdatingPass(true);
+    try {
+      const { apiFetch } = await import("@/lib/api/client");
+      const res = await apiFetch("/profile/me/password", {
+        method: "PUT",
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setPassSuccess("Password updated successfully!");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        setPassError(data.message || "Failed to update password.");
+      }
+    } catch (err) {
+      setPassError("An error occurred. Please try again.");
+    } finally {
+      setIsUpdatingPass(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteError("");
+    setIsDeleting(true);
+    try {
+      const { apiFetch } = await import("@/lib/api/client");
+      const res = await apiFetch("/profile/me", { method: "DELETE" });
+      const data = await res.json();
+      
+      if (data.success) {
+        const { removeToken } = await import("@/lib/auth-session");
+        removeToken();
+        window.location.href = "/signin";
+      } else {
+        setDeleteError(data.message || "Failed to delete account.");
+        setIsDeleting(false);
+      }
+    } catch (err) {
+      setDeleteError("An error occurred. Please try again.");
+      setIsDeleting(false);
+    }
+  };
 
   if (isCheckingAuth) {
     return (
@@ -82,36 +162,47 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          <div className="w-full md:w-2/3 md:pl-4 max-w-lg space-y-5">
-            <div>
-              <label className="block text-sm font-medium text-text-main mb-2 transition-colors">Current Password</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                className="w-full px-4 py-2.5 rounded-xl bg-surface text-text-main border border-border-subtle focus:border-greenui focus:ring-2 focus:ring-greenui/20 outline-none transition-all placeholder:text-text-muted/50 shadow-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-main mb-2 transition-colors">New Password</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                className="w-full px-4 py-2.5 rounded-xl bg-surface text-text-main border border-border-subtle focus:border-greenui focus:ring-2 focus:ring-greenui/20 outline-none transition-all placeholder:text-text-muted/50 shadow-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text-main mb-2 transition-colors">Confirm New Password</label>
-              <input
-                type="password"
-                placeholder="••••••••"
-                className="w-full px-4 py-2.5 rounded-xl bg-surface text-text-main border border-border-subtle focus:border-greenui focus:ring-2 focus:ring-greenui/20 outline-none transition-all placeholder:text-text-muted/50 shadow-sm"
-              />
-            </div>
-            <div className="pt-2">
-              <button className="bg-greenbutton text-white dark:text-black px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-greenbutton/90 transition-all shadow-sm cursor-pointer flex items-center gap-2">
-                Change Password
-              </button>
-            </div>
+          <div className="w-full md:w-2/3 md:pl-4 max-w-lg">
+            <form onSubmit={handlePasswordChange} className="space-y-5">
+              {passError && <div className="p-3 bg-red-500/10 text-red-500 text-sm font-semibold rounded-lg">{passError}</div>}
+              {passSuccess && <div className="p-3 bg-greenui/10 text-emerald-600 text-sm font-semibold rounded-lg">{passSuccess}</div>}
+              
+              <div>
+                <label className="block text-sm font-medium text-text-main mb-2 transition-colors">Current Password</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2.5 rounded-xl bg-surface text-text-main border border-border-subtle focus:border-greenui focus:ring-2 focus:ring-greenui/20 outline-none transition-all placeholder:text-text-muted/50 shadow-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-main mb-2 transition-colors">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2.5 rounded-xl bg-surface text-text-main border border-border-subtle focus:border-greenui focus:ring-2 focus:ring-greenui/20 outline-none transition-all placeholder:text-text-muted/50 shadow-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-main mb-2 transition-colors">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2.5 rounded-xl bg-surface text-text-main border border-border-subtle focus:border-greenui focus:ring-2 focus:ring-greenui/20 outline-none transition-all placeholder:text-text-muted/50 shadow-sm"
+                />
+              </div>
+              <div className="pt-2">
+                <button type="submit" disabled={isUpdatingPass} className="bg-greenbutton text-white dark:text-black px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-greenbutton/90 transition-all shadow-sm cursor-pointer flex items-center gap-2 disabled:opacity-50">
+                  {isUpdatingPass ? "Updating..." : "Change Password"}
+                </button>
+              </div>
+            </form>
           </div>
         </section>
 
@@ -124,14 +215,46 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          <div className="w-full md:w-2/3 md:pl-4 flex items-start">
-            <button className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer flex items-center gap-2 shadow-sm">
+          <div className="w-full md:w-2/3 md:pl-4 flex flex-col items-start">
+            <button 
+              onClick={() => setShowDeleteModal(true)}
+              className="bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer flex items-center gap-2 shadow-sm"
+            >
               <Trash2 size={16} /> Delete account
             </button>
+            {deleteError && <p className="text-red-500 text-sm mt-3">{deleteError}</p>}
           </div>
         </section>
 
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-canvas/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-surface p-6 md:p-8 rounded-2xl shadow-xl border border-border-subtle max-w-[400px] w-full animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-bold text-text-main mb-3">Delete Account</h3>
+            <p className="text-sm text-text-muted leading-relaxed mb-6">
+              Are you absolutely sure you want to delete your account? This action cannot be undone and will permanently delete your profile, skills, and progress.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
+              <button 
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+                className="px-5 py-2.5 text-sm font-bold text-text-main hover:bg-surface-hover rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteAccount}
+                disabled={isDeleting}
+                className="px-5 py-2.5 text-sm font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {isDeleting ? "Deleting..." : "Yes, Delete Account"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
