@@ -9,6 +9,7 @@ import {
 import type { Skill } from "@/types/skill";
 import { CATEGORY_THEMES } from "@/types/question";
 import AdminSkillCard from "@/components/admin/AdminSkillCard";
+import { apiFetch } from "@/lib/api/client";
 
 export default function AdminDashboardPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -48,9 +49,7 @@ export default function AdminDashboardPage() {
   const fetchSkills = async () => {
     try {
       setIsLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-      // Using public skills endpoint for listing
-      const res = await fetch(`${apiUrl}/skills`);
+      const res = await apiFetch("/skills", { auth: false });
       const data = await res.json();
       
       if (data.success) {
@@ -110,14 +109,7 @@ export default function AdminDashboardPage() {
   const handleDeleteSkill = async (id: string, title: string) => {
     if (confirm(`Are you sure you want to delete ${title}?`)) {
       try {
-        const token = localStorage.getItem("token");
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-        const res = await fetch(`${apiUrl}/admin/skills/${id}`, {
-          method: "DELETE",
-          headers: {
-            "Authorization": `Bearer ${token}`
-          }
-        });
+        const res = await apiFetch(`/admin/skills/${id}`, { method: "DELETE" });
         const data = await res.json();
         
         if (data.success) {

@@ -1,6 +1,4 @@
 {
-  "dependencies": {
-    "bcrypt": "^6.0.0",
-    "jsonwebtoken": "^9.0.3"
-  }
+  "name": "stacoll-webapplication",
+  "private": true
 }

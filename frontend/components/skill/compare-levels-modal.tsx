@@ -1,17 +1,19 @@
 "use client";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { SkillLevel, LEVEL_OPTIONS } from "@/types/question";
+import { LEVEL_OPTIONS } from "@/types/question";
+import type { SkillLevel } from "@/types/skill";
+import { levelLabel } from "@/types/skill";
 
 interface CompareLevelsModalProps {
   levels: SkillLevel[];
-  initialTab?: SkillLevel["id"];
+  initialTab?: SkillLevel["level"];
   themeColor: string;
   onClose: () => void;
 }
 
 export function CompareLevelsModal({ levels, initialTab = "beginner", themeColor, onClose }: CompareLevelsModalProps) {
-  const [activeCompareTab, setActiveCompareTab] = useState<SkillLevel["id"]>(initialTab);
+  const [activeCompareTab, setActiveCompareTab] = useState<SkillLevel["level"]>(initialTab);
 
   return (
     <div 
@@ -22,21 +24,20 @@ export function CompareLevelsModal({ levels, initialTab = "beginner", themeColor
       <div className="bg-surface p-8 rounded-3xl shadow-2xl border border-border-subtle max-w-[800px] w-full h-[85vh] min-h-[500px] flex flex-col animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
         <h3 className="text-2xl font-extrabold text-text-main mb-6 shrink-0">Compare Skill Levels</h3>
 
-        {/* Tabs */}
         <div className="flex bg-surface-hover p-1.5 rounded-2xl mb-6 shrink-0">
           {(levels || []).map((lvl) => {
-            const isActive = activeCompareTab === lvl.id;
-            const diff = LEVEL_OPTIONS.find(d => d.value === lvl.id);
+            const isActive = activeCompareTab === lvl.level;
+            const diff = LEVEL_OPTIONS.find(d => d.value === lvl.level);
             return (
               <button
-                key={lvl.id}
-                onClick={() => setActiveCompareTab(lvl.id as SkillLevel["id"])}
+                key={lvl.level}
+                onClick={() => setActiveCompareTab(lvl.level)}
                 className={`flex-1 py-2.5 text-center text-sm font-bold rounded-xl transition-all cursor-pointer ${isActive
                     ? `bg-surface text-${diff?.color} shadow-sm border border-border-subtle`
                     : 'text-text-muted hover:text-text-main'
                   }`}
               >
-                {lvl.title}
+                {levelLabel(lvl.level)}
               </button>
             );
           })}
@@ -44,13 +45,13 @@ export function CompareLevelsModal({ levels, initialTab = "beginner", themeColor
 
         <div className="flex-1 overflow-hidden flex flex-col pb-4 pr-1">
           {(levels || []).map((lvl) => {
-            if (lvl.id !== activeCompareTab) return null;
-            const diff = LEVEL_OPTIONS.find(d => d.value === lvl.id);
+            if (lvl.level !== activeCompareTab) return null;
+            const diff = LEVEL_OPTIONS.find(d => d.value === lvl.level);
             return (
-              <div key={lvl.id} className="bg-canvas border border-border-subtle rounded-2xl p-6 flex flex-col h-full animate-in fade-in duration-300">
+              <div key={lvl.level} className="bg-canvas border border-border-subtle rounded-2xl p-6 flex flex-col h-full animate-in fade-in duration-300">
                 <div className="flex items-center gap-3 mb-4 shrink-0">
                   <span className={`px-3 py-1 text-[11px] font-black uppercase rounded-lg border text-${diff?.color} border-${diff?.color} bg-${diff?.bg}/30`}>
-                    {lvl.title}
+                    {levelLabel(lvl.level)}
                   </span>
                   <h4 className="text-lg font-bold text-text-main">Level Criteria</h4>
                 </div>

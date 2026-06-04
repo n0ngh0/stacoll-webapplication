@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Skill, SkillLevel } from "@/types/skill";
 import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
 import { getLevelQuestionCount } from "@/lib/api/problems";
+import { apiFetch } from "@/lib/api/client";
 
 export default function SkillDetailPage() {
     const params = useParams();
@@ -23,14 +24,9 @@ export default function SkillDetailPage() {
     } | null>(null);
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) {
-            router.push("/");
-        } else {
-            const timer = setTimeout(() => setIsCheckingAuth(false), 100);
-            return () => clearTimeout(timer);
-        }
-    }, [router]);
+        const timer = setTimeout(() => setIsCheckingAuth(false), 0);
+        return () => clearTimeout(timer);
+    }, []);
 
     // Fetch skill detail from API
     useEffect(() => {
@@ -42,12 +38,9 @@ export default function SkillDetailPage() {
     const fetchSkillDetail = async () => {
         try {
             setIsLoading(true);
-            const token = localStorage.getItem("token");
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-            
             const [skillRes, progressRes] = await Promise.all([
-                fetch(`${apiUrl}/skills/${skillId}`, { headers: { "Authorization": `Bearer ${token}` } }),
-                fetch(`${apiUrl}/assessment/${skillId}/progress`, { headers: { "Authorization": `Bearer ${token}` } })
+                apiFetch(`/skills/${skillId}`),
+                apiFetch(`/assessment/${skillId}/progress`),
             ]);
             
             const skillData = await skillRes.json();
@@ -340,8 +333,8 @@ export default function SkillDetailPage() {
             {/* Compare Levels Modal */}
             {showCompareModal && (
                 <CompareLevelsModal
-                    levels={skill.levels.map((l: any) => ({ ...l, id: l.level, title: l.level })) as any}
-                    initialTab={selectedLevel as any}
+                    levels={skill.levels}
+                    initialTab={selectedLevel as SkillLevel["level"]}
                     themeColor={themeColor}
                     onClose={() => setShowCompareModal(false)}
                 />

@@ -4,14 +4,15 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import { ArrowLeft, Pencil, Trash2, ListChecks, Code2, AlertTriangle, CheckCircle2 } from "lucide-react";
-import type { Question, ChoiceQuestion, CodingQuestion, Skill } from "@/types/question";
+import type { Question, ChoiceQuestion, CodingQuestion } from "@/types/question";
+import type { Skill } from "@/types/skill";
 import {
   deleteAdminProblem,
   fetchAdminProblem,
-  getApiUrl,
-  mapDbSkillToFormSkill,
+  fetchSkillById,
   mapProblemToForm,
 } from "@/lib/api/problems";
+import { getToken } from "@/lib/auth-session";
 
 export default function QuestionDetailPage() {
   const params = useParams();
@@ -30,23 +31,17 @@ export default function QuestionDetailPage() {
     const load = async () => {
       if (!qid || !skillId) return;
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
+        if (!getToken()) {
           setLoadError("Not authenticated");
           return;
         }
 
-        const [skillRes, problem] = await Promise.all([
-          fetch(`${getApiUrl()}/skills/${skillId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetchAdminProblem(qid, token),
+        const [loadedSkill, problem] = await Promise.all([
+          fetchSkillById(skillId),
+          fetchAdminProblem(qid),
         ]);
 
-        const skillData = await skillRes.json();
-        if (skillData.success && skillData.skill) {
-          setSkill(mapDbSkillToFormSkill(skillData.skill));
-        }
+        if (loadedSkill) setSkill(loadedSkill);
 
         if (problem) {
           setQuestion(mapProblemToForm(problem));
@@ -87,10 +82,7 @@ export default function QuestionDetailPage() {
 
   const handleDelete = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
-      const result = await deleteAdminProblem(qid, token);
+      const result = await deleteAdminProblem(qid);
       if (result.success) {
         router.push(`/admin/skills/${skillId}?level=${levelId}`);
       } else {
@@ -109,7 +101,7 @@ export default function QuestionDetailPage() {
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-10">
           <div>
             <Link
-              href={`/admin/skills/${skill.id}?level=${levelId}`}
+              href={`/admin/skills/${skill._id}?level=${levelId}`}
               className="inline-flex items-center gap-1.5 text-sm font-bold text-text-muted hover:text-text-main transition-colors mb-4"
             >
               <ArrowLeft size={16} /> Back to Skill
@@ -145,7 +137,7 @@ export default function QuestionDetailPage() {
 
           <div className="flex items-center gap-2 shrink-0">
             <Link
-              href={`/admin/skills/${skill.id}/${levelId}/questions/${question.id}/edit`}
+              href={`/admin/skills/${skill._id}/${levelId}/questions/${question.id}/edit`}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-surface border border-border-subtle text-text-main font-bold rounded-xl text-sm hover:border-brand-secondary-hover hover:text-brand-secondary-hover transition-colors text-center"
             >
               <Pencil size={14} /> Edit

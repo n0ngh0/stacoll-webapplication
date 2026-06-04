@@ -5,6 +5,8 @@ import ReactMarkdown from "react-markdown";
 import { getLevelColorClass } from "@/types/question";
 import { useState, useEffect } from "react";
 import { User } from "@/types/user";
+import { apiFetch } from "@/lib/api/client";
+import { clearSession, getToken, updateStoredUser } from "@/lib/auth-session";
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
@@ -18,11 +20,13 @@ export default function ProfilePage() {
     username: string;
     title: string;
     bio: string;
+    imgUrl: string;
     projects: { title: string; description: string; tags: string[] }[];
   }>({
     username: "",
     title: "",
     bio: "",
+    imgUrl: "",
     projects: []
   });
 
@@ -45,15 +49,9 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return; // Handle not logged in (middleware usually catches this)
+      if (!getToken()) return;
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-      const res = await fetch(`${apiUrl}/profile/me`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
+      const res = await apiFetch("/profile/me");
 
       const text = await res.text();
       let data;
@@ -100,14 +98,12 @@ export default function ProfilePage() {
           username: data.user.username || "",
           title: data.user.title || "",
           bio: data.user.bio || "",
+          imgUrl: data.user.imgUrl || "",
           projects: data.user.projects || []
         });
       } else {
         if (res.status === 401) {
-          // Clear token if unauthorized
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          // Not setting user will show the "Please sign in" message
+          clearSession();
         }
         console.error("Profile fetch failed:", data.message);
       }
@@ -122,16 +118,9 @@ export default function ProfilePage() {
     try {
       setErrorMsg("");
       setIsSaving(true);
-      const token = localStorage.getItem("token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-
-      const res = await fetch(`${apiUrl}/profile/me`, {
-        method: 'PUT',
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(editForm)
+      const res = await apiFetch("/profile/me", {
+        method: "PUT",
+        body: JSON.stringify(editForm),
       });
 
       const data = await res.json();
@@ -139,8 +128,7 @@ export default function ProfilePage() {
         setUser(data.user); // Update local state with saved data
         setIsEditModalOpen(false);
         // Also update local storage user if needed for navbar
-        const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
-        localStorage.setItem("user", JSON.stringify({ ...storedUser, username: data.user.username }));
+        updateStoredUser({ username: data.user.username });
       } else {
         setErrorMsg(data.message || "Failed to save profile");
       }
@@ -152,7 +140,49 @@ export default function ProfilePage() {
     }
   };
 
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg('Please select a valid image file.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg('Image must be smaller than 5MB.');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const token = localStorage.getItem('token');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'stacoll/profiles');
+
+      const res = await fetch(`${apiUrl}/upload/image`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setEditForm((prev) => ({ ...prev, imgUrl: data.url }));
+      } else {
+        setErrorMsg(data.message || 'Failed to upload image.');
+      }
+    } catch {
+      setErrorMsg('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
 
   const handleAddProject = () => {
     setEditForm({
@@ -360,6 +390,47 @@ export default function ProfilePage() {
                   <span className="flex-1">{errorMsg}</span>
                 </div>
               )}
+
+              {/* Profile Picture Upload */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-text-main border-b border-border-subtle pb-2">Profile Picture</h3>
+                <div className="flex items-center gap-5">
+                  <div className="relative group">
+                    <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-greenui shadow-md">
+                      <img
+                        src={editForm.imgUrl || user?.imgUrl || "/profiles/default.jpg"}
+                        alt="Profile preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    {isUploadingImage && (
+                      <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                        <Loader2 size={20} className="animate-spin text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <label
+                      htmlFor="profile-image-upload"
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold cursor-pointer border border-border-subtle bg-canvas hover:bg-surface-hover transition-colors ${isUploadingImage ? 'opacity-50 pointer-events-none' : ''}`}
+                    >
+                      {isUploadingImage ? (
+                        <><Loader2 size={16} className="animate-spin" /> Uploading...</>
+                      ) : (
+                        <><span>📷</span> Change Photo</>
+                      )}
+                    </label>
+                    <input
+                      id="profile-image-upload"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handleImageUpload}
+                    />
+                    <p className="text-xs text-text-muted">JPEG, PNG, WebP — max 5MB</p>
+                  </div>
+                </div>
+              </div>
 
               {/* Basic Info Section */}
               <div className="space-y-4">

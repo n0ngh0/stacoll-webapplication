@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import SkillForm from "@/components/admin/skill-form";
 import type { Skill } from "@/types/skill";
+import { apiFetch } from "@/lib/api/client";
+import { fetchSkillById } from "@/lib/api/problems";
 
 export default function EditSkillPage() {
   const params = useParams();
@@ -24,15 +26,8 @@ export default function EditSkillPage() {
 
   const loadSkill = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-      const res = await fetch(`${apiUrl}/skills/${id}`, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setSkill(data.skill);
-      }
+      const loaded = await fetchSkillById(id);
+      if (loaded) setSkill(loaded);
     } catch (e) {
       console.error(e);
     } finally {
@@ -62,28 +57,16 @@ export default function EditSkillPage() {
     );
   }
 
-  const handleUpdate = async (data: any) => {
-    try {
-      const token = localStorage.getItem("token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-      
-      const res = await fetch(`${apiUrl}/admin/skills/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(data),
-      });
+  const handleUpdate = async (data: Record<string, unknown>) => {
+    const res = await apiFetch(`/admin/skills/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
 
-      const result = await res.json();
-      
-      if (!result.success) {
-        throw new Error(result.message || "Failed to update skill");
-      }
-    } catch (error: any) {
-      console.error("Update skill error:", error);
-      throw error;
+    const result = await res.json();
+
+    if (!result.success) {
+      throw new Error(result.message || "Failed to update skill");
     }
   };
 

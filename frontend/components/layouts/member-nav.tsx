@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Compass, Shield } from "lucide-react";
 import { useUser } from "@/lib/use-user";
+import { clearSession } from "@/lib/auth-session";
 
 export default function MemberNav() {
     const router = useRouter();
@@ -27,13 +28,7 @@ export default function MemberNav() {
 
     // ฟังก์ชันออกจากระบบ
     const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-
-        // ลบ Cookie ด้วยเพื่อให้ Middleware ทำงานถูกต้อง
-        document.cookie = "token=; path=/; max-age=0;";
-        document.cookie = "user=; path=/; max-age=0;";
-
+        clearSession();
         router.push("/");
         router.refresh();
     };

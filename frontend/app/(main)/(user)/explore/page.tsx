@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Skill } from "@/types/skill";
+import { apiFetch } from "@/lib/api/client";
 
 const categoryTheme: Record<string, string> = {
   analyst: "#3b82f6",
@@ -23,18 +24,9 @@ export default function UserDashboardPage() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token || token === "undefined" || token === "null") {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      document.cookie = "token=; path=/; max-age=0;";
-      document.cookie = "user=; path=/; max-age=0;";
-      window.location.href = "/";
-    } else {
-      const timer = setTimeout(() => setIsCheckingAuth(false), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [router]);
+    const timer = setTimeout(() => setIsCheckingAuth(false), 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Fetch skills จาก API
   useEffect(() => {
@@ -46,13 +38,7 @@ export default function UserDashboardPage() {
   const fetchSkills = async () => {
     try {
       setIsLoading(true);
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${apiUrl}/skills`, {
-        headers: {
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        }
-      });
+      const res = await apiFetch("/skills");
       const data = await res.json();
 
       if (data.success) {

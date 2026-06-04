@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ArrowLeft, Save, Upload, ImageIcon, Trash } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
 import { CATEGORY_OPTIONS } from "@/types/question";
-import type { Skill } from "@/types/question";
+import type { Skill } from "@/types/skill";
+import { fileToDataUrl, isPersistableIcon } from "@/lib/icon-upload";
 
 interface SkillFormProps {
   mode: "create" | "edit";
@@ -17,9 +18,10 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
   const router = useRouter();
 
   const [title, setTitle] = useState(initialData?.title || "");
-  const [desc, setDesc] = useState(initialData?.description || initialData?.desc || "");
+  const [desc, setDesc] = useState(initialData?.description || "");
   const [icon, setIcon] = useState(initialData?.icon || "");
   const [category, setCategory] = useState<any>(initialData?.category || "programming");
+  const [isUploadingIcon, setIsUploadingIcon] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -38,10 +40,14 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
       return;
     }
 
+    const iconValue = isPersistableIcon(icon)
+      ? icon.trim()
+      : icon.trim() || title.trim().substring(0, 3).toUpperCase();
+
     const payload = {
       title: title.trim(),
       description: desc.trim(),
-      icon: icon.trim() || title.trim().substring(0, 3).toUpperCase(),
+      icon: iconValue,
       category,
     };
 
@@ -57,7 +63,7 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
     }
   };
 
-  const isImageUrl = (url: string) => url.startsWith("http") || url.startsWith("blob:") || url.startsWith("data:");
+  const isImageUrl = (url: string) => isPersistableIcon(url);
 
   return (
     <>
@@ -127,19 +133,50 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
                         <input
                           type="file"
                           accept="image/*"
-                          id="mock-upload"
+                          id="skill-icon-upload"
                           className="hidden"
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const file = e.target.files?.[0];
-                            if (file) setIcon(URL.createObjectURL(file));
+                            if (!file) return;
+
+                            setIsUploadingIcon(true);
+                            try {
+                              const token = localStorage.getItem("token");
+                              const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+
+                              const formData = new FormData();
+                              formData.append("file", file);
+                              formData.append("folder", "stacoll/skills");
+
+                              const res = await fetch(`${apiUrl}/upload/image`, {
+                                method: "POST",
+                                headers: { Authorization: `Bearer ${token}` },
+                                body: formData,
+                              });
+
+                              const data = await res.json();
+                              if (data.success) {
+                                setIcon(data.url);
+                                toast.success("Icon uploaded successfully!");
+                              } else {
+                                toast.error(data.message || "Upload failed");
+                              }
+                            } catch {
+                              toast.error("Failed to upload icon. Please try again.");
+                            } finally {
+                              setIsUploadingIcon(false);
+                            }
                           }}
                         />
                         <label
-                          htmlFor="mock-upload"
-                          className="inline-flex items-center gap-2 px-5 py-2.5 bg-surface border border-border-subtle text-text-main rounded-xl text-sm font-bold hover:bg-surface-hover hover:border-border-strong transition-all cursor-pointer shadow-sm"
+                          htmlFor="skill-icon-upload"
+                          className={`inline-flex items-center gap-2 px-5 py-2.5 bg-surface border border-border-subtle text-text-main rounded-xl text-sm font-bold hover:bg-surface-hover hover:border-border-strong transition-all cursor-pointer shadow-sm ${isUploadingIcon ? 'opacity-50 pointer-events-none' : ''}`}
                         >
-                          <Upload size={16} />
-                          Choose Image
+                          {isUploadingIcon ? (
+                            <><span className="animate-spin">⏳</span> Uploading...</>
+                          ) : (
+                            <><Upload size={16} /> Choose Image</>
+                          )}
                         </label>
                         {isImageUrl(icon) && (
                           <button

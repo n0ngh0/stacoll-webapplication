@@ -1,45 +1,74 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { parseUserCookie } from "@/lib/auth-session";
+
+const MEMBER_PREFIXES = [
+  "/explore",
+  "/profile",
+  "/myskill",
+  "/settings",
+  "/export",
+  "/skill",
+  "/assessment",
+];
+
+const AUTH_PAGES = ["/signin", "/signup", "/verify-otp", "/forgot-password"];
+
+function isValidToken(token: string | undefined): boolean {
+  return Boolean(token && token !== "undefined" && token !== "null");
+}
+
+function isMemberRoute(pathname: string) {
+  return MEMBER_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
 
 export function proxy(request: NextRequest) {
-  const token = request.cookies.get('token')?.value
-  const userCookie = request.cookies.get('user')?.value
-  
-  let user = null
-  if (userCookie) {
-    try {
-      user = JSON.parse(userCookie)
-    } catch (e) {
-      console.error("Failed to parse user cookie")
-    }
+  const token = request.cookies.get("token")?.value;
+  const user = parseUserCookie(request.cookies.get("user")?.value);
+  const { pathname } = request.nextUrl;
+  const hasToken = isValidToken(token);
+
+  if (!hasToken && (isMemberRoute(pathname) || pathname.startsWith("/admin"))) {
+    const signIn = new URL("/signin", request.url);
+    signIn.searchParams.set("from", pathname);
+    return NextResponse.redirect(signIn);
   }
 
-  const { pathname } = request.nextUrl
-
-  // 1. ถ้าพยายามเข้าหน้า /user หรือ /admin แต่ไม่มี token ให้ส่งไปหน้า signin
-  if (!token && (pathname.startsWith('/user') || pathname.startsWith('/admin'))) {
-    return NextResponse.redirect(new URL('/signin', request.url))
+  if (pathname.startsWith("/admin") && user?.role !== "admin") {
+    return NextResponse.redirect(new URL("/explore", request.url));
   }
 
-  // 2. ถ้าเข้าหน้า /admin แต่ Role ไม่ใช่ admin ให้ดีดไปหน้า /user
-  if (pathname.startsWith('/admin') && user?.role !== 'admin') {
-    return NextResponse.redirect(new URL('/user', request.url))
+  if (
+    hasToken &&
+    AUTH_PAGES.some(
+      (page) => pathname === page || pathname.startsWith(`${page}/`)
+    )
+  ) {
+    return NextResponse.redirect(
+      new URL(user?.role === "admin" ? "/admin" : "/explore", request.url)
+    );
   }
 
-  // 3. ถ้ามี token แล้วพยายามเข้าหน้า auth (signin/signup) ให้ส่งไปหน้า /user
-  if (token && token !== "undefined" && token !== "null" && (pathname.startsWith('/signin') || pathname.startsWith('/signup'))) {
-    return NextResponse.redirect(new URL('/explore', request.url))
-  }
-
-  return NextResponse.next()
+  return NextResponse.next();
 }
 
-// กำหนดขอบเขตการทำงานของ Middleware
 export const config = {
   matcher: [
-    '/user/:path*',
-    '/admin/:path*',
-    '/signin',
-    '/signup'
+    "/explore/:path*",
+    "/profile/:path*",
+    "/myskill/:path*",
+    "/settings/:path*",
+    "/export/:path*",
+    "/skill/:path*",
+    "/assessment/:path*",
+    "/admin/:path*",
+    "/signin",
+    "/signup",
+    "/verify-otp",
+    "/verify-otp/:path*",
+    "/forgot-password",
+    "/forgot-password/:path*",
   ],
-}
+};

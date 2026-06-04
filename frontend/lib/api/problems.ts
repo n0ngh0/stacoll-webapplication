@@ -2,10 +2,10 @@ import type {
   Question,
   ChoiceQuestion,
   CodingQuestion,
-  Skill,
   CreateQuestionPayload,
 } from "@/types/question";
-import type { SkillLevel } from "@/types/skill";
+import type { Skill, SkillLevel } from "@/types/skill";
+import { apiFetch, getApiUrl } from "@/lib/api/client";
 
 export type ApiProblem = {
   _id: string;
@@ -21,9 +21,7 @@ export type ApiProblem = {
   testCases?: { input: string; expectedOutput: string; isHidden: boolean }[];
 };
 
-export function getApiUrl() {
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
-}
+export { getApiUrl };
 
 const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
 
@@ -108,40 +106,6 @@ export function mapFormToProblemPayload(
   };
 }
 
-export function mapDbSkillToFormSkill(skill: {
-  _id: string;
-  title: string;
-  icon: string;
-  description: string;
-  category: string;
-  levels: Array<{
-    level: string;
-    description: string;
-    estimatedTime: number;
-    questionCount?: number;
-    actualQuestionCount?: number;
-    mode?: string;
-  }>;
-  createdAt?: string;
-  updatedAt?: string;
-}): Skill {
-  return {
-    id: skill._id,
-    title: skill.title,
-    icon: skill.icon,
-    desc: skill.description,
-    category: skill.category,
-    levels: skill.levels.map((l) => ({
-      id: l.level as Skill["levels"][0]["id"],
-      title: l.level.charAt(0).toUpperCase() + l.level.slice(1),
-      description: l.description,
-      estimatedTime: l.estimatedTime,
-    })),
-    createdAt: skill.createdAt || "",
-    updatedAt: skill.updatedAt || "",
-  };
-}
-
 export function getLevelQuestionCount(
   level: SkillLevel & { actualQuestionCount?: number }
 ): number {
@@ -152,12 +116,9 @@ export function getLevelQuestionCount(
 }
 
 export async function fetchAdminProblem(
-  problemId: string,
-  token: string
+  problemId: string
 ): Promise<ApiProblem | null> {
-  const res = await fetch(`${getApiUrl()}/admin/problems/${problemId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await apiFetch(`/admin/problems/${problemId}`);
   const data = await res.json();
   if (!data.success) return null;
   return data.problem;
@@ -165,12 +126,10 @@ export async function fetchAdminProblem(
 
 export async function fetchAdminProblems(
   skillId: string,
-  level: string,
-  token: string
+  level: string
 ): Promise<ApiProblem[]> {
-  const res = await fetch(
-    `${getApiUrl()}/admin/skills/${skillId}/problems?level=${encodeURIComponent(level)}`,
-    { headers: { Authorization: `Bearer ${token}` } }
+  const res = await apiFetch(
+    `/admin/skills/${skillId}/problems?level=${encodeURIComponent(level)}`
   );
   const data = await res.json();
   if (!data.success) return [];
@@ -179,15 +138,10 @@ export async function fetchAdminProblems(
 
 export async function createAdminProblem(
   skillId: string,
-  payload: Record<string, unknown>,
-  token: string
+  payload: Record<string, unknown>
 ) {
-  const res = await fetch(`${getApiUrl()}/admin/skills/${skillId}/problems`, {
+  const res = await apiFetch(`/admin/skills/${skillId}/problems`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
     body: JSON.stringify(payload),
   });
   return res.json();
@@ -195,24 +149,25 @@ export async function createAdminProblem(
 
 export async function updateAdminProblem(
   problemId: string,
-  payload: Record<string, unknown>,
-  token: string
+  payload: Record<string, unknown>
 ) {
-  const res = await fetch(`${getApiUrl()}/admin/problems/${problemId}`, {
+  const res = await apiFetch(`/admin/problems/${problemId}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
     body: JSON.stringify(payload),
   });
   return res.json();
 }
 
-export async function deleteAdminProblem(problemId: string, token: string) {
-  const res = await fetch(`${getApiUrl()}/admin/problems/${problemId}`, {
+export async function deleteAdminProblem(problemId: string) {
+  const res = await apiFetch(`/admin/problems/${problemId}`, {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
   });
   return res.json();
+}
+
+export async function fetchSkillById(skillId: string): Promise<Skill | null> {
+  const res = await apiFetch(`/skills/${skillId}`);
+  const data = await res.json();
+  if (!data.success || !data.skill) return null;
+  return data.skill as Skill;
 }

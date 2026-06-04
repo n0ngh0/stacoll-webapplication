@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Award, CheckCircle, Clock, Search, ExternalLink, Activity, AlertTriangle, History, Loader2 } from "lucide-react";
 
 import { getLevelColorClass } from "@/types/question";
+import { apiFetch } from "@/lib/api/client";
+import { getToken } from "@/lib/auth-session";
 
 export default function MySkillPage() {
   const [activeTab, setActiveTab] = useState<"verified" | "pending" | "history">("verified");
@@ -17,13 +19,11 @@ export default function MySkillPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const token = localStorage.getItem("token");
-                if (!token) return;
-                
-                const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+                if (!getToken()) return;
+
                 const [profileRes, historyRes] = await Promise.all([
-                    fetch(`${apiUrl}/profile/me`, { headers: { "Authorization": `Bearer ${token}` } }),
-                    fetch(`${apiUrl}/assessment/history`, { headers: { "Authorization": `Bearer ${token}` } })
+                    apiFetch("/profile/me"),
+                    apiFetch("/assessment/history"),
                 ]);
                 
                 // Read text first to handle non-JSON error responses gracefully

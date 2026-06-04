@@ -52,15 +52,11 @@ export async function generateResumePDF(element: HTMLElement, filename: string):
       </html>
     `;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
-    
-    // 3. Send HTML to backend for PDF generation
-    const response = await fetch(`${apiUrl}/export/pdf`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain',
-      },
-      body: htmlString
+    const { apiFetch } = await import("./api/client");
+    const response = await apiFetch("/export/pdf", {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: htmlString,
     });
     
     if (!response.ok) {
