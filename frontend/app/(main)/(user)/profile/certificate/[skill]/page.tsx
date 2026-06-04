@@ -1,12 +1,13 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { ChevronLeft, Award, CheckCircle, Clock, ArrowRight } from "lucide-react";
+import { ChevronLeft, Award, CheckCircle, Clock, ArrowRight, AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { SafeMarkdown } from "@/components/SafeMarkdown";
 import { CATEGORY_THEMES, getLevelColorClass } from "@/types/question";
 import { apiFetch } from "@/lib/api/client";
 import { getToken } from "@/lib/auth-session";
+import { formatCertDate, getWalletEntry } from "@/lib/verified-skills";
 
 type CertificateData = {
   name: string;
@@ -17,6 +18,7 @@ type CertificateData = {
   expires: string;
   shortDescription: string;
   fullDescription: string;
+  statusMessage: string;
 };
 
 export default function CertificatePage() {
@@ -27,6 +29,11 @@ export default function CertificatePage() {
   const [mounted, setMounted] = useState(false);
   const [skillData, setSkillData] = useState<CertificateData | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
+  const [expiredMessage, setExpiredMessage] = useState("");
+  const [isInGrace, setIsInGrace] = useState(false);
+  const [graceLevel, setGraceLevel] = useState<string | null>(null);
+  const [mustRestart, setMustRestart] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -49,37 +56,44 @@ export default function CertificatePage() {
       const profileData = await profileRes.json();
       const skillApiData = await skillRes.json();
 
-      if (profileData.success && profileData.user?.verifiedSkills) {
-        const vSkill = profileData.user.verifiedSkills.find(
-          (s: { skillId: string }) => String(s.skillId) === rawSkillId
-        );
+      if (profileData.success && profileData.user?.skillWallet) {
+        const wallet = getWalletEntry(profileData.user.skillWallet, rawSkillId);
 
-        if (vSkill) {
+        if (wallet) {
+          if (wallet.isFullyExpired) {
+            setIsExpired(true);
+            setExpiredMessage(wallet.statusMessage);
+            setIsInGrace(wallet.isInGracePeriod);
+            setGraceLevel(wallet.graceLevel);
+            setMustRestart(wallet.mustRestartFromBeginner);
+            return;
+          }
+
+          if (!wallet.effectiveLevel || wallet.effectiveScore === null) {
+            setNotFound(true);
+            return;
+          }
+
           const skill = skillApiData.success ? skillApiData.skill : null;
           const matchedLevel = skill?.levels?.find(
             (l: { level: string }) =>
-              l.level.toLowerCase() === String(vSkill.level).toLowerCase()
+              l.level.toLowerCase() === wallet.effectiveLevel!.toLowerCase()
           );
 
           setSkillData({
-            name: vSkill.skillName,
+            name: wallet.skillName,
             category: skill?.category ?? "programming",
-            level: vSkill.level.toUpperCase(),
-            score: vSkill.score,
-            date: new Date(vSkill.verifiedAt).toLocaleDateString("en-US", {
-              month: "short",
-              day: "2-digit",
-              year: "numeric",
-            }),
-            expires: new Date(
-              new Date(vSkill.verifiedAt).getTime() + 2 * 365 * 24 * 60 * 60 * 1000
-            ).toLocaleDateString("en-US", {
-              month: "short",
-              day: "2-digit",
-              year: "numeric",
-            }),
+            level: wallet.effectiveLevel.toUpperCase(),
+            score: wallet.effectiveScore,
+            date: wallet.effectiveVerifiedAt
+              ? formatCertDate(wallet.effectiveVerifiedAt)
+              : "—",
+            expires: wallet.effectiveExpiresAt
+              ? formatCertDate(wallet.effectiveExpiresAt)
+              : "—",
             shortDescription: matchedLevel?.description?.trim() ?? "",
             fullDescription: matchedLevel?.fullDescription?.trim() ?? "",
+            statusMessage: wallet.statusMessage,
           });
           return;
         }
@@ -94,6 +108,45 @@ export default function CertificatePage() {
 
   if (!mounted) {
     return <div className="fixed inset-0 z-[9999] bg-canvas animate-pulse transition-colors duration-300"></div>;
+  }
+
+  if (isExpired) {
+    const renewHref = isInGrace && graceLevel
+      ? `/skill/${rawSkillId}?level=${graceLevel}`
+      : `/skill/${rawSkillId}?level=beginner`;
+
+    return (
+      <div className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center bg-canvas transition-colors duration-300 px-4">
+        <div className={`max-w-md w-full bg-surface border rounded-3xl p-8 text-center shadow-sm ${
+          isInGrace ? "border-accent-orange/30" : "border-red-500/30"
+        }`}>
+          <AlertTriangle className={`mx-auto mb-4 ${isInGrace ? "text-accent-orange" : "text-red-500"}`} size={40} />
+          <h2 className="text-2xl font-bold text-text-main mb-3">Certificate Expired</h2>
+          <p className="text-sm text-text-muted mb-6 leading-relaxed">{expiredMessage}</p>
+          <p className="text-xs text-text-muted mb-6">
+            {isInGrace
+              ? "You have a 10-day grace period to renew your highest level without re-climbing lower levels. After that, you must restart from Beginner."
+              : mustRestart
+                ? "The grace period has ended. Your assessment history is kept, but you must pass Beginner again to rebuild your certificates."
+                : "Renew your assessment to restore verification."}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => router.push(renewHref)}
+              className="px-6 py-3 bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold rounded-xl transition-all cursor-pointer"
+            >
+              {isInGrace ? `Renew ${graceLevel}` : "Restart from Beginner"}
+            </button>
+            <button
+              onClick={() => router.push("/profile")}
+              className="px-6 py-3 text-text-main font-bold rounded-xl border border-border-subtle hover:bg-surface-hover transition-all cursor-pointer"
+            >
+              Back to Profile
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (notFound || !skillData) {
@@ -113,6 +166,7 @@ export default function CertificatePage() {
   const themeColor = CATEGORY_THEMES[skillData.category] || "#19c3af";
   const competenciesText =
     skillData.fullDescription || skillData.shortDescription || "*No detailed criteria available.*";
+  const isFallback = skillData.statusMessage.toLowerCase().includes("expired — showing");
 
   return (
     <div className="flex-1 min-h-screen bg-canvas flex flex-col items-center py-10 px-4 transition-colors duration-300">
@@ -130,6 +184,13 @@ export default function CertificatePage() {
             Back to Profile
           </button>
         </div>
+
+        {isFallback && (
+          <div className="mx-8 mt-6 px-4 py-3 rounded-xl bg-accent-orange/10 border border-accent-orange/30 text-sm text-accent-orange font-medium flex items-start gap-2">
+            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+            <span>{skillData.statusMessage}</span>
+          </div>
+        )}
 
         <div 
           className="py-10 flex flex-col items-center justify-center relative overflow-hidden transition-colors duration-300"
@@ -168,6 +229,9 @@ export default function CertificatePage() {
               <p className="text-sm text-text-muted mt-4 leading-relaxed transition-colors">
                 You have successfully demonstrated proficiency in <strong>{skillData.name}</strong> at the <strong>{skillData.level}</strong> level.
               </p>
+              {!isFallback && (
+                <p className="text-xs text-text-muted mt-2">{skillData.statusMessage}</p>
+              )}
             </div>
 
             <div className="z-10 bg-surface border border-border-subtle rounded-2xl p-6 min-w-[240px] space-y-5 transition-colors duration-300">

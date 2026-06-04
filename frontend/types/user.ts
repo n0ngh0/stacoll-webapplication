@@ -18,6 +18,36 @@ export interface User {
     level: string;
     score: number;
     verifiedAt: string;
+    expiresAt?: string;
+    isExpired?: boolean;
+  }>;
+  skillWallet?: Array<{
+    skillId: string;
+    skillName: string;
+    effectiveLevel: string | null;
+    effectiveScore: number | null;
+    effectiveVerifiedAt: string | null;
+    effectiveExpiresAt: string | null;
+    isFullyExpired: boolean;
+    isInGracePeriod: boolean;
+    graceLevel: string | null;
+    graceExpiresAt: string | null;
+    graceDaysRemaining: number;
+    mustRestartFromBeginner: boolean;
+    renewTargetLevel: string | null;
+    highestAchievedLevel: string | null;
+    statusMessage: string;
+    levelStatus: Record<
+      string,
+      {
+        hasCertificate: boolean;
+        isValid: boolean;
+        isExpired: boolean;
+        expiresAt: string | null;
+        verifiedAt: string | null;
+        score: number | null;
+      }
+    >;
   }>;
   // วันที่และเวลาจะถูกแปลงเป็น ISO String เมื่อส่งผ่าน JSON
   createdAt: string;

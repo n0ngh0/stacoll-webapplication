@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { User } from "@/types/user";
 import { apiFetch } from "@/lib/api/client";
 import { clearSession, getToken, updateStoredUser } from "@/lib/auth-session";
+import { formatCertDate } from "@/lib/verified-skills";
 
 const MAX_PROJECTS = 4;
 
@@ -83,35 +84,6 @@ export default function ProfilePage() {
 
       if (data.success) {
         const user = data.user;
-        
-        // Filter to keep only the highest level of each skill
-        const getLevelWeight = (level: string) => {
-          if (!level) return 0;
-          switch (level.toUpperCase()) {
-            case 'BEGINNER': return 1;
-            case 'INTERMEDIATE': return 2;
-            case 'ADVANCED': return 3;
-            default: return 0;
-          }
-        };
-        
-        if (user.verifiedSkills) {
-          const skillMap = new Map();
-          user.verifiedSkills.forEach((skill: any) => {
-            const name = skill.skillName || skill.name;
-            if (!skillMap.has(name)) {
-              skillMap.set(name, skill);
-            } else {
-              const currentSkill = skillMap.get(name);
-              if (getLevelWeight(skill.level) > getLevelWeight(currentSkill.level)) {
-                skillMap.set(name, skill);
-              } else if (getLevelWeight(skill.level) === getLevelWeight(currentSkill.level) && skill.score > currentSkill.score) {
-                skillMap.set(name, skill);
-              }
-            }
-          });
-          user.verifiedSkills = Array.from(skillMap.values());
-        }
 
         setUser(user);
         setEditForm({
@@ -385,7 +357,10 @@ export default function ProfilePage() {
         
         {(() => {
           // Calculate match for each job based on user's verified skills
-          const userSkillNames = user.verifiedSkills?.map((s: any) => s.skillName.toLowerCase()) || [];
+          const userSkillNames =
+            user.skillWallet
+              ?.filter((s) => !s.isFullyExpired)
+              .map((s) => s.skillName.toLowerCase()) || [];
           
           const rankedJobs = JOB_ROLES.map(job => {
             const matchedSkills = job.skills.filter(s => userSkillNames.includes(s.toLowerCase()));
@@ -482,50 +457,103 @@ export default function ProfilePage() {
         <section>
           <h2 className="text-2xl font-bold text-text-main mb-6 transition-colors">Verified Skills</h2>
           <div className="space-y-4">
-            {!user.verifiedSkills || user.verifiedSkills.length === 0 ? (
+            {!user.skillWallet || user.skillWallet.length === 0 ? (
               <div className="bg-surface border border-border-subtle rounded-2xl p-8 text-center transition-colors duration-300">
                 <p className="text-text-muted font-medium">
                   No verified skills yet. Start an assessment to earn your first badge!
                 </p>
               </div>
             ) : (
-              user.verifiedSkills.map((skill) => (
-                <Link
-                  key={String(skill.skillId)}
-                  href={`/profile/certificate/${skill.skillId}`}
-                  className="bg-surface border border-border-subtle rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:border-brand-secondary/40 cursor-pointer group"
-                >
-                  
-                  {/* แถบสีด้านซ้าย */}
-                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-greenui group-hover:bg-brand-secondary transition-colors"></div>
-                  
-                  <div className="bg-canvas p-3 rounded-xl transition-colors group-hover:bg-brand-secondary/10">
-                    <Award className="text-greenui group-hover:text-brand-secondary transition-colors" size={24} />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-bold text-text-main transition-colors group-hover:text-brand-secondary">{skill.skillName}</h3>
-                        <p className={`text-[10px] font-bold mt-0.5 ${getLevelColorClass(skill.level.toUpperCase())} transition-colors`}>
-                          {skill.level.toUpperCase()}
-                        </p>
+              <>
+                {user.skillWallet
+                  .filter((skill) => !skill.isFullyExpired)
+                  .map((skill) => (
+                    <Link
+                      key={String(skill.skillId)}
+                      href={`/profile/certificate/${skill.skillId}`}
+                      className="bg-surface border border-border-subtle rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:border-brand-secondary/40 cursor-pointer group"
+                    >
+                      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-greenui group-hover:bg-brand-secondary transition-colors"></div>
+
+                      <div className="bg-canvas p-3 rounded-xl transition-colors group-hover:bg-brand-secondary/10">
+                        <Award className="text-greenui group-hover:text-brand-secondary transition-colors" size={24} />
                       </div>
-                      <div className="text-right">
-                        <span className="text-2xl font-bold text-text-main transition-colors">{skill.score}</span>
-                        <span className="text-xs text-text-muted ml-1 transition-colors">/100</span>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-text-main transition-colors group-hover:text-brand-secondary">{skill.skillName}</h3>
+                            <p className={`text-[10px] font-bold mt-0.5 ${getLevelColorClass((skill.effectiveLevel || "").toUpperCase())} transition-colors`}>
+                              {(skill.effectiveLevel || "").toUpperCase()}
+                            </p>
+                            <p className="text-[11px] text-text-muted mt-2 leading-relaxed">{skill.statusMessage}</p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="text-2xl font-bold text-text-main transition-colors">{skill.effectiveScore}</span>
+                            <span className="text-xs text-text-muted ml-1 transition-colors">/100</span>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center mt-3 text-[10px] text-text-muted transition-colors">
+                          <span className="flex items-center gap-1">
+                            <CheckCircle size={12} className="text-greenui" /> Active certificate
+                          </span>
+                          {skill.effectiveExpiresAt && (
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} />
+                              Valid until {formatCertDate(skill.effectiveExpiresAt)}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex justify-between items-center mt-3 text-[10px] text-text-muted transition-colors">
-                      <span className="flex items-center gap-1">
-                        <CheckCircle size={12} className="text-text-muted opacity-70" /> Verified
-                      </span>
-                      <span>{formatDate(skill.verifiedAt)}</span>
+                    </Link>
+                  ))}
+
+                {user.skillWallet.filter((skill) => skill.isFullyExpired).length > 0 && (
+                  <div className="pt-2">
+                    <h3 className="text-sm font-bold text-text-muted uppercase tracking-wider mb-3">Expired Certificates</h3>
+                    <div className="space-y-3">
+                      {user.skillWallet
+                        .filter((skill) => skill.isFullyExpired)
+                        .map((skill) => (
+                          <Link
+                            key={`expired-${skill.skillId}`}
+                            href={`/skill/${skill.skillId}${skill.graceLevel ? `?level=${skill.graceLevel}` : skill.mustRestartFromBeginner ? "?level=beginner" : ""}`}
+                            className={`bg-surface border rounded-2xl p-5 shadow-sm flex items-center gap-4 relative overflow-hidden transition-all duration-300 cursor-pointer group ${
+                              skill.isInGracePeriod
+                                ? "border-accent-orange/40 hover:border-accent-orange/70"
+                                : "border-red-500/30 hover:border-red-500/50"
+                            }`}
+                          >
+                            <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${
+                              skill.isInGracePeriod ? "bg-accent-orange/70" : "bg-red-500/70"
+                            }`}></div>
+
+                            <div className={`p-3 rounded-xl ${
+                              skill.isInGracePeriod ? "bg-accent-orange/10" : "bg-red-500/10"
+                            }`}>
+                              <Clock className={skill.isInGracePeriod ? "text-accent-orange" : "text-red-500"} size={24} />
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-bold text-text-main">{skill.skillName}</h3>
+                              <p className={`text-[11px] font-semibold mt-1 ${
+                                skill.isInGracePeriod ? "text-accent-orange" : "text-red-500"
+                              }`}>
+                                {skill.statusMessage}
+                              </p>
+                              <p className="text-[11px] text-text-muted mt-2">
+                                {skill.isInGracePeriod
+                                  ? `Tap to renew ${skill.graceLevel} without re-climbing lower levels`
+                                  : "Tap to restart from Beginner"}
+                              </p>
+                            </div>
+                          </Link>
+                        ))}
                     </div>
                   </div>
-                </Link>
-              ))
+                )}
+              </>
             )}
           </div>
         </section>

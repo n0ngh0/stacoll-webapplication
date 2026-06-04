@@ -1,6 +1,30 @@
 import Skill from "../models/Skill";
 import Problem from "../models/Problem";
 
+const DEFAULT_SKILL_LEVELS = [
+  {
+    level: "beginner" as const,
+    description: "Basic understanding of core concepts",
+    fullDescription: "",
+    questionCount: 15,
+    estimatedTime: 30,
+  },
+  {
+    level: "intermediate" as const,
+    description: "Can apply concepts in practice",
+    fullDescription: "",
+    questionCount: 20,
+    estimatedTime: 45,
+  },
+  {
+    level: "advanced" as const,
+    description: "Deep mastery of this skill",
+    fullDescription: "",
+    questionCount: 15,
+    estimatedTime: 60,
+  },
+];
+
 export const skillController = {
   // GET /api/skills — ดึง skill ทั้งหมด (public)
   async getAllSkills(query?: { category?: string; search?: string }) {
@@ -23,10 +47,25 @@ export const skillController = {
         .lean();
 
       const enrichedSkills = await Promise.all(skills.map(async (skill: any) => {
-        const problemCount = await Problem.countDocuments({ skillId: skill._id, isActive: true });
+        const enrichedLevels = await Promise.all((skill.levels || []).map(async (levelObj: any) => {
+          const count = await Problem.countDocuments({
+            skillId: skill._id,
+            level: levelObj.level,
+            isActive: true,
+          });
+          return {
+            ...levelObj,
+            actualQuestionCount: count,
+          };
+        }));
+        const problemCount = enrichedLevels.reduce(
+          (sum: number, l: { actualQuestionCount: number }) => sum + l.actualQuestionCount,
+          0
+        );
         return {
           ...skill,
-          actualQuestionCount: problemCount
+          levels: enrichedLevels,
+          actualQuestionCount: problemCount,
         };
       }));
 
@@ -103,7 +142,10 @@ export const skillController = {
         };
       }
 
-      const skill = await Skill.create(body);
+      const skill = await Skill.create({
+        ...body,
+        levels: body.levels?.length ? body.levels : DEFAULT_SKILL_LEVELS,
+      });
 
       return {
         status: 201,

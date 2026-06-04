@@ -6,12 +6,14 @@ import { Award, CheckCircle, Clock, Search, ExternalLink, Activity, AlertTriangl
 import { getLevelColorClass } from "@/types/question";
 import { apiFetch } from "@/lib/api/client";
 import { getToken } from "@/lib/auth-session";
+import { formatCertDate } from "@/lib/verified-skills";
 
 export default function MySkillPage() {
   const [activeTab, setActiveTab] = useState<"verified" | "pending" | "history">("verified");
   const [searchQuery, setSearchQuery] = useState("");
 
     const [skills, setSkills] = useState<any[]>([]);
+    const [expiredSkills, setExpiredSkills] = useState<any[]>([]);
     const [pendingRetakes, setPendingRetakes] = useState<any[]>([]);
     const [history, setHistory] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -37,15 +39,32 @@ export default function MySkillPage() {
                 try { historyData = JSON.parse(historyText); } catch (e) { console.error("History parse error:", historyText); }
 
                 if (profileData.success) {
-                    const verified = profileData.user.verifiedSkills || [];
-                    setSkills(verified.map((vs: any) => ({
-                        id: vs.skillId,
-                        name: vs.skillName,
-                        level: vs.level,
-                        score: vs.score,
-                        date: new Date(vs.verifiedAt).toLocaleDateString(),
-                        expires: new Date(new Date(vs.verifiedAt).getTime() + 2 * 365 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-                    })));
+                    const wallet = profileData.user.skillWallet || [];
+                    setSkills(
+                      wallet
+                        .filter((w: any) => !w.isFullyExpired)
+                        .map((w: any) => ({
+                          id: w.skillId,
+                          name: w.skillName,
+                          level: (w.effectiveLevel || "").toUpperCase(),
+                          score: w.effectiveScore,
+                          date: w.effectiveVerifiedAt ? formatCertDate(w.effectiveVerifiedAt) : "—",
+                          expires: w.effectiveExpiresAt ? formatCertDate(w.effectiveExpiresAt) : "—",
+                          statusMessage: w.statusMessage,
+                        }))
+                    );
+                    setExpiredSkills(
+                      wallet
+                        .filter((w: any) => w.isFullyExpired)
+                        .map((w: any) => ({
+                          id: w.skillId,
+                          name: w.skillName,
+                          statusMessage: w.statusMessage,
+                          isInGracePeriod: w.isInGracePeriod,
+                          graceLevel: w.graceLevel,
+                          mustRestartFromBeginner: w.mustRestartFromBeginner,
+                        }))
+                    );
                 }
 
                 if (historyData.success) {
@@ -133,7 +152,7 @@ export default function MySkillPage() {
         {/* Filters / Tabs (Match Explore page filters) */}
         <div className="flex justify-center gap-3 md:gap-4 mb-10 flex-wrap">
           {[
-            { id: "verified", label: "Verified Skills", count: skills.length },
+            { id: "verified", label: "Active Certificates", count: skills.length },
             { id: "pending", label: "Pending Retakes", count: pendingRetakes.length },
             { id: "history", label: "Assessment History", count: null }
           ].map((tab) => (
@@ -161,7 +180,8 @@ export default function MySkillPage() {
       <div className="space-y-6">
         
         {activeTab === "verified" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in slide-in-from-bottom-4 fade-in duration-500">
+          <div className="space-y-8 animate-in slide-in-from-bottom-4 fade-in duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? <div className="col-span-full py-10 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-greenui"/></div> : skills.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map((skill, idx) => (
               <Link
                 href={`/profile/certificate/${skill.id}`}
@@ -178,11 +198,12 @@ export default function MySkillPage() {
                   </div>
                 </div>
 
-                <div className="mb-6">
+                <div className="mb-4">
                   <h3 className="font-extrabold text-text-main text-xl mb-2">{skill.name}</h3>
                   <p className={`text-[10px] font-bold mt-0.5 uppercase ${getLevelColorClass(skill.level)} transition-colors`}>
                     {skill.level}
                   </p>
+                  <p className="text-[11px] text-text-muted mt-2 leading-relaxed">{skill.statusMessage}</p>
                 </div>
 
                 <div className="mt-auto pt-4 border-t-2 border-dashed border-border-subtle flex justify-between items-center text-xs font-semibold text-text-muted">
@@ -190,7 +211,7 @@ export default function MySkillPage() {
                     <CheckCircle size={14} className="text-greenui" /> {skill.date}
                   </span>
                   <span className="text-[10px] bg-canvas border border-border-subtle px-2 py-1 rounded-md">
-                    Expires {skill.expires}
+                    Valid until {skill.expires}
                   </span>
                 </div>
               </Link>
@@ -198,8 +219,44 @@ export default function MySkillPage() {
             {!isLoading && skills.length === 0 && (
               <div className="col-span-full py-20 text-center border-2 border-dashed border-border-subtle rounded-3xl bg-surface">
                 <Award size={48} className="mx-auto text-border-subtle mb-4" />
-                <h3 className="text-xl font-bold text-text-main mb-2">No verified skills found.</h3>
-                <p className="text-text-muted">Start taking assessments to build your wallet!</p>
+                <h3 className="text-xl font-bold text-text-main mb-2">No active certificates.</h3>
+                <p className="text-text-muted">Pass an assessment to earn your first certificate.</p>
+              </div>
+            )}
+            </div>
+
+            {!isLoading && expiredSkills.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 && (
+              <div>
+                <h3 className="text-lg font-bold text-text-main mb-4 flex items-center gap-2">
+                  <AlertTriangle size={20} className="text-accent-orange" />
+                  Expired Certificates
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {expiredSkills.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase())).map((skill, idx) => (
+                    <Link
+                      href={`/skill/${skill.id}${skill.isInGracePeriod && skill.graceLevel ? `?level=${skill.graceLevel}` : "?level=beginner"}`}
+                      key={`expired-${idx}`}
+                      className={`bg-surface border-2 rounded-2xl p-6 shadow-sm flex flex-col transition-all duration-300 cursor-pointer ${
+                        skill.isInGracePeriod ? "border-accent-orange/30 hover:border-accent-orange/60" : "border-red-500/30 hover:border-red-500/50"
+                      }`}
+                    >
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+                        skill.isInGracePeriod ? "bg-accent-orange/10 text-accent-orange" : "bg-red-500/10 text-red-500"
+                      }`}>
+                        <Clock size={24} />
+                      </div>
+                      <h3 className="font-extrabold text-text-main text-xl mb-2">{skill.name}</h3>
+                      <p className={`text-[11px] font-semibold leading-relaxed ${
+                        skill.isInGracePeriod ? "text-accent-orange" : "text-red-500"
+                      }`}>{skill.statusMessage}</p>
+                      <p className="text-[11px] text-text-muted mt-3">
+                        {skill.isInGracePeriod
+                          ? `Renew ${skill.graceLevel} without re-climbing`
+                          : "Restart from Beginner"}
+                      </p>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </div>

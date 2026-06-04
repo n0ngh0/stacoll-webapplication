@@ -1,5 +1,9 @@
 import User from "../models/User";
 import { validatePassword } from "../utils/validation";
+import {
+  buildSkillWalletSummaries,
+  enrichVerifiedSkillEntry,
+} from "../utils/verified-skills";
 
 const MAX_PROFILE_PROJECTS = 4;
 
@@ -12,13 +16,23 @@ export const profileController = {
         return { status: 404, body: { success: false, message: "User not found" } };
       }
 
+      const now = new Date();
+      const enrichedSkills = (user.verifiedSkills ?? []).map((entry) =>
+        enrichVerifiedSkillEntry(entry as any, now)
+      );
+      const skillWallet = buildSkillWalletSummaries(user.verifiedSkills as any, now);
+
       return {
         status: 200,
         body: {
           success: true,
           message: "Profile fetched successfully",
-          user
-        }
+          user: {
+            ...user,
+            verifiedSkills: enrichedSkills,
+            skillWallet,
+          },
+        },
       };
     } catch (err: any) {
       return { status: 500, body: { success: false, message: "Error fetching profile", error: err.message } };
@@ -32,7 +46,7 @@ export const profileController = {
       }
 
       // Disallow updating sensitive fields
-      const { email, password, role, isVerified, otp, otpExpiry, createdAt, updatedAt, ...updateData } = body;
+      const { email, password, role, isVerified, otp, otpExpiry, createdAt, updatedAt, verifiedSkills, skillWallet, ...updateData } = body;
 
       if (Array.isArray(updateData.projects) && updateData.projects.length > MAX_PROFILE_PROJECTS) {
         return {

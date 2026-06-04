@@ -11,7 +11,7 @@ import { fileToDataUrl, isPersistableIcon } from "@/lib/icon-upload";
 interface SkillFormProps {
   mode: "create" | "edit";
   initialData?: any;
-  onSubmit: (data: any) => Promise<void>;
+  onSubmit: (data: any) => Promise<{ _id?: string } | void>;
 }
 
 export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProps) {
@@ -49,14 +49,23 @@ export default function SkillForm({ mode, initialData, onSubmit }: SkillFormProp
       description: desc.trim(),
       icon: iconValue,
       category,
+      levels: [
+        { level: "beginner", description: "Basic understanding of core concepts", fullDescription: "", questionCount: 15, estimatedTime: 30 },
+        { level: "intermediate", description: "Can apply concepts in practice", fullDescription: "", questionCount: 20, estimatedTime: 45 },
+        { level: "advanced", description: "Deep mastery of this skill", fullDescription: "", questionCount: 15, estimatedTime: 60 },
+      ],
     };
 
     try {
-      await onSubmit(payload);
+      const created = await onSubmit(payload);
       toast.success(mode === "create" ? "Skill created successfully!" : "Skill updated successfully!");
 
       setTimeout(() => {
-        router.push(mode === "create" ? "/admin" : `/admin/skills/${initialData?._id}`);
+        if (mode === "create" && created?._id) {
+          router.push(`/admin/skills/${created._id}`);
+        } else {
+          router.push(mode === "create" ? "/admin" : `/admin/skills/${initialData?._id}`);
+        }
       }, 1000);
     } catch (error: any) {
       toast.error(error.message || "Something went wrong.");

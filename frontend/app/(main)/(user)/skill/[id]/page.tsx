@@ -1,10 +1,10 @@
 "use client";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, CircleQuestionMark, Clock, Monitor, Loader2, ListChecks, Lock, Award } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Skill, SkillLevel } from "@/types/skill";
 import { CompareLevelsModal } from "@/components/skill/compare-levels-modal";
-import { getLevelQuestionCount } from "@/lib/api/problems";
+import { getAvailableUserLevels, getLevelQuestionCount } from "@/lib/api/problems";
 import { apiFetch } from "@/lib/api/client";
 
 export default function SkillDetailPage() {
@@ -20,11 +20,26 @@ export default function SkillDetailPage() {
     const [showCompareModal, setShowCompareModal] = useState(false);
     const [userProgress, setUserProgress] = useState<{
         passedLevels: Record<string, boolean>;
+        validLevels: Record<string, boolean>;
+        expiredLevels: Record<string, boolean>;
         cooldownLevels: Record<string, { active: boolean; daysRemaining: number }>;
+        effectiveLevel: string | null;
+        renewalState: {
+            graceLevel: string | null;
+            graceDaysRemaining: number;
+            isInGracePeriod: boolean;
+            mustRestartFromBeginner: boolean;
+            renewTargetLevel: string | null;
+        } | null;
     } | null>(null);
 
     const searchParams = useSearchParams();
     const urlLevel = searchParams.get("level");
+
+    const availableLevels = useMemo(
+        () => (skill ? getAvailableUserLevels(skill.levels) : []),
+        [skill]
+    );
 
     useEffect(() => {
         const timer = setTimeout(() => setIsCheckingAuth(false), 0);
@@ -49,12 +64,16 @@ export default function SkillDetailPage() {
             const skillData = await skillRes.json();
             const progressData = await progressRes.json();
 
-            let passed = {};
+            let passed: Record<string, boolean> = {};
             if (progressData.success) {
-                passed = progressData.passedLevels;
+                passed = progressData.validLevels ?? progressData.passedLevels ?? {};
                 setUserProgress({
-                    passedLevels: progressData.passedLevels,
+                    passedLevels: progressData.passedLevels ?? passed,
+                    validLevels: progressData.validLevels ?? passed,
+                    expiredLevels: progressData.expiredLevels ?? {},
                     cooldownLevels: progressData.cooldowns,
+                    effectiveLevel: progressData.effectiveLevel ?? null,
+                    renewalState: progressData.renewalState ?? null,
                 });
             } else {
                 console.error("Failed to fetch progress:", progressData.message);
@@ -62,16 +81,22 @@ export default function SkillDetailPage() {
 
             if (skillData.success) {
                 setSkill(skillData.skill);
-                if (skillData.skill.levels && skillData.skill.levels.length > 0) {
-                    if (urlLevel && skillData.skill.levels.some((l: any) => l.level === urlLevel)) {
+                const available = getAvailableUserLevels(skillData.skill.levels || []);
+                if (available.length > 0) {
+                    const levelIds = new Set(available.map((l) => l.level));
+                    if (progressData.success && progressData.renewalState?.isInGracePeriod && progressData.renewalState.graceLevel && levelIds.has(progressData.renewalState.graceLevel)) {
+                        setSelectedLevel(progressData.renewalState.graceLevel);
+                    } else if (progressData.success && progressData.renewalState?.mustRestartFromBeginner && levelIds.has("beginner")) {
+                        setSelectedLevel("beginner");
+                    } else if (urlLevel && levelIds.has(urlLevel)) {
                         setSelectedLevel(urlLevel);
                     } else {
-                        // Auto-select the first unpassed level
-                        const firstUnpassed = skillData.skill.levels.find((l: any) => !passed[l.level as keyof typeof passed]);
+                        const progress = progressData.validLevels ?? progressData.passedLevels ?? passed;
+                        const firstUnpassed = available.find((l) => !progress[l.level]);
                         if (firstUnpassed) {
                             setSelectedLevel(firstUnpassed.level);
                         } else {
-                            setSelectedLevel(skillData.skill.levels[skillData.skill.levels.length - 1].level);
+                            setSelectedLevel(available[available.length - 1].level);
                         }
                     }
                 }
@@ -140,9 +165,26 @@ export default function SkillDetailPage() {
     }
 
     // Get current level info for stats
-    const currentLevel = skill.levels.find((l) => l.level === selectedLevel) || skill.levels[0];
-    const questionCountForLevel = getLevelQuestionCount(currentLevel as SkillLevel);
+    const currentLevel = availableLevels.find((l) => l.level === selectedLevel) || availableLevels[0];
+    const questionCountForLevel = currentLevel ? getLevelQuestionCount(currentLevel as SkillLevel) : 0;
     const themeColor = categoryTheme[skill.category] || "#19c3af";
+
+    if (availableLevels.length === 0) {
+        return (
+            <div className="flex-1 min-h-screen bg-canvas flex flex-col items-center justify-center transition-colors duration-300 px-4">
+                <div className="bg-surface border border-border-subtle rounded-2xl p-10 text-center max-w-md">
+                    <p className="text-text-main font-bold text-lg mb-2">{skill.title}</p>
+                    <p className="text-text-muted font-medium mb-4">No assessments are available for this skill yet.</p>
+                    <button
+                        onClick={() => router.push("/explore")}
+                        className="text-greenui font-bold hover:underline cursor-pointer"
+                    >
+                        Back to Explore
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1 min-h-screen bg-canvas flex flex-col items-center py-10 px-4 transition-colors duration-300">
@@ -205,11 +247,20 @@ export default function SkillDetailPage() {
                             </button>
                         </div>
                         <div className="flex flex-col md:flex-row items-center gap-4">
-                            {skill.levels.map((level, index) => {
+                            {availableLevels.map((level, index) => {
                                 const style = levelStyles[level.level] || levelStyles.beginner;
                                 const isActive = selectedLevel === level.level;
-                                const isLocked = index > 0 && !(userProgress?.passedLevels[skill.levels[index - 1].level]);
-                                const isPassed = userProgress?.passedLevels[level.level] || false;
+                                const renewal = userProgress?.renewalState;
+                                let isLocked = false;
+                                if (renewal?.isInGracePeriod && renewal.graceLevel) {
+                                    isLocked = level.level !== renewal.graceLevel;
+                                } else if (renewal?.mustRestartFromBeginner) {
+                                    isLocked = level.level !== "beginner";
+                                } else {
+                                    isLocked = index > 0 && !(userProgress?.validLevels[availableLevels[index - 1].level]);
+                                }
+                                const isValid = userProgress?.validLevels[level.level] || false;
+                                const isExpired = !isValid && (userProgress?.expiredLevels[level.level] || false);
 
                                 return (
                                     <div key={level.level} className="flex-1 flex items-center w-full">
@@ -224,7 +275,12 @@ export default function SkillDetailPage() {
                                                 }`}
                                         >
                                             {isLocked && <Lock size={28} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-text-muted opacity-60 z-10" />}
-                                            {isPassed && <div className="absolute top-3 right-3 text-greenui"><ListChecks size={16} /></div>}
+                                            {isValid && <div className="absolute top-3 right-3 text-greenui"><ListChecks size={16} /></div>}
+                                            {isExpired && !isLocked && (
+                                                <div className="absolute top-3 right-3 text-accent-orange" title="Certificate expired">
+                                                    <Clock size={16} />
+                                                </div>
+                                            )}
                                             
                                             <div className={`flex items-center gap-3 ${isLocked ? 'opacity-40' : ''}`}>
                                                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors duration-300 ${isActive
@@ -242,7 +298,7 @@ export default function SkillDetailPage() {
                                             </p>
                                         </div>
 
-                                        {index < skill.levels.length - 1 && (
+                                        {index < availableLevels.length - 1 && (
                                             <div className="hidden md:block mx-2 text-text-muted transition-colors duration-300">
                                                 <ChevronLeft size={20} className="rotate-180 opacity-50" />
                                             </div>
@@ -256,17 +312,29 @@ export default function SkillDetailPage() {
                     {/* Action Button */}
                     <div className="flex justify-center pt-4 mb-1">
                         {(() => {
-                            const selectedIndex = skill.levels.findIndex((l: any) => l.level === selectedLevel);
-                            const isLocked = selectedIndex > 0 && !(userProgress?.passedLevels[skill.levels[selectedIndex - 1].level]);
-                            const isPassed = userProgress?.passedLevels[selectedLevel] || false;
+                            const selectedIndex = availableLevels.findIndex((l: any) => l.level === selectedLevel);
+                            const renewal = userProgress?.renewalState;
+                            let isLocked = false;
+                            if (renewal?.isInGracePeriod && renewal.graceLevel) {
+                                isLocked = selectedLevel !== renewal.graceLevel;
+                            } else if (renewal?.mustRestartFromBeginner) {
+                                isLocked = selectedLevel !== "beginner";
+                            } else {
+                                isLocked = selectedIndex > 0 && !(userProgress?.validLevels[availableLevels[selectedIndex - 1].level]);
+                            }
+                            const isValid = userProgress?.validLevels[selectedLevel] || false;
+                            const isExpired = !isValid && (userProgress?.expiredLevels[selectedLevel] || false);
+                            const isGraceRenew =
+                                renewal?.isInGracePeriod &&
+                                renewal.graceLevel === selectedLevel;
                             const cooldown = userProgress?.cooldownLevels[selectedLevel];
                             const cooldownDays = cooldown?.active ? cooldown.daysRemaining : 0;
                             const hasNoQuestions = questionCountForLevel === 0;
 
-                            if (isPassed) {
+                            if (isValid) {
                                 return (
                                     <button 
-                                        onClick={() => router.push(`/profile/certificate/${skillId.toLowerCase()}`)} 
+                                        onClick={() => router.push(`/profile/certificate/${skillId}`)} 
                                         className="cursor-pointer bg-greenbutton hover:bg-greenbutton/90 text-white dark:text-black font-bold py-4 w-[320px] max-w-full flex justify-center items-center rounded-full text-xl shadow-lg shadow-greenbutton/20 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 gap-2"
                                     >
                                         View Certificate <Award size={20} />
@@ -274,11 +342,68 @@ export default function SkillDetailPage() {
                                 );
                             }
 
+                            if (isGraceRenew) {
+                                return (
+                                    <div className="flex flex-col items-center w-[320px] max-w-full relative">
+                                        <button
+                                            onClick={handleStartAssessment}
+                                            className="cursor-pointer bg-accent-orange hover:bg-accent-orange/90 text-white font-bold py-4 w-full flex justify-center items-center rounded-full text-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 gap-2"
+                                        >
+                                            <Clock size={20} /> Renew ({renewal!.graceDaysRemaining}d left)
+                                        </button>
+                                        <p className="text-xs text-text-muted mt-2 font-medium text-center absolute top-full left-0 w-full">
+                                            Grace period: renew {selectedLevel} now — no need to re-climb lower levels.
+                                        </p>
+                                    </div>
+                                );
+                            }
+
+                            if (renewal?.mustRestartFromBeginner && selectedLevel === "beginner") {
+                                return (
+                                    <div className="flex flex-col items-center w-[320px] max-w-full relative">
+                                        <button
+                                            onClick={handleStartAssessment}
+                                            className="cursor-pointer bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold py-4 w-full flex justify-center items-center rounded-full text-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 gap-2"
+                                        >
+                                            Restart from Beginner
+                                        </button>
+                                        <p className="text-xs text-text-muted mt-2 font-medium text-center absolute top-full left-0 w-full">
+                                            Grace period ended. Pass Beginner again to rebuild your skill chain.
+                                        </p>
+                                    </div>
+                                );
+                            }
+
+                            if (isExpired) {
+                                return (
+                                    <div className="flex flex-col items-center w-[320px] max-w-full relative">
+                                        <button
+                                            onClick={handleStartAssessment}
+                                            className="cursor-pointer bg-accent-orange hover:bg-accent-orange/90 text-white font-bold py-4 w-full flex justify-center items-center rounded-full text-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 gap-2"
+                                        >
+                                            <Clock size={20} /> Renew Assessment
+                                        </button>
+                                        <p className="text-xs text-text-muted mt-2 font-medium text-center absolute top-full left-0 w-full">
+                                            Your {selectedLevel} certificate has expired. Retake to renew for 2 years.
+                                        </p>
+                                    </div>
+                                );
+                            }
+
                             if (isLocked) {
                                 return (
-                                    <button disabled className="bg-canvas border border-border-subtle text-text-muted font-bold py-4 w-[320px] max-w-full flex justify-center items-center rounded-full text-xl shadow-sm cursor-not-allowed gap-2 transition-colors">
-                                        <Lock size={20} /> Locked
-                                    </button>
+                                    <div className="flex flex-col items-center w-[320px] max-w-full relative">
+                                        <button disabled className="bg-canvas border border-border-subtle text-text-muted font-bold py-4 w-full flex justify-center items-center rounded-full text-xl shadow-sm cursor-not-allowed gap-2 transition-colors">
+                                            <Lock size={20} /> Locked
+                                        </button>
+                                        <p className="text-xs text-text-muted mt-2 font-medium text-center absolute top-full left-0 w-full">
+                                            {renewal?.isInGracePeriod
+                                                ? `Renew ${renewal.graceLevel} during the grace period first.`
+                                                : renewal?.mustRestartFromBeginner
+                                                  ? "Grace period ended — restart from Beginner first."
+                                                  : "Pass the previous level first."}
+                                        </p>
+                                    </div>
                                 );
                             }
 
@@ -349,7 +474,7 @@ export default function SkillDetailPage() {
             {/* Compare Levels Modal */}
             {showCompareModal && (
                 <CompareLevelsModal
-                    levels={skill.levels}
+                    levels={availableLevels}
                     initialTab={selectedLevel as SkillLevel["level"]}
                     themeColor={themeColor}
                     onClose={() => setShowCompareModal(false)}

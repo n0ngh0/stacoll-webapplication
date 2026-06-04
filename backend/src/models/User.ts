@@ -7,6 +7,7 @@ export interface IVerifiedSkill {
   level: string;
   score: number;
   verifiedAt: Date;
+  expiresAt?: Date;
 }
 
 export interface IUser {
@@ -104,6 +105,7 @@ const userSchema = new Schema<IUser>(
         level: { type: String, enum: ["beginner", "intermediate", "advanced"], required: true },
         score: { type: Number, required: true, min: 0, max: 100 },
         verifiedAt: { type: Date, default: Date.now },
+        expiresAt: { type: Date },
       }
     ],
     isVerified: {

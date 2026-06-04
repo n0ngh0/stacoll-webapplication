@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Skill } from "@/types/skill";
 import { apiFetch } from "@/lib/api/client";
+import { getAvailableUserLevels } from "@/lib/api/problems";
 
 const categoryTheme: Record<string, string> = {
   analyst: "#3b82f6",
@@ -186,7 +187,7 @@ export default function UserDashboardPage() {
                   {/* Card Footer (Level Tags & Arrow) */}
                   <div className="flex justify-between items-center mt-auto">
                     <div className="flex flex-wrap gap-1.5">
-                      {skill.levels.map((lvl) => {
+                      {getAvailableUserLevels(skill.levels).map((lvl) => {
                         const levelStyleMap: Record<string, string> = {
                           beginner: "bg-beginnerbg dark:bg-beginnertext/20 text-beginnertext",
                           intermediate: "bg-intermediatebg dark:bg-intermediatetext/20 text-intermediatetext",

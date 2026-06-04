@@ -14,6 +14,8 @@ export default function CreateSkillPage() {
     if (!result.success) {
       throw new Error(result.message || "Failed to create skill");
     }
+
+    return result.skill;
   };
 
   return <SkillForm mode="create" onSubmit={handleCreate} />;

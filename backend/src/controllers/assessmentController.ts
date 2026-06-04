@@ -4,6 +4,16 @@ import Skill from "../models/Skill";
 import User from "../models/User";
 import Language from "../models/Language";
 import mongoose from "mongoose";
+import {
+  entriesByLevel,
+  getEffectiveLevel,
+  getExpiresAt,
+  getSkillRenewalState,
+  isEntryExpired,
+  isLevelValid,
+  upsertVerifiedSkill,
+  validateAssessmentAttempt,
+} from "../utils/verified-skills";
 
 const PASSING_SCORE = 60;
 const COOLDOWN_DAYS = 14;
@@ -25,13 +35,43 @@ export const assessmentController = {
   // ดึง progress ของ user ใน skill นั้น
   async getUserProgress(userId: string, skillId: string) {
     try {
-      const results = await AssessmentResult.find({ userId, skillId }).sort({ createdAt: -1 }).lean();
-      
-      const passedLevels: Record<string, boolean> = {
-        beginner: false,
-        intermediate: false,
-        advanced: false,
+      const [results, user] = await Promise.all([
+        AssessmentResult.find({ userId, skillId }).sort({ createdAt: -1 }).lean(),
+        User.findById(userId).lean(),
+      ]);
+
+      const skillEntries = (user?.verifiedSkills ?? []).filter(
+        (v) => v.skillId.toString() === skillId
+      );
+      const byLevel = entriesByLevel(skillEntries as any);
+      const now = new Date();
+
+      const validLevels: Record<string, boolean> = {
+        beginner: isLevelValid(byLevel, "beginner", now),
+        intermediate: isLevelValid(byLevel, "intermediate", now),
+        advanced: isLevelValid(byLevel, "advanced", now),
       };
+
+      const expiredLevels: Record<string, boolean> = {
+        beginner: Boolean(byLevel.get("beginner") && isEntryExpired(byLevel.get("beginner")!, now)),
+        intermediate: Boolean(byLevel.get("intermediate") && isEntryExpired(byLevel.get("intermediate")!, now)),
+        advanced: Boolean(byLevel.get("advanced") && isEntryExpired(byLevel.get("advanced")!, now)),
+      };
+
+      const levelDetails: Record<string, { expiresAt: string | null; isValid: boolean; isExpired: boolean }> = {};
+      for (const level of ["beginner", "intermediate", "advanced"] as const) {
+        const entry = byLevel.get(level);
+        levelDetails[level] = {
+          expiresAt: entry ? getExpiresAt(entry as any).toISOString() : null,
+          isValid: validLevels[level],
+          isExpired: entry ? isEntryExpired(entry as any, now) : false,
+        };
+      }
+
+      const effective = getEffectiveLevel(skillEntries as any, now);
+      const renewalState = getSkillRenewalState(skillEntries as any, now);
+
+      const passedLevels = { ...validLevels };
 
       const cooldowns: Record<string, { active: boolean; daysRemaining: number }> = {
         beginner: { active: false, daysRemaining: 0 },
@@ -39,26 +79,18 @@ export const assessmentController = {
         advanced: { active: false, daysRemaining: 0 },
       };
 
-      // หา passed status ก่อน
-      for (const res of results) {
-        if (res.passed) {
-          passedLevels[res.level] = true;
-        }
-      }
-
-      // หา cooldown สำหรับอันที่ไม่ผ่าน (ล่าสุดของแต่ละ level)
       const latestFails: Record<string, any> = {};
       for (const res of results) {
-        if (!latestFails[res.level] && !passedLevels[res.level]) {
+        if (!latestFails[res.level] && !validLevels[res.level]) {
           latestFails[res.level] = res;
         }
       }
 
-      const now = Date.now();
+      const nowMs = Date.now();
       for (const [level, res] of Object.entries(latestFails)) {
-        const timePassed = now - new Date(res.createdAt).getTime();
+        const timePassed = nowMs - new Date(res.createdAt).getTime();
         const daysPassed = timePassed / (1000 * 60 * 60 * 24);
-        
+
         if (daysPassed < COOLDOWN_DAYS) {
           cooldowns[level] = {
             active: true,
@@ -72,6 +104,19 @@ export const assessmentController = {
         body: {
           success: true,
           passedLevels,
+          validLevels,
+          expiredLevels,
+          levelDetails,
+          effectiveLevel: effective?.level ?? null,
+          renewalState: {
+            highestAchievedLevel: renewalState.highestAchievedLevel,
+            graceLevel: renewalState.graceLevel,
+            graceExpiresAt: renewalState.graceExpiresAt?.toISOString() ?? null,
+            graceDaysRemaining: renewalState.graceDaysRemaining,
+            isInGracePeriod: renewalState.isInGracePeriod,
+            mustRestartFromBeginner: renewalState.mustRestartFromBeginner,
+            renewTargetLevel: renewalState.renewTargetLevel,
+          },
           cooldowns,
         },
       };
@@ -83,28 +128,28 @@ export const assessmentController = {
   // ตรวจสอบสิทธิ์ และเริ่มทำข้อสอบ
   async startAssessment(userId: string, skillId: string, level: string) {
     try {
-      // 1. ตรวจสอบ Level Lock
-      if (level === "intermediate" || level === "advanced") {
-        const requiredLevel = level === "intermediate" ? "beginner" : "intermediate";
-        const passedPrev = await AssessmentResult.findOne({ userId, skillId, level: requiredLevel, passed: true });
-        
-        if (!passedPrev) {
-          return { status: 403, body: { success: false, message: `You must pass ${requiredLevel} level first.` } };
-        }
+      const user = await User.findById(userId).lean();
+      const skillEntries = (user?.verifiedSkills ?? []).filter(
+        (v) => v.skillId.toString() === skillId
+      );
+      const byLevel = entriesByLevel(skillEntries as any);
+      const now = new Date();
+      const normalizedLevel = level.toLowerCase();
+      const renewalState = getSkillRenewalState(skillEntries as any, now);
+      const access = validateAssessmentAttempt(byLevel, normalizedLevel, renewalState, now);
+
+      if (!access.allowed) {
+        return {
+          status: access.message?.includes("still valid") ? 400 : 403,
+          body: { success: false, message: access.message },
+        };
       }
 
-      // 2. ตรวจสอบว่าผ่าน level นี้ไปแล้วหรือยัง
-      const alreadyPassed = await AssessmentResult.findOne({ userId, skillId, level, passed: true });
-      if (alreadyPassed) {
-        return { status: 400, body: { success: false, message: `You have already passed this level.` } };
-      }
-
-      // 3. ตรวจสอบ Cooldown
-      const lastAttempt = await AssessmentResult.findOne({ userId, skillId, level }).sort({ createdAt: -1 });
+      const lastAttempt = await AssessmentResult.findOne({ userId, skillId, level: normalizedLevel }).sort({ createdAt: -1 });
       if (lastAttempt && !lastAttempt.passed) {
         const timePassed = Date.now() - new Date(lastAttempt.createdAt).getTime();
         const daysPassed = timePassed / (1000 * 60 * 60 * 24);
-        
+
         if (daysPassed < COOLDOWN_DAYS) {
           return {
             status: 403,
@@ -117,9 +162,8 @@ export const assessmentController = {
         }
       }
 
-      // 4. ดึงคำถาม
-      const problems = await Problem.find({ skillId, level, isActive: true })
-        .select("-correctAnswer -explanation") // ไม่ส่งเฉลย
+      const problems = await Problem.find({ skillId, level: normalizedLevel, isActive: true })
+        .select("-correctAnswer -explanation")
         .sort({ order: 1 })
         .lean();
 
@@ -143,13 +187,24 @@ export const assessmentController = {
   // ส่งคำตอบและตรวจข้อสอบ
   async submitAssessment(userId: string, skillId: string, level: string, submittedAnswers: Record<string, string>) {
     try {
-      // 1. ตรวจสอบอีกรอบว่าผ่านไปแล้วหรือติด cooldown ไหมเพื่อป้องกันการยิง API ตรงๆ
-      const alreadyPassed = await AssessmentResult.findOne({ userId, skillId, level, passed: true });
-      if (alreadyPassed) {
-        return { status: 400, body: { success: false, message: `You have already passed this level.` } };
+      const normalizedLevel = level.toLowerCase();
+      const user = await User.findById(userId).lean();
+      const skillEntries = (user?.verifiedSkills ?? []).filter(
+        (v) => v.skillId.toString() === skillId
+      );
+      const byLevel = entriesByLevel(skillEntries as any);
+      const now = new Date();
+      const renewalState = getSkillRenewalState(skillEntries as any, now);
+      const access = validateAssessmentAttempt(byLevel, normalizedLevel, renewalState, now);
+
+      if (!access.allowed) {
+        return {
+          status: access.message?.includes("still valid") ? 400 : 403,
+          body: { success: false, message: access.message },
+        };
       }
-      
-      const lastAttempt = await AssessmentResult.findOne({ userId, skillId, level }).sort({ createdAt: -1 });
+
+      const lastAttempt = await AssessmentResult.findOne({ userId, skillId, level: normalizedLevel }).sort({ createdAt: -1 });
       if (lastAttempt && !lastAttempt.passed) {
         const timePassed = Date.now() - new Date(lastAttempt.createdAt).getTime();
         const daysPassed = timePassed / (1000 * 60 * 60 * 24);
@@ -158,8 +213,7 @@ export const assessmentController = {
         }
       }
 
-      // 2. ดึงคำถามพร้อมเฉลย
-      const problems = await Problem.find({ skillId, level, isActive: true }).populate("languageId").lean();
+      const problems = await Problem.find({ skillId, level: normalizedLevel, isActive: true }).populate("languageId").lean();
       
       if (problems.length === 0) {
         return { status: 404, body: { success: false, message: "No problems found." } };
@@ -241,30 +295,25 @@ export const assessmentController = {
       const passed = score >= PASSING_SCORE;
 
       // 5. บันทึกประวัติ
-      const result = await AssessmentResult.create({
+      await AssessmentResult.create({
         userId,
         skillId,
-        level,
+        level: normalizedLevel,
         score,
         passed,
         answers: answerRecords,
       });
 
-      // 6. ถ้าผ่าน ให้เพิ่มใน User verifiedSkills
       if (passed) {
         const skill = await Skill.findById(skillId);
         if (skill) {
-          await User.findByIdAndUpdate(userId, {
-            $addToSet: {
-              verifiedSkills: {
-                skillId: skill._id,
-                skillName: skill.title,
-                level: level,
-                score: score,
-                verifiedAt: new Date(),
-              }
-            }
-          });
+          await upsertVerifiedSkill(
+            userId,
+            skillId,
+            skill.title,
+            normalizedLevel,
+            score
+          );
         }
       }
 

@@ -27,34 +27,21 @@ export default function ExportPreparePage() {
           const data = await res.json();
           if (data.success) {
             const user = data.user;
-            
-            // Helper to get highest skills
-            const getLevelWeight = (level: string) => {
-              if (!level) return 0;
-              switch (level.toUpperCase()) {
-                case 'BEGINNER': return 1;
-                case 'INTERMEDIATE': return 2;
-                case 'ADVANCED': return 3;
-                default: return 0;
-              }
-            };
-            
-            if (user.verifiedSkills) {
-              const skillMap = new Map();
-              user.verifiedSkills.forEach((skill: any) => {
-                const name = skill.skillName || skill.name;
-                if (!skillMap.has(name)) {
-                  skillMap.set(name, skill);
-                } else {
-                  const currentSkill = skillMap.get(name);
-                  if (getLevelWeight(skill.level) > getLevelWeight(currentSkill.level)) {
-                    skillMap.set(name, skill);
-                  } else if (getLevelWeight(skill.level) === getLevelWeight(currentSkill.level) && skill.score > currentSkill.score) {
-                    skillMap.set(name, skill);
-                  }
-                }
-              });
-              user.verifiedSkills = Array.from(skillMap.values());
+
+            if (user.skillWallet?.length) {
+              user.verifiedSkills = user.skillWallet
+                .filter((w: { isFullyExpired: boolean }) => !w.isFullyExpired)
+                .map((w: {
+                  skillName: string;
+                  effectiveLevel: string | null;
+                  effectiveScore: number | null;
+                  effectiveVerifiedAt: string | null;
+                }) => ({
+                  skillName: w.skillName,
+                  level: w.effectiveLevel,
+                  score: w.effectiveScore,
+                  verifiedAt: w.effectiveVerifiedAt,
+                }));
             }
 
             setUserData(user);
@@ -163,8 +150,8 @@ export default function ExportPreparePage() {
       <section className="mb-10">
         <div className="flex justify-between items-end mb-4">
           <div>
-            <h2 className="text-xl font-bold text-text-main">Verified Skills</h2>
-            <p className="text-sm text-text-muted mt-1">Select up to 4 skills to feature on your resume ({selectedSkills.size}/4)</p>
+            <h2 className="text-xl font-bold text-text-main">Active Certificates</h2>
+            <p className="text-sm text-text-muted mt-1">Only non-expired certificates can be featured ({selectedSkills.size}/4)</p>
           </div>
         </div>
 

@@ -115,6 +115,13 @@ export function getLevelQuestionCount(
   return level.questionCount ?? 0;
 }
 
+/** User-facing levels: only show levels that have at least one active question. */
+export function getAvailableUserLevels(
+  levels: (SkillLevel & { actualQuestionCount?: number })[]
+): (SkillLevel & { actualQuestionCount?: number })[] {
+  return levels.filter((level) => getLevelQuestionCount(level) > 0);
+}
+
 export async function fetchAdminProblem(
   problemId: string
 ): Promise<ApiProblem | null> {
