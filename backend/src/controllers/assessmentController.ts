@@ -7,17 +7,17 @@ import mongoose from "mongoose";
 const PASSING_SCORE = 60;
 const COOLDOWN_DAYS = 14;
 
-function getPistonLanguage(judge0_id: number): string {
-  const map: Record<number, string> = {
-    45: "nasm",
-    46: "bash",
-    50: "c",
-    54: "c++",
-    62: "java",
-    63: "javascript",
-    71: "python",
+function getJDoodleConfig(judge0_id: number): { language: string; versionIndex: string } {
+  const map: Record<number, { language: string; versionIndex: string }> = {
+    45: { language: "nasm", versionIndex: "3" },
+    46: { language: "bash", versionIndex: "3" },
+    50: { language: "c", versionIndex: "4" },
+    54: { language: "cpp", versionIndex: "4" },
+    62: { language: "java", versionIndex: "3" },
+    63: { language: "nodejs", versionIndex: "3" },
+    71: { language: "python3", versionIndex: "3" },
   };
-  return map[judge0_id] || "python";
+  return map[judge0_id] || { language: "python3", versionIndex: "3" };
 }
 
 export const assessmentController = {
@@ -187,23 +187,28 @@ export const assessmentController = {
                   finalSourceCode = lang.driverTemplate.replace("{{USER_CODE}}", userAnswer);
                 }
 
-                const pistonLang = getPistonLanguage(lang.judge0_id);
-                const res = await fetch("https://emkc.org/api/v2/piston/execute", {
+                const jDoodleConfig = getJDoodleConfig(lang.judge0_id);
+                const clientId = process.env.JDOODLE_CLIENT_ID || "";
+                const clientSecret = process.env.JDOODLE_CLIENT_SECRET || "";
+
+                const res = await fetch("https://api.jdoodle.com/v1/execute", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify({
-                    language: pistonLang,
-                    version: "*",
-                    files: [{ content: finalSourceCode }],
+                    clientId,
+                    clientSecret,
+                    script: finalSourceCode,
+                    language: jDoodleConfig.language,
+                    versionIndex: jDoodleConfig.versionIndex,
                     stdin: tc.input || "",
                   }),
                 });
                 const data = await res.json();
                 
-                const actualOutput = data.run?.stdout?.trim() || "";
+                const actualOutput = data.output?.trim() || "";
                 const expected = tc.expectedOutput?.trim() || "";
                 
-                if (data.compile?.stderr || data.run?.code !== 0 || actualOutput !== expected) {
+                if (data.error || actualOutput !== expected) {
                   allTestsPassed = false;
                   break;
                 }
@@ -311,32 +316,34 @@ export const assessmentController = {
             finalSourceCode = lang.driverTemplate.replace("{{USER_CODE}}", source_code);
           }
 
-          const pistonLang = getPistonLanguage(lang.judge0_id);
-          const res = await fetch("https://emkc.org/api/v2/piston/execute", {
+          const jDoodleConfig = getJDoodleConfig(lang.judge0_id);
+          const clientId = process.env.JDOODLE_CLIENT_ID || "";
+          const clientSecret = process.env.JDOODLE_CLIENT_SECRET || "";
+
+          const res = await fetch("https://api.jdoodle.com/v1/execute", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              language: pistonLang,
-              version: "*",
-              files: [{ content: finalSourceCode }],
+              clientId,
+              clientSecret,
+              script: finalSourceCode,
+              language: jDoodleConfig.language,
+              versionIndex: jDoodleConfig.versionIndex,
               stdin: tc.input || "",
             }),
           });
           
           const data = await res.json();
           
-          const actualOutput = data.run?.stdout?.trim() || "";
+          const actualOutput = data.output?.trim() || "";
           const expected = tc.expectedOutput?.trim() || "";
           
           let passed = false;
           let statusDesc = "Unknown";
           
-          if (data.compile?.stderr) {
+          if (data.error) {
             passed = false;
-            statusDesc = "Compilation Error";
-          } else if (data.run?.code !== 0) {
-            passed = false;
-            statusDesc = "Runtime Error";
+            statusDesc = "API/Compilation Error";
           } else if (actualOutput !== expected) {
             passed = false;
             statusDesc = "Wrong Answer";
@@ -353,7 +360,7 @@ export const assessmentController = {
             isHidden: tc.isHidden,
             input: tc.isHidden ? "Hidden Test Case" : tc.input,
             expectedOutput: tc.isHidden ? "Hidden Output" : tc.expectedOutput,
-            actualOutput: tc.isHidden ? (passed ? "Correct" : "Incorrect") : (data.run?.output || data.compile?.stderr || ""),
+            actualOutput: tc.isHidden ? (passed ? "Correct" : "Incorrect") : (data.output || data.error || ""),
             status: statusDesc,
           });
           
@@ -400,18 +407,22 @@ export const assessmentController = {
     }
   },
 
-  // POST /api/assessment/execute — Proxy to Piston API to run code safely from backend
+  // POST /api/assessment/execute — Proxy to JDoodle API to run code safely from backend
   async executeCode(body: { language_id: number; source_code: string; stdin?: string }) {
     try {
-      const pistonLang = getPistonLanguage(body.language_id);
+      const jDoodleConfig = getJDoodleConfig(body.language_id);
+      const clientId = process.env.JDOODLE_CLIENT_ID || "";
+      const clientSecret = process.env.JDOODLE_CLIENT_SECRET || "";
       
-      const res = await fetch("https://emkc.org/api/v2/piston/execute", {
+      const res = await fetch("https://api.jdoodle.com/v1/execute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          language: pistonLang,
-          version: "*",
-          files: [{ content: body.source_code }],
+          clientId,
+          clientSecret,
+          script: body.source_code,
+          language: jDoodleConfig.language,
+          versionIndex: jDoodleConfig.versionIndex,
           stdin: body.stdin || "",
         }),
       });
@@ -419,18 +430,18 @@ export const assessmentController = {
       const data = await res.json();
       
       const mappedData = {
-        stdout: data.run?.stdout || "",
-        stderr: data.run?.stderr || "",
-        compile_output: data.compile?.stderr || "",
+        stdout: data.output || "",
+        stderr: data.error || "",
+        compile_output: "",
         status: {
-          id: data.compile?.stderr ? 6 : (data.run?.code !== 0 ? 11 : 3),
-          description: data.compile?.stderr ? "Compilation Error" : (data.run?.code !== 0 ? "Runtime Error" : "Accepted")
+          id: data.error ? 11 : 3,
+          description: data.error ? "Error" : "Executed"
         }
       };
       
       return {
         status: res.status === 200 || res.status === 201 ? 200 : res.status,
-        body: { success: res.ok, data: mappedData, message: data.message || data.error || "Execution completed" },
+        body: { success: res.ok && !data.error, data: mappedData, message: data.error || "Execution completed" },
       };
     } catch (err: any) {
       return { status: 500, body: { success: false, message: "Error executing code", error: err.message } };
