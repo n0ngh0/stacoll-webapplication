@@ -14,7 +14,6 @@ import { uploadRoutes } from "./routes/uploadRoutes";
 
 import { swagger } from "@elysiajs/swagger";
 import { cors } from "@elysiajs/cors";
-import { agentDebug } from "./utils/debug-log";
 
 configDotenv()
 connectDB()
@@ -22,12 +21,6 @@ connectDB()
 const port = process.env.PORT || 8000
 
 const app = new Elysia()
-  .onRequest(({ request }) => {
-    const path = new URL(request.url).pathname;
-    if (path.includes("forgot-password")) {
-      agentDebug("index.ts:onRequest", "incoming request", { method: request.method, path }, "H1");
-    }
-  })
   .use(cors())
   .use(swagger({
     documentation: {
