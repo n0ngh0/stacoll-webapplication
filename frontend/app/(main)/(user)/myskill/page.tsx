@@ -96,7 +96,7 @@ export default function MySkillPage() {
                             const timePassed = Date.now() - new Date(attempt.createdAt).getTime();
                             const daysPassed = timePassed / (1000 * 60 * 60 * 24);
                             
-                            const cooldownDays = 14;
+                            const cooldownDays = 3;
                             let cooldownText = "Available Now";
                             if (daysPassed < cooldownDays) {
                                 cooldownText = `${Math.ceil(cooldownDays - daysPassed)} days left`;

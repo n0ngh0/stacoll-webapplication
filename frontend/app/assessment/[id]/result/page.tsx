@@ -106,7 +106,7 @@ export default function AssessmentResultPage() {
         {/* Cooldown notice if failed */}
         {!isPassed && (
           <p className="mt-6 text-sm font-medium text-accent-orange bg-accent-orange/10 p-3 rounded-lg inline-block">
-            Note: You must wait 14 days before you can retake this assessment.
+            Note: You must wait 3 days before you can retake this assessment.
           </p>
         )}
       </div>
