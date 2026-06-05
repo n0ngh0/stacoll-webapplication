@@ -86,7 +86,7 @@ export default function SkillDetailPage() {
                 setSkill(skillData.skill);
                 const available = getAvailableUserLevels(skillData.skill.levels || []);
                 if (available.length > 0) {
-                    const levelIds = new Set(available.map((l) => l.level));
+                    const levelIds = new Set<string>(available.map((l) => l.level));
                     if (progressData.success && progressData.renewalState?.isInGracePeriod && progressData.renewalState.graceLevel && levelIds.has(progressData.renewalState.graceLevel)) {
                         setSelectedLevel(progressData.renewalState.graceLevel);
                     } else if (progressData.success && progressData.renewalState?.mustRestartFromBeginner && levelIds.has("beginner")) {
