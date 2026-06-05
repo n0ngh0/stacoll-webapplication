@@ -94,18 +94,6 @@ export default function AdminDashboardPage() {
     return `${activeFilters.length} Selected`;
   };
 
-  const handleAddCategory = () => {
-    setIsFilterOpen(false);
-    setTimeout(() => {
-      const newCat = prompt("Enter new category name:");
-      if (newCat && !categories.includes(newCat.toLowerCase())) {
-        const catLower = newCat.toLowerCase();
-        setCategories([...categories, catLower]);
-        setActiveFilters([...activeFilters, catLower]);
-      }
-    }, 100);
-  };
-
   const handleDeleteSkill = async (id: string, title: string) => {
     if (confirm(`Are you sure you want to delete ${title}?`)) {
       try {
@@ -235,17 +223,6 @@ export default function AdminDashboardPage() {
                         </button>
                       );
                     })}
-                  </div>
-
-                  {/* ปุ่มเพิ่มหมวดหมู่ */}
-                  <div className="p-1.5 bg-gray-50 dark:bg-transparent border-t border-border-subtle dark:border-t border-border-subtle">
-                    <button
-                      onClick={handleAddCategory}
-                      className="w-full flex items-center gap-2 px-2.5 py-2 text-sm font-medium text-text-main bg-white dark:bg-surface border border-gray-300 dark:border-gray-700 rounded-md dark:hover:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800/30 transition-colors cursor-pointer"
-                    >
-                      <Plus size={16} />
-                      Manage Category...
-                    </button>
                   </div>
                 </div>
               )}
