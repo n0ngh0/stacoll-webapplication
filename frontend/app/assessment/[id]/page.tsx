@@ -175,7 +175,7 @@ export default function ExamPage() {
                 {currentQuestion.questionType === "coding" ? (
                     <CodingQuestion
                         title={currentQuestion.question}
-                        description={currentQuestion.explanation || currentQuestion.question}
+                        description={currentQuestion.explanation || ""}
                         code={answers[currentQuestion._id] ?? (currentQuestion.templateCode || "def solve():\n    pass")}
                         language={currentQuestion.languageId?.monaco_identifier || "python"}
                         languageId={currentQuestion.languageId?.judge0_id || 71}

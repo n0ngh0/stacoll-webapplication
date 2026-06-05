@@ -163,7 +163,7 @@ export const assessmentController = {
       }
 
       const problems = await Problem.find({ skillId, level: normalizedLevel, isActive: true })
-        .select("-correctAnswer -explanation")
+        .select("-correctAnswer")
         .sort({ order: 1 })
         .lean();
 

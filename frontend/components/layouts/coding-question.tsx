@@ -40,51 +40,12 @@ const CodingQuestion = memo(function CodingQuestion({
 
   const [output, setOutput] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
-
-  const [isCompiling, setIsCompiling] = useState(false);
+  const [allTestsPassed, setAllTestsPassed] = useState(false);
 
   const handleRun = async () => {
-    setIsCompiling(true);
-    setOutput("Executing code...");
-    try {
-      // Let's test against the first public test case
-      const publicTestCase = testCases?.find(tc => !tc.isHidden);
-      const stdin = publicTestCase ? publicTestCase.input : "";
-
-      const res = await apiFetch("/assessment/execute", {
-        method: "POST",
-        body: JSON.stringify({
-          language_id: languageId,
-          source_code: code,
-          stdin: stdin,
-        }),
-      });
-      const data = await res.json();
-      
-      if (data.success && data.data) {
-        const jd0 = data.data;
-        if (jd0.status?.id === 3) {
-          setOutput(`Status: Accepted\n\nOutput:\n${jd0.stdout || ""}`);
-        } else {
-          setOutput(`Status: ${jd0.status?.description}\n\nError/Output:\n${jd0.compile_output || jd0.stderr || jd0.stdout || ""}`);
-        }
-      } else {
-        setOutput(`Failed to execute code on server.\nReason: ${data.message || "Unknown Error"}\nDetails: ${data.error || JSON.stringify(data.data || {})}`);
-      }
-    } catch (err: any) {
-      setOutput(`Network Error or Server Crash: ${err.message}`);
-    } finally {
-      setIsCompiling(false);
-    }
-  };
-
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
-
-  const handleVerify = async () => {
-    setIsVerifying(true);
-    setOutput("Verifying against all test cases (including hidden)...");
-    setIsVerified(false);
+    setIsRunning(true);
+    setOutput("Running against all test cases (including hidden)...");
+    setAllTestsPassed(false);
     try {
       const res = await apiFetch(`/assessment/${skillId}/verify-problem/${problemId}`, {
         method: "POST",
@@ -95,7 +56,7 @@ const CodingQuestion = memo(function CodingQuestion({
       const data = await res.json();
       
       if (data.success) {
-        let outStr = `Verification Results: ${data.passed ? "✅ All Tests Passed!" : "❌ Some Tests Failed."}\n\n`;
+        let outStr = `Results: ${data.passed ? "✅ All Tests Passed!" : "❌ Some Tests Failed."}\n\n`;
         data.results?.forEach((r: any) => {
           outStr += `Test Case ${r.testCaseIndex} [${r.isHidden ? 'HIDDEN' : 'PUBLIC'}]: ${r.passed ? '✅ Passed' : '❌ Failed'}\n`;
           if (!r.passed && !r.isHidden) {
@@ -105,15 +66,20 @@ const CodingQuestion = memo(function CodingQuestion({
           }
         });
         setOutput(outStr);
-        if (data.passed) setIsVerified(true);
+        if (data.passed) setAllTestsPassed(true);
       } else {
-        setOutput(`Verification failed: ${data.message || "Unknown error"}`);
+        setOutput(`Run failed: ${data.message || "Unknown error"}`);
       }
     } catch (err) {
-      setOutput("Network Error during verification.");
+      setOutput("Network error during run.");
     } finally {
-      setIsVerifying(false);
+      setIsRunning(false);
     }
+  };
+
+  const handleCodeChange = (val: string | undefined) => {
+    setAllTestsPassed(false);
+    onChange(val || "");
   };
 
   return (
@@ -130,7 +96,11 @@ const CodingQuestion = memo(function CodingQuestion({
                 </div>
 
                 <div className="prose prose-invert max-w-none prose-p:text-text-muted prose-headings:text-text-main prose-strong:text-text-main prose-code:bg-surface-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-hover prose-pre:border prose-pre:border-border-subtle">
-                  {typeof description === 'string' ? <SafeMarkdown>{description}</SafeMarkdown> : description}
+                  {typeof description === "string" && description.trim() ? (
+                    <SafeMarkdown>{description}</SafeMarkdown>
+                  ) : typeof description !== "string" ? (
+                    description
+                  ) : null}
                 </div>
 
                 {/* Optional: Show public test cases here if needed */}
@@ -165,7 +135,7 @@ const CodingQuestion = memo(function CodingQuestion({
                   language={language || "python"}
                   theme="vs-dark"
                   value={code}
-                  onChange={(val) => onChange(val || "")}
+                  onChange={handleCodeChange}
                   options={{
                     minimap: { enabled: false },
                     fontSize: 15,
@@ -185,19 +155,11 @@ const CodingQuestion = memo(function CodingQuestion({
                   <div className="flex items-center gap-3">
                   <button
                     onClick={handleRun}
-                    disabled={isCompiling || isVerifying}
-                    className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-text-main bg-surface hover:bg-surface-hover rounded-xl border border-border-subtle transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                    disabled={isRunning}
+                    className={`flex items-center gap-2 px-5 py-2 text-sm font-bold text-white rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50 ${allTestsPassed ? "bg-emerald-500 hover:bg-emerald-600" : "bg-violet-600 hover:bg-violet-700"}`}
                   >
-                    {isCompiling ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
-                    {isCompiling ? "Running..." : "Run Code"}
-                  </button>
-                  <button
-                    onClick={handleVerify}
-                    disabled={isCompiling || isVerifying}
-                    className={`flex items-center gap-2 px-5 py-2 text-sm font-bold text-white rounded-xl transition-all shadow-sm cursor-pointer disabled:opacity-50 ${isVerified ? "bg-emerald-500 hover:bg-emerald-600" : "bg-violet-600 hover:bg-violet-700"}`}
-                  >
-                    {isVerifying ? <Loader2 size={12} className="animate-spin" /> : <SendHorizontal size={12} />}
-                    {isVerifying ? "Verifying..." : (isVerified ? "Verified ✅" : "Submit & Verify")}
+                    {isRunning ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
+                    {isRunning ? "Running..." : (allTestsPassed ? "Passed ✅" : "Run")}
                   </button>
                 </div>
                 </div>
@@ -231,11 +193,10 @@ const CodingQuestion = memo(function CodingQuestion({
 
             <button
               onClick={onNext}
-              disabled={!isVerified}
-              className={`flex items-center justify-center gap-2 px-10 py-3.5 rounded-full text-lg font-black transition-colors shadow-md ${!isVerified ? 'opacity-50 cursor-not-allowed bg-border-subtle text-text-muted' : (isLast
-                  ? "bg-greenui text-text-main dark:text-[#1f2937] hover:brightness-105 cursor-pointer"
-                  : "bg-brand-secondary text-white hover:brightness-95 cursor-pointer"
-              )}`}
+              className={`flex items-center justify-center gap-2 px-10 py-3.5 rounded-full text-lg font-black transition-colors shadow-md cursor-pointer ${isLast
+                  ? "bg-greenui text-text-main dark:text-[#1f2937] hover:brightness-105"
+                  : "bg-brand-secondary text-white hover:brightness-95"
+              }`}
             >
               <span>{isLast ? "Finish Assessment" : "Next"}</span>
               {isLast ? <SendHorizontal size={18} className="ml-1" /> : <ChevronRight size={20} />}

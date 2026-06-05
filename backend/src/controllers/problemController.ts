@@ -10,7 +10,7 @@ export const problemController = {
       }
 
       const problems = await Problem.find(filter)
-        .select("-correctAnswer -explanation") // ไม่ส่งเฉลยให้ user
+        .select("-correctAnswer") // ไม่ส่งเฉลยให้ user
         .sort({ order: 1 })
         .lean();
 
