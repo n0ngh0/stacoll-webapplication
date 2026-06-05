@@ -16,7 +16,7 @@ import {
 } from "../utils/verified-skills";
 
 const PASSING_SCORE = 60;
-const COOLDOWN_DAYS = 14;
+const COOLDOWN_DAYS = 3;
 
 function getJDoodleConfig(judge0_id: number): { language: string; versionIndex: string } {
   const map: Record<number, { language: string; versionIndex: string }> = {
