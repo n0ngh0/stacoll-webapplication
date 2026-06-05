@@ -7,7 +7,8 @@ import { SafeMarkdown } from "@/components/SafeMarkdown";
 import { CATEGORY_THEMES, getLevelColorClass } from "@/types/question";
 import { apiFetch } from "@/lib/api/client";
 import { getToken } from "@/lib/auth-session";
-import { formatCertDate, getWalletEntry } from "@/lib/verified-skills";
+import { formatCertDate, getLevelWeight, getWalletEntry } from "@/lib/verified-skills";
+import { getAvailableUserLevels } from "@/lib/api/problems";
 
 type CertificateData = {
   name: string;
@@ -34,6 +35,7 @@ export default function CertificatePage() {
   const [isInGrace, setIsInGrace] = useState(false);
   const [graceLevel, setGraceLevel] = useState<string | null>(null);
   const [mustRestart, setMustRestart] = useState(false);
+  const [isAtMaxLevel, setIsAtMaxLevel] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -60,16 +62,15 @@ export default function CertificatePage() {
         const wallet = getWalletEntry(profileData.user.skillWallet, rawSkillId);
 
         if (wallet) {
-          if (wallet.isFullyExpired) {
-            setIsExpired(true);
-            setExpiredMessage(wallet.statusMessage);
-            setIsInGrace(wallet.isInGracePeriod);
-            setGraceLevel(wallet.graceLevel);
-            setMustRestart(wallet.mustRestartFromBeginner);
-            return;
-          }
-
           if (!wallet.effectiveLevel || wallet.effectiveScore === null) {
+            if (wallet.isInGracePeriod || wallet.mustRestartFromBeginner || wallet.isFullyExpired) {
+              setIsExpired(true);
+              setExpiredMessage(wallet.statusMessage);
+              setIsInGrace(wallet.isInGracePeriod);
+              setGraceLevel(wallet.graceLevel);
+              setMustRestart(wallet.mustRestartFromBeginner);
+              return;
+            }
             setNotFound(true);
             return;
           }
@@ -78,6 +79,15 @@ export default function CertificatePage() {
           const matchedLevel = skill?.levels?.find(
             (l: { level: string }) =>
               l.level.toLowerCase() === wallet.effectiveLevel!.toLowerCase()
+          );
+
+          const availableLevels = getAvailableUserLevels(skill?.levels || []);
+          const maxAvailableLevel = availableLevels.reduce(
+            (max, l) => (getLevelWeight(l.level) > getLevelWeight(max) ? l.level : max),
+            availableLevels[0]?.level ?? "advanced"
+          );
+          setIsAtMaxLevel(
+            getLevelWeight(wallet.effectiveLevel!) >= getLevelWeight(maxAvailableLevel)
           );
 
           setSkillData({
@@ -185,17 +195,18 @@ export default function CertificatePage() {
           </button>
         </div>
 
-        {isFallback && (
-          <div className="mx-8 mt-6 px-4 py-3 rounded-xl bg-accent-orange/10 border border-accent-orange/30 text-sm text-accent-orange font-medium flex items-start gap-2">
-            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-            <span>{skillData.statusMessage}</span>
-          </div>
-        )}
-
         <div 
           className="py-10 flex flex-col items-center justify-center relative overflow-hidden transition-colors duration-300"
           style={{ backgroundColor: `${themeColor}33` }}
         >
+          {isFallback && (
+            <div className="w-full px-8 mb-8">
+              <div className="px-4 py-3 rounded-xl bg-surface/80 border border-accent-orange/30 text-sm text-accent-orange font-medium flex items-start gap-2 shadow-sm backdrop-blur-sm">
+                <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                <span>{skillData.statusMessage}</span>
+              </div>
+            </div>
+          )}
           <span 
             className="px-3 py-1 bg-surface rounded-full text-[10px] font-black uppercase tracking-widest mb-4 shadow-sm border"
             style={{ color: themeColor, borderColor: `${themeColor}50` }}
@@ -261,19 +272,21 @@ export default function CertificatePage() {
             </div>
           </div>
 
-          <div className="pt-8 border-t border-border-subtle transition-colors duration-300 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <h3 className="text-lg font-bold text-text-main transition-colors">Ready for the next challenge?</h3>
-              <p className="text-sm text-text-muted mt-1 transition-colors">Take the assessment for the next level to upgrade your rank.</p>
+          {!isAtMaxLevel && (
+            <div className="pt-8 border-t border-border-subtle transition-colors duration-300 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div>
+                <h3 className="text-lg font-bold text-text-main transition-colors">Ready for the next challenge?</h3>
+                <p className="text-sm text-text-muted mt-1 transition-colors">Take the assessment for the next level to upgrade your rank.</p>
+              </div>
+              
+              <button 
+                onClick={() => router.push(`/skill/${rawSkillId}`)}
+                className="px-6 py-3 bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold rounded-xl shadow-sm transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+              >
+                Take Next Level Assessment <ArrowRight size={18} />
+              </button>
             </div>
-            
-            <button 
-              onClick={() => router.push(`/skill/${rawSkillId}`)}
-              className="px-6 py-3 bg-brand-secondary hover:bg-brand-secondary-hover text-white font-bold rounded-xl shadow-sm transition-all flex items-center gap-2 shrink-0 cursor-pointer"
-            >
-              Take Next Level Assessment <ArrowRight size={18} />
-            </button>
-          </div>
+          )}
 
         </div>
       </div>

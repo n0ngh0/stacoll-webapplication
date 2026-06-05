@@ -41,6 +41,9 @@ export default function SkillDetailPage() {
         [skill]
     );
 
+    const hasPassedLevel = (level: string) =>
+        Boolean(userProgress?.validLevels[level] || userProgress?.expiredLevels[level]);
+
     useEffect(() => {
         const timer = setTimeout(() => setIsCheckingAuth(false), 0);
         return () => clearTimeout(timer);
@@ -257,7 +260,7 @@ export default function SkillDetailPage() {
                                 } else if (renewal?.mustRestartFromBeginner) {
                                     isLocked = level.level !== "beginner";
                                 } else {
-                                    isLocked = index > 0 && !(userProgress?.validLevels[availableLevels[index - 1].level]);
+                                    isLocked = index > 0 && !hasPassedLevel(availableLevels[index - 1].level);
                                 }
                                 const isValid = userProgress?.validLevels[level.level] || false;
                                 const isExpired = !isValid && (userProgress?.expiredLevels[level.level] || false);
@@ -320,7 +323,7 @@ export default function SkillDetailPage() {
                             } else if (renewal?.mustRestartFromBeginner) {
                                 isLocked = selectedLevel !== "beginner";
                             } else {
-                                isLocked = selectedIndex > 0 && !(userProgress?.validLevels[availableLevels[selectedIndex - 1].level]);
+                                isLocked = selectedIndex > 0 && !hasPassedLevel(availableLevels[selectedIndex - 1].level);
                             }
                             const isValid = userProgress?.validLevels[selectedLevel] || false;
                             const isExpired = !isValid && (userProgress?.expiredLevels[selectedLevel] || false);

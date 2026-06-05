@@ -83,7 +83,7 @@ export function levelLabel(level: string): string {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }
 
-/** Level counts as valid only if not expired and all lower levels in the chain are valid. */
+/** Level is valid when its own certificate has not expired (no lower-level chain requirement). */
 export function isLevelValid(
   byLevel: Map<string, VerifiedSkillEntry>,
   level: string,
@@ -94,16 +94,14 @@ export function isLevelValid(
   if (!entry || isEntryExpired(entry, now)) {
     return false;
   }
-  if (normalized === "intermediate") {
-    return isLevelValid(byLevel, "beginner", now);
-  }
-  if (normalized === "advanced") {
-    return (
-      isLevelValid(byLevel, "beginner", now) &&
-      isLevelValid(byLevel, "intermediate", now)
-    );
-  }
   return true;
+}
+
+export function hasPassedLevel(
+  byLevel: Map<string, VerifiedSkillEntry>,
+  level: string
+): boolean {
+  return byLevel.has(level.toLowerCase());
 }
 
 export function getEffectiveLevel(
@@ -204,21 +202,18 @@ export function validateAssessmentAttempt(
     };
   }
 
-  if (normalized === "intermediate" || normalized === "advanced") {
-    const requiredLevel = normalized === "intermediate" ? "beginner" : "intermediate";
-    if (!isLevelValid(byLevel, requiredLevel, now)) {
-      const requiredEntry = byLevel.get(requiredLevel);
-      if (!requiredEntry) {
-        return {
-          allowed: false,
-          message: `You must pass the ${requiredLevel} level first.`,
-        };
-      }
-      return {
-        allowed: false,
-        message: `Your ${requiredLevel} certificate has expired. Renew ${levelLabel(requiredLevel)} before taking this level.`,
-      };
-    }
+  if (normalized === "intermediate" && !hasPassedLevel(byLevel, "beginner")) {
+    return {
+      allowed: false,
+      message: "You must pass the beginner level first.",
+    };
+  }
+
+  if (normalized === "advanced" && !hasPassedLevel(byLevel, "intermediate")) {
+    return {
+      allowed: false,
+      message: "You must pass the intermediate level first.",
+    };
   }
 
   return { allowed: true };
@@ -230,8 +225,6 @@ export function getSkillStatusMessage(
   renewalState: SkillRenewalState,
   now: Date = new Date()
 ): string {
-  const byLevel = entriesByLevel(entries);
-
   if (renewalState.isInGracePeriod && renewalState.graceLevel) {
     const graceLabel = levelLabel(renewalState.graceLevel);
     if (!effective || getLevelWeight(renewalState.graceLevel) > getLevelWeight(effective.level)) {
@@ -249,20 +242,11 @@ export function getSkillStatusMessage(
       day: "2-digit",
       year: "numeric",
     });
-    const highestStored = getHighestAchievedLevel(byLevel);
-    if (highestStored && highestStored !== effective.level) {
-      return `${levelLabel(highestStored)} expired — showing ${levelLabel(effective.level)} certificate (valid until ${expires})`;
-    }
     return `Valid until ${expires}`;
   }
 
   if (entries.length === 0) {
     return "Not verified";
-  }
-
-  const beginner = byLevel.get("beginner");
-  if (beginner && isEntryExpired(beginner, now)) {
-    return "Beginner certificate expired — renew Beginner to restore your skill chain";
   }
 
   return "All certificates expired — renew an assessment to restore verification";
@@ -340,7 +324,7 @@ export function buildSkillWalletSummaries(
       effectiveExpiresAt: effective
         ? getExpiresAt(effective.entry).toISOString()
         : null,
-      isFullyExpired: effective === null,
+      isFullyExpired: effective === null && !renewalState.isInGracePeriod,
       isInGracePeriod: renewalState.isInGracePeriod,
       graceLevel: renewalState.graceLevel,
       graceExpiresAt: renewalState.graceExpiresAt?.toISOString() ?? null,
