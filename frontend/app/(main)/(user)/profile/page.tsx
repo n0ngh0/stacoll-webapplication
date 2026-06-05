@@ -486,7 +486,6 @@ export default function ProfilePage() {
                             <p className={`text-[10px] font-bold mt-0.5 ${getLevelColorClass((skill.effectiveLevel || "").toUpperCase())} transition-colors`}>
                               {(skill.effectiveLevel || "").toUpperCase()}
                             </p>
-                            <p className="text-[11px] text-text-muted mt-2 leading-relaxed">{skill.statusMessage}</p>
                           </div>
                           <div className="text-right shrink-0">
                             <span className="text-2xl font-bold text-text-main transition-colors">{skill.effectiveScore}</span>
