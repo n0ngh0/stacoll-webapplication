@@ -95,7 +95,7 @@ const CodingQuestion = memo(function CodingQuestion({
                   <h3 className="text-2xl font-bold text-text-main leading-snug">{title}</h3>
                 </div>
 
-                <div className="prose prose-invert max-w-none prose-p:text-text-muted prose-headings:text-text-main prose-strong:text-text-main prose-code:bg-surface-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-hover prose-pre:border prose-pre:border-border-subtle">
+                <div className="prose dark:prose-invert max-w-none prose-p:text-text-muted prose-headings:text-text-main prose-strong:text-text-main prose-code:text-text-main prose-code:bg-surface-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-hover prose-pre:border prose-pre:border-border-subtle prose-table:text-text-main prose-th:text-text-main prose-td:text-text-muted">
                   {typeof description === "string" && description.trim() ? (
                     <SafeMarkdown>{description}</SafeMarkdown>
                   ) : typeof description !== "string" ? (
