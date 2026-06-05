@@ -10,11 +10,14 @@ const MAX_PROFILE_PROJECTS = 4;
 export const profileController = {
   async getProfile(userId: string) {
     try {
-      const user = await User.findById(userId).select("-password").lean();
+      const user = await User.findById(userId).lean();
       
       if (!user) {
         return { status: 404, body: { success: false, message: "User not found" } };
       }
+
+      const { password, ...userWithoutPassword } = user;
+      const canChangePassword = user.authProvider !== "google" && !!password;
 
       const now = new Date();
       const enrichedSkills = (user.verifiedSkills ?? []).map((entry) =>
@@ -28,7 +31,8 @@ export const profileController = {
           success: true,
           message: "Profile fetched successfully",
           user: {
-            ...user,
+            ...userWithoutPassword,
+            canChangePassword,
             verifiedSkills: enrichedSkills,
             skillWallet,
           },

@@ -49,6 +49,8 @@ export interface User {
       }
     >;
   }>;
+  authProvider?: "local" | "google";
+  canChangePassword?: boolean;
   // วันที่และเวลาจะถูกแปลงเป็น ISO String เมื่อส่งผ่าน JSON
   createdAt: string;
   updatedAt: string;

@@ -27,14 +27,28 @@ export default function SettingsPage() {
   useEffect(() => setMounted(true), []);
 
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [canChangePassword, setCanChangePassword] = useState(true);
 
   useEffect(() => {
-    if (!getToken()) {
-      router.push("/signin");
-    } else {
-      const timer = setTimeout(() => setIsCheckingAuth(false), 100);
-      return () => clearTimeout(timer);
-    }
+    const load = async () => {
+      if (!getToken()) {
+        router.push("/signin");
+        return;
+      }
+      try {
+        const { apiFetch } = await import("@/lib/api/client");
+        const res = await apiFetch("/profile/me");
+        const data = await res.json();
+        if (data.success && data.user) {
+          setCanChangePassword(Boolean(data.user.canChangePassword));
+        }
+      } catch {
+        // keep default: show password section if profile fetch fails
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+    load();
   }, [router]);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -153,7 +167,8 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* Password & Security Section*/}
+        {/* Password Section — hidden for Google-only accounts */}
+        {canChangePassword && (
         <section className="py-8 md:py-10 flex flex-col md:flex-row md:items-start gap-6 md:gap-12">
           <div className="w-full md:w-1/3">
             <h2 className="text-base font-semibold text-text-main transition-colors">Password</h2>
@@ -205,6 +220,7 @@ export default function SettingsPage() {
             </form>
           </div>
         </section>
+        )}
 
         {/* Danger Zone Section*/}
         <section className="py-8 md:py-10 flex flex-col md:flex-row md:items-start gap-6 md:gap-12">
