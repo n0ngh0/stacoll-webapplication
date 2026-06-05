@@ -89,13 +89,13 @@ const CodingQuestion = memo(function CodingQuestion({
           {/* Problem Description Area (Left Panel) */}
           <Panel defaultSize={25} minSize={20}>
             <div className="h-full bg-canvas border-r border-border-subtle flex flex-col overflow-y-auto custom-scrollbar">
-              <div className="p-8 pb-10 flex-1">
-                <div className="mb-8">
-                  <h2 className="text-sm font-black tracking-widest text-brand-secondary uppercase mb-2">Question Description</h2>
-                  <h3 className="text-2xl font-bold text-text-main leading-snug">{title}</h3>
+              <div className="p-5 pb-6 flex-1">
+                <div className="mb-5">
+                  <h2 className="text-[10px] font-black tracking-widest text-brand-secondary uppercase mb-1.5">Question Description</h2>
+                  <h3 className="text-lg font-bold text-text-main leading-snug">{title}</h3>
                 </div>
 
-                <div className="prose dark:prose-invert max-w-none prose-p:text-text-muted prose-headings:text-text-main prose-strong:text-text-main prose-code:text-text-main prose-code:bg-surface-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-hover prose-pre:border prose-pre:border-border-subtle prose-table:text-text-main prose-th:text-text-main prose-td:text-text-muted">
+                <div className="prose prose-sm dark:prose-invert max-w-none prose-p:text-text-muted prose-headings:text-text-main prose-strong:text-text-main prose-code:text-text-main prose-code:bg-surface-hover prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-pre:bg-surface-hover prose-pre:border prose-pre:border-border-subtle prose-table:text-text-main prose-th:text-text-main prose-td:text-text-muted">
                   {typeof description === "string" && description.trim() ? (
                     <SafeMarkdown>{description}</SafeMarkdown>
                   ) : typeof description !== "string" ? (
@@ -178,7 +178,7 @@ const CodingQuestion = memo(function CodingQuestion({
         </Group>
 
           {/* Footer Actions */}
-          <div className="h-[80px] bg-surface border-t border-border-subtle flex items-center justify-between px-8">
+          <div className="h-[64px] bg-surface border-t border-border-subtle flex items-center justify-between px-6">
             <div>
               {!isFirst && (
                 <button
@@ -193,7 +193,7 @@ const CodingQuestion = memo(function CodingQuestion({
 
             <button
               onClick={onNext}
-              className={`flex items-center justify-center gap-2 px-10 py-3.5 rounded-full text-lg font-black transition-colors shadow-md cursor-pointer ${isLast
+              className={`flex items-center justify-center gap-2 px-7 py-2.5 rounded-full text-sm font-bold transition-colors shadow-md cursor-pointer ${isLast
                   ? "bg-greenui text-text-main dark:text-[#1f2937] hover:brightness-105"
                   : "bg-brand-secondary text-white hover:brightness-95"
               }`}
