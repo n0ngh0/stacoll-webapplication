@@ -12,11 +12,11 @@ export default function ExamPage() {
     const params = useParams();
     const router = useRouter();
     const rawSkillId = (params?.id || "skill-assessment") as string;
-    const displaySkillName = decodeURIComponent(rawSkillId as string).toUpperCase();
 
     const searchParams = useSearchParams();
     const selectedLevel = searchParams?.get("level") || "beginner";
 
+    const [skillTitle, setSkillTitle] = useState("");
     const [problems, setProblems] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -79,6 +79,9 @@ export default function ExamPage() {
 
                 const skillData = await skillRes.json();
                 const data = await assessRes.json();
+                if (skillData.success && skillData.skill?.title) {
+                    setSkillTitle(skillData.skill.title);
+                }
                 if (data.success) {
                     setProblems(data.problems);
                     const levelMeta = skillData.success
@@ -153,7 +156,7 @@ export default function ExamPage() {
                         Calculating Results...
                     </h2>
                     <p className="text-text-muted text-[15px]">
-                        Please wait while we evaluate your answers for <strong className="text-text-main">{displaySkillName}</strong>.
+                        Please wait while we evaluate your answers for <strong className="text-text-main">{skillTitle}</strong>.
                     </p>
                 </div>
             </div>
@@ -165,7 +168,7 @@ export default function ExamPage() {
             <AssessmentHeader
                 current={currentIndex + 1}
                 total={problems.length}
-                title={displaySkillName}
+                title={skillTitle.toUpperCase()}
                 timeLeft={formatTime(timeLeft)}
                 isUrgent={timeLeft < 300}
                 skillId={rawSkillId}
