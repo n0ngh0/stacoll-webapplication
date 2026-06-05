@@ -240,9 +240,6 @@ export default function CertificatePage() {
               <p className="text-sm text-text-muted mt-4 leading-relaxed transition-colors">
                 You have successfully demonstrated proficiency in <strong>{skillData.name}</strong> at the <strong>{skillData.level}</strong> level.
               </p>
-              {!isFallback && (
-                <p className="text-xs text-text-muted mt-2">{skillData.statusMessage}</p>
-              )}
             </div>
 
             <div className="z-10 bg-surface border border-border-subtle rounded-2xl p-6 min-w-[240px] space-y-5 transition-colors duration-300">
