@@ -193,7 +193,7 @@ export default function ExamPage() {
                         data={{
                             id: currentQuestion._id,
                             title: currentQuestion.question,
-                            description: currentQuestion.explanation || "Select the best answer.",
+                            description: currentQuestion.explanation || "",
                             options: currentQuestion.choices ?? []
                         }}
                         selected={answers[currentQuestion._id] ?? null}

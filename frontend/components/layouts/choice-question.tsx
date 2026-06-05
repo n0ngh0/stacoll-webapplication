@@ -40,9 +40,11 @@ const ChoiceQuestion = memo(function ChoiceQuestion({
                 <div className="mb-12">
                     <div className="text-[11px] font-black text-brand-secondary uppercase tracking-[0.2em] mb-4">Question Description</div>
                     <h2 className="text-3xl font-black text-text-main mb-6 tracking-tight leading-tight">{data.title}</h2>
-                    <div className="prose prose-lg dark:prose-invert max-w-none text-text-muted leading-relaxed mb-8 whitespace-pre-wrap">
-                        <SafeMarkdown>{data.description}</SafeMarkdown>
-                    </div>
+                    {data.description?.trim() && (
+                        <div className="prose prose-lg dark:prose-invert max-w-none text-text-muted leading-relaxed mb-8 whitespace-pre-wrap">
+                            <SafeMarkdown>{data.description}</SafeMarkdown>
+                        </div>
+                    )}
                     {data.codeSnippet && (
                         <div className="mb-8">
                             <div className="text-[11px] font-black text-text-muted uppercase tracking-[0.2em] mb-3">Code Snippet</div>
